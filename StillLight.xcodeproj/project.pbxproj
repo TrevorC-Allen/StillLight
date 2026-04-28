@@ -1,0 +1,423 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		000000000000000000000201 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000101 /* AppState.swift */; };
+		000000000000000000000202 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000102 /* RootView.swift */; };
+		000000000000000000000203 /* StillLightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000103 /* StillLightApp.swift */; };
+		000000000000000000000204 /* CameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000104 /* CameraPreview.swift */; };
+		000000000000000000000205 /* CameraScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000105 /* CameraScreen.swift */; };
+		000000000000000000000206 /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000106 /* CameraService.swift */; };
+		000000000000000000000207 /* CameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000107 /* CameraViewModel.swift */; };
+		000000000000000000000208 /* PhotoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000108 /* PhotoExporter.swift */; };
+		000000000000000000000209 /* FilmLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000109 /* FilmLibrary.swift */; };
+		000000000000000000000210 /* FilmPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000110 /* FilmPickerSheet.swift */; };
+		000000000000000000000211 /* FilmPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000111 /* FilmPreset.swift */; };
+		000000000000000000000212 /* GalleryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000112 /* GalleryScreen.swift */; };
+		000000000000000000000213 /* PhotoRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000113 /* PhotoRecord.swift */; };
+		000000000000000000000214 /* PhotoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000114 /* PhotoStore.swift */; };
+		000000000000000000000215 /* ResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000115 /* ResultView.swift */; };
+		000000000000000000000216 /* FilmImagePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000116 /* FilmImagePipeline.swift */; };
+		000000000000000000000217 /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000117 /* SettingsScreen.swift */; };
+		000000000000000000000218 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000118 /* ShareSheet.swift */; };
+		000000000000000000000219 /* StillLightTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000119 /* StillLightTheme.swift */; };
+		000000000000000000000220 /* CameraAssistOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000120 /* CameraAssistOverlay.swift */; };
+		000000000000000000000221 /* ImportLabScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000121 /* ImportLabScreen.swift */; };
+		000000000000000000000222 /* FilmRecommender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000122 /* FilmRecommender.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000004 /* StillLight.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StillLight.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		000000000000000000000017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		000000000000000000000101 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		000000000000000000000102 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		000000000000000000000103 /* StillLightApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StillLightApp.swift; sourceTree = "<group>"; };
+		000000000000000000000104 /* CameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreview.swift; sourceTree = "<group>"; };
+		000000000000000000000105 /* CameraScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraScreen.swift; sourceTree = "<group>"; };
+		000000000000000000000106 /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
+		000000000000000000000107 /* CameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewModel.swift; sourceTree = "<group>"; };
+		000000000000000000000108 /* PhotoExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoExporter.swift; sourceTree = "<group>"; };
+		000000000000000000000109 /* FilmLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLibrary.swift; sourceTree = "<group>"; };
+		000000000000000000000110 /* FilmPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmPickerSheet.swift; sourceTree = "<group>"; };
+		000000000000000000000111 /* FilmPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmPreset.swift; sourceTree = "<group>"; };
+		000000000000000000000112 /* GalleryScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryScreen.swift; sourceTree = "<group>"; };
+		000000000000000000000113 /* PhotoRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoRecord.swift; sourceTree = "<group>"; };
+		000000000000000000000114 /* PhotoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoStore.swift; sourceTree = "<group>"; };
+		000000000000000000000115 /* ResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultView.swift; sourceTree = "<group>"; };
+		000000000000000000000116 /* FilmImagePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmImagePipeline.swift; sourceTree = "<group>"; };
+		000000000000000000000117 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
+		000000000000000000000118 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		000000000000000000000119 /* StillLightTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StillLightTheme.swift; sourceTree = "<group>"; };
+		000000000000000000000120 /* CameraAssistOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraAssistOverlay.swift; sourceTree = "<group>"; };
+		000000000000000000000121 /* ImportLabScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportLabScreen.swift; sourceTree = "<group>"; };
+		000000000000000000000122 /* FilmRecommender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmRecommender.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		000000000000000000000007 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		000000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000020 /* StillLight */,
+				000000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		000000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000004 /* StillLight.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		000000000000000000000020 /* StillLight */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000021 /* App */,
+				000000000000000000000022 /* Camera */,
+				000000000000000000000023 /* Film */,
+				000000000000000000000024 /* ImagePipeline */,
+				000000000000000000000025 /* Export */,
+				000000000000000000000026 /* Gallery */,
+				000000000000000000000031 /* ImportLab */,
+				000000000000000000000032 /* AI */,
+				000000000000000000000027 /* Settings */,
+				000000000000000000000028 /* UI */,
+				000000000000000000000029 /* Resources */,
+				000000000000000000000030 /* Supporting */,
+			);
+			path = StillLight;
+			sourceTree = "<group>";
+		};
+		000000000000000000000021 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000101 /* AppState.swift */,
+				000000000000000000000102 /* RootView.swift */,
+				000000000000000000000103 /* StillLightApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		000000000000000000000022 /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000104 /* CameraPreview.swift */,
+				000000000000000000000120 /* CameraAssistOverlay.swift */,
+				000000000000000000000105 /* CameraScreen.swift */,
+				000000000000000000000106 /* CameraService.swift */,
+				000000000000000000000107 /* CameraViewModel.swift */,
+			);
+			path = Camera;
+			sourceTree = "<group>";
+		};
+		000000000000000000000023 /* Film */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000109 /* FilmLibrary.swift */,
+				000000000000000000000110 /* FilmPickerSheet.swift */,
+				000000000000000000000111 /* FilmPreset.swift */,
+			);
+			path = Film;
+			sourceTree = "<group>";
+		};
+		000000000000000000000024 /* ImagePipeline */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000116 /* FilmImagePipeline.swift */,
+			);
+			path = ImagePipeline;
+			sourceTree = "<group>";
+		};
+		000000000000000000000025 /* Export */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000108 /* PhotoExporter.swift */,
+			);
+			path = Export;
+			sourceTree = "<group>";
+		};
+		000000000000000000000026 /* Gallery */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000112 /* GalleryScreen.swift */,
+				000000000000000000000113 /* PhotoRecord.swift */,
+				000000000000000000000114 /* PhotoStore.swift */,
+				000000000000000000000115 /* ResultView.swift */,
+			);
+			path = Gallery;
+			sourceTree = "<group>";
+		};
+		000000000000000000000031 /* ImportLab */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000121 /* ImportLabScreen.swift */,
+			);
+			path = ImportLab;
+			sourceTree = "<group>";
+		};
+		000000000000000000000032 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000122 /* FilmRecommender.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		000000000000000000000027 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000117 /* SettingsScreen.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		000000000000000000000028 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000118 /* ShareSheet.swift */,
+				000000000000000000000119 /* StillLightTheme.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		000000000000000000000029 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000015 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		000000000000000000000030 /* Supporting */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000017 /* Info.plist */,
+			);
+			path = Supporting;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		000000000000000000000005 /* StillLight */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000010 /* Build configuration list for PBXNativeTarget "StillLight" */;
+			buildPhases = (
+				000000000000000000000006 /* Sources */,
+				000000000000000000000007 /* Frameworks */,
+				000000000000000000000008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = StillLight;
+			productName = StillLight;
+			productReference = 000000000000000000000004 /* StillLight.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		000000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2641;
+				LastUpgradeCheck = 2641;
+				TargetAttributes = {
+					000000000000000000000005 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
+				};
+			};
+			buildConfigurationList = 000000000000000000000009 /* Build configuration list for PBXProject "StillLight" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 000000000000000000000002;
+			productRefGroup = 000000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				000000000000000000000005 /* StillLight */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		000000000000000000000008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		000000000000000000000006 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000201 /* AppState.swift in Sources */,
+				000000000000000000000202 /* RootView.swift in Sources */,
+				000000000000000000000203 /* StillLightApp.swift in Sources */,
+				000000000000000000000204 /* CameraPreview.swift in Sources */,
+				000000000000000000000205 /* CameraScreen.swift in Sources */,
+				000000000000000000000206 /* CameraService.swift in Sources */,
+				000000000000000000000207 /* CameraViewModel.swift in Sources */,
+				000000000000000000000208 /* PhotoExporter.swift in Sources */,
+				000000000000000000000209 /* FilmLibrary.swift in Sources */,
+				000000000000000000000210 /* FilmPickerSheet.swift in Sources */,
+				000000000000000000000211 /* FilmPreset.swift in Sources */,
+				000000000000000000000212 /* GalleryScreen.swift in Sources */,
+				000000000000000000000213 /* PhotoRecord.swift in Sources */,
+				000000000000000000000214 /* PhotoStore.swift in Sources */,
+				000000000000000000000215 /* ResultView.swift in Sources */,
+				000000000000000000000216 /* FilmImagePipeline.swift in Sources */,
+				000000000000000000000217 /* SettingsScreen.swift in Sources */,
+				000000000000000000000218 /* ShareSheet.swift in Sources */,
+				000000000000000000000219 /* StillLightTheme.swift in Sources */,
+				000000000000000000000220 /* CameraAssistOverlay.swift in Sources */,
+				000000000000000000000221 /* ImportLabScreen.swift in Sources */,
+				000000000000000000000222 /* FilmRecommender.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		000000000000000000000011 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		000000000000000000000012 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		000000000000000000000013 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = StillLight/Supporting/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.trevorcui.StillLight;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		000000000000000000000014 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = StillLight/Supporting/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.trevorcui.StillLight;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		000000000000000000000009 /* Build configuration list for PBXProject "StillLight" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000011 /* Debug */,
+				000000000000000000000012 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		000000000000000000000010 /* Build configuration list for PBXNativeTarget "StillLight" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000013 /* Debug */,
+				000000000000000000000014 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 000000000000000000000001 /* Project object */;
+}

@@ -36,6 +36,46 @@ enum CameraFlashMode: String, CaseIterable {
     }
 }
 
+struct CameraLensOption: Identifiable, Equatable {
+    let displayFactor: CGFloat
+
+    var id: CGFloat { displayFactor }
+
+    var label: String {
+        if displayFactor < 1 {
+            return String(format: "%.1f", displayFactor)
+        }
+        if displayFactor.rounded() == displayFactor {
+            return "\(Int(displayFactor))"
+        }
+        return String(format: "%.1f", displayFactor)
+    }
+}
+
+struct CameraZoomState: Equatable {
+    var displayFactor: CGFloat
+    var minDisplayFactor: CGFloat
+    var maxDisplayFactor: CGFloat
+    var lensOptions: [CameraLensOption]
+
+    static let standard = CameraZoomState(
+        displayFactor: 1,
+        minDisplayFactor: 1,
+        maxDisplayFactor: 1,
+        lensOptions: [CameraLensOption(displayFactor: 1)]
+    )
+
+    var displayFactorText: String {
+        if displayFactor < 1 {
+            return String(format: "%.1f", displayFactor)
+        }
+        if displayFactor.rounded() == displayFactor {
+            return "\(Int(displayFactor))"
+        }
+        return String(format: "%.1f", displayFactor)
+    }
+}
+
 final class CameraService: NSObject, ObservableObject {
     let session = AVCaptureSession()
 
@@ -46,6 +86,7 @@ final class CameraService: NSObject, ObservableObject {
     private var audioInput: AVCaptureDeviceInput?
     private var photoDelegate: PhotoCaptureDelegate?
     private var movieDelegate: MovieCaptureDelegate?
+    private var zoomDisplayScale: CGFloat = 1
     private(set) var position: AVCaptureDevice.Position = .back
 
     func checkPermission(_ completion: @escaping (CameraPermissionState) -> Void) {
@@ -111,6 +152,37 @@ final class CameraService: NSObject, ObservableObject {
             } catch {
                 completion(.unavailable)
             }
+        }
+    }
+
+    func currentZoomState(completion: @escaping (CameraZoomState) -> Void) {
+        sessionQueue.async { [weak self] in
+            guard let self, let device = self.videoInput?.device else {
+                completion(.standard)
+                return
+            }
+            completion(self.zoomState(for: device))
+        }
+    }
+
+    func setZoomDisplayFactor(_ displayFactor: CGFloat, completion: @escaping (CameraZoomState) -> Void) {
+        sessionQueue.async { [weak self] in
+            guard let self, let device = self.videoInput?.device else {
+                completion(.standard)
+                return
+            }
+
+            do {
+                try device.lockForConfiguration()
+                let rawFactor = self.rawZoomFactor(forDisplayFactor: displayFactor, device: device)
+                device.videoZoomFactor = rawFactor
+                device.unlockForConfiguration()
+            } catch {
+                completion(self.zoomState(for: device))
+                return
+            }
+
+            completion(self.zoomState(for: device))
         }
     }
 
@@ -233,7 +305,7 @@ final class CameraService: NSObject, ObservableObject {
             session.removeInput(videoInput)
         }
 
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position) else {
+        guard let device = Self.bestDevice(for: position) else {
             session.commitConfiguration()
             throw CameraError.deviceUnavailable
         }
@@ -245,6 +317,7 @@ final class CameraService: NSObject, ObservableObject {
         }
         session.addInput(input)
         videoInput = input
+        zoomDisplayScale = Self.displayScale(for: device)
 
         if !session.outputs.contains(photoOutput), session.canAddOutput(photoOutput) {
             session.addOutput(photoOutput)
@@ -254,6 +327,103 @@ final class CameraService: NSObject, ObservableObject {
         }
 
         session.commitConfiguration()
+        setInitialZoom(on: device)
+    }
+
+    private static func bestDevice(for position: AVCaptureDevice.Position) -> AVCaptureDevice? {
+        let deviceTypes: [AVCaptureDevice.DeviceType]
+
+        if position == .back {
+            deviceTypes = [
+                .builtInTripleCamera,
+                .builtInDualWideCamera,
+                .builtInDualCamera,
+                .builtInWideAngleCamera
+            ]
+        } else {
+            deviceTypes = [
+                .builtInTrueDepthCamera,
+                .builtInWideAngleCamera
+            ]
+        }
+
+        for deviceType in deviceTypes {
+            if let device = AVCaptureDevice.default(deviceType, for: .video, position: position) {
+                return device
+            }
+        }
+
+        return AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position)
+    }
+
+    private static func displayScale(for device: AVCaptureDevice) -> CGFloat {
+        switch device.deviceType {
+        case .builtInTripleCamera, .builtInDualWideCamera:
+            return 2
+        default:
+            return 1
+        }
+    }
+
+    private func setInitialZoom(on device: AVCaptureDevice) {
+        do {
+            try device.lockForConfiguration()
+            device.videoZoomFactor = rawZoomFactor(forDisplayFactor: 1, device: device)
+            device.unlockForConfiguration()
+        } catch {
+            return
+        }
+    }
+
+    private func zoomState(for device: AVCaptureDevice) -> CameraZoomState {
+        let minDisplayFactor = device.minAvailableVideoZoomFactor / zoomDisplayScale
+        let maxDisplayFactor = min(device.maxAvailableVideoZoomFactor / zoomDisplayScale, 15)
+        let currentDisplayFactor = device.videoZoomFactor / zoomDisplayScale
+        let clampedDisplayFactor = currentDisplayFactor.clamped(to: minDisplayFactor...maxDisplayFactor)
+
+        return CameraZoomState(
+            displayFactor: clampedDisplayFactor,
+            minDisplayFactor: minDisplayFactor,
+            maxDisplayFactor: maxDisplayFactor,
+            lensOptions: lensOptions(for: device, minDisplayFactor: minDisplayFactor, maxDisplayFactor: maxDisplayFactor)
+        )
+    }
+
+    private func rawZoomFactor(forDisplayFactor displayFactor: CGFloat, device: AVCaptureDevice) -> CGFloat {
+        let minDisplayFactor = device.minAvailableVideoZoomFactor / zoomDisplayScale
+        let maxDisplayFactor = min(device.maxAvailableVideoZoomFactor / zoomDisplayScale, 15)
+        let clampedDisplayFactor = displayFactor.clamped(to: minDisplayFactor...maxDisplayFactor)
+        return (clampedDisplayFactor * zoomDisplayScale)
+            .clamped(to: device.minAvailableVideoZoomFactor...device.maxAvailableVideoZoomFactor)
+    }
+
+    private func lensOptions(
+        for device: AVCaptureDevice,
+        minDisplayFactor: CGFloat,
+        maxDisplayFactor: CGFloat
+    ) -> [CameraLensOption] {
+        let candidates: [CGFloat]
+
+        switch device.deviceType {
+        case .builtInTripleCamera:
+            candidates = [0.5, 1, 3]
+        case .builtInDualWideCamera:
+            candidates = [0.5, 1]
+        case .builtInDualCamera:
+            candidates = [1, 2]
+        default:
+            candidates = [1, 2, 3]
+        }
+
+        let options = candidates
+            .filter { $0 >= minDisplayFactor - 0.01 && $0 <= maxDisplayFactor + 0.01 }
+            .map(CameraLensOption.init(displayFactor:))
+
+        if options.isEmpty {
+            return [CameraLensOption(displayFactor: min(max(1, minDisplayFactor), maxDisplayFactor))]
+        }
+
+        return options
     }
 
     private func configureAudioInputIfAllowed() throws {
@@ -336,5 +506,11 @@ private final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegat
         }
 
         completion(.success(data))
+    }
+}
+
+private extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }

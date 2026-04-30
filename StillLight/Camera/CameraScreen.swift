@@ -8,8 +8,10 @@ struct CameraScreen: View {
     @StateObject private var levelMonitor = LevelMonitor()
     @State private var showsFilmPicker = false
     @State private var showsGallery = false
+    @State private var reviewResult: CaptureResult?
     @State private var shutterFlash = false
     @State private var focusIndicator: FocusIndicator?
+    @State private var pinchStartZoomFactor: CGFloat?
 
     var body: some View {
         ZStack {
@@ -51,7 +53,7 @@ struct CameraScreen: View {
         .sheet(isPresented: $showsGallery) {
             GalleryScreen()
         }
-        .sheet(item: $viewModel.result) { result in
+        .sheet(item: $reviewResult) { result in
             ResultView(result: result)
         }
     }
@@ -63,6 +65,7 @@ struct CameraScreen: View {
                 updateFocusIndicator(viewPoint)
             }
             .ignoresSafeArea()
+            .simultaneousGesture(zoomGesture)
             .overlay {
                 if let focusIndicator {
                     FocusReticle()
@@ -98,6 +101,7 @@ struct CameraScreen: View {
             VStack(spacing: 0) {
                 topBar
                 Spacer()
+                zoomControl
                 exposureControl
                 captureModeControl
                 bottomControls
@@ -212,17 +216,15 @@ struct CameraScreen: View {
     private var bottomControls: some View {
         HStack(alignment: .center) {
             Button {
-                showsFilmPicker = true
-            } label: {
-                VStack(spacing: 5) {
-                    Image(systemName: "film")
-                        .font(.system(size: 21, weight: .medium))
-                    Text("\(appState.currentRoll.remainingShots)/\(appState.currentRoll.totalShots)")
-                        .font(.caption2.monospacedDigit())
+                if let latestResult = viewModel.latestResult {
+                    reviewResult = latestResult
+                } else {
+                    showsGallery = true
                 }
-                .foregroundStyle(StillLightTheme.text)
-                .frame(width: 72, height: 72)
+            } label: {
+                recentCaptureThumbnail
             }
+            .disabled(viewModel.isRecording)
 
             Spacer()
 
@@ -261,6 +263,59 @@ struct CameraScreen: View {
         }
         .padding(.horizontal, 28)
         .padding(.bottom, 20)
+    }
+
+    private var recentCaptureThumbnail: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(StillLightTheme.panel.opacity(0.92))
+                .frame(width: 58, height: 58)
+
+            if let latestImage = viewModel.latestResult?.image {
+                Image(uiImage: latestImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 58, height: 58)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(Color.white.opacity(0.34), lineWidth: 1)
+                    }
+            } else {
+                Image(systemName: "photo.on.rectangle")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(StillLightTheme.text.opacity(0.88))
+            }
+        }
+        .frame(width: 72, height: 72)
+    }
+
+    private var zoomControl: some View {
+        HStack(spacing: 7) {
+            ForEach(viewModel.zoomState.lensOptions) { option in
+                ZoomLensButton(
+                    option: option,
+                    isSelected: abs(viewModel.zoomState.displayFactor - option.displayFactor) < 0.08
+                ) {
+                    withAnimation(.easeOut(duration: 0.16)) {
+                        viewModel.setZoomFactor(option.displayFactor)
+                    }
+                }
+            }
+
+            if viewModel.zoomState.lensOptions.count < 2 {
+                Text("\(viewModel.zoomState.displayFactorText)x")
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(StillLightTheme.text)
+                    .padding(.horizontal, 10)
+                    .frame(height: 30)
+            }
+        }
+        .padding(5)
+        .background(StillLightTheme.panel.opacity(0.70))
+        .clipShape(Capsule())
+        .padding(.bottom, 12)
+        .opacity(viewModel.isRecording ? 0.72 : 1)
     }
 
     private var captureModeControl: some View {
@@ -346,6 +401,20 @@ struct CameraScreen: View {
         return String(format: "%02d:%02d", totalSeconds / 60, totalSeconds % 60)
     }
 
+    private var zoomGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { magnification in
+                let startFactor = pinchStartZoomFactor ?? viewModel.zoomState.displayFactor
+                if pinchStartZoomFactor == nil {
+                    pinchStartZoomFactor = startFactor
+                }
+                viewModel.zoomByPinch(magnification, from: startFactor)
+            }
+            .onEnded { _ in
+                pinchStartZoomFactor = nil
+            }
+    }
+
     private func permissionMessage(
         title: String,
         message: String,
@@ -418,6 +487,24 @@ private struct CameraModeButton: View {
                 .frame(width: 70, height: 30)
                 .background(isSelected ? StillLightTheme.accent : Color.clear)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct ZoomLensButton: View {
+    let option: CameraLensOption
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text("\(option.label)x")
+                .font(.system(size: isSelected ? 13 : 12, weight: .bold, design: .rounded))
+                .foregroundStyle(isSelected ? StillLightTheme.background : StillLightTheme.text)
+                .frame(width: isSelected ? 42 : 34, height: isSelected ? 34 : 30)
+                .background(isSelected ? StillLightTheme.accent : StillLightTheme.panelElevated.opacity(0.86))
+                .clipShape(Capsule())
         }
         .buttonStyle(.plain)
     }

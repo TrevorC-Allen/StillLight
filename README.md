@@ -23,6 +23,8 @@ Choose a film roll
 - Flash mode: off / on / auto
 - Exposure compensation
 - Tap to focus and meter with animated focus reticle
+- Native-like zoom with pinch gesture and available lens buttons such as 0.5x / 1x / 3x on multi-camera iPhones
+- Non-blocking capture flow: processed shots update the lower-left recent-frame thumbnail instead of opening an automatic result sheet
 - Aspect-ratio frame guide, grid lines and horizon level
 - Haptic shutter feedback
 - Aspect ratios: 3:2, 4:3, 1:1, 16:9, Half

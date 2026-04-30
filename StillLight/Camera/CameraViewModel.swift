@@ -16,7 +16,8 @@ final class CameraViewModel: ObservableObject {
     @Published var exposureBias: Double = 0
     @Published var flashMode: CameraFlashMode = .off
     @Published var captureMode: CameraCaptureMode = .photo
-    @Published var result: CaptureResult?
+    @Published var zoomState: CameraZoomState = .standard
+    @Published var latestResult: CaptureResult?
 
     let cameraService = CameraService()
     private var recordingStartedAt: Date?
@@ -28,6 +29,7 @@ final class CameraViewModel: ObservableObject {
                 self?.permissionState = state
                 if state == .authorized {
                     self?.cameraService.start()
+                    self?.refreshZoomState()
                 }
             }
         }
@@ -58,8 +60,21 @@ final class CameraViewModel: ObservableObject {
         cameraService.switchCamera { [weak self] state in
             DispatchQueue.main.async {
                 self?.permissionState = state
+                self?.refreshZoomState()
             }
         }
+    }
+
+    func setZoomFactor(_ displayFactor: CGFloat) {
+        cameraService.setZoomDisplayFactor(displayFactor) { [weak self] state in
+            DispatchQueue.main.async {
+                self?.zoomState = state
+            }
+        }
+    }
+
+    func zoomByPinch(_ magnification: CGFloat, from startFactor: CGFloat) {
+        setZoomFactor(startFactor * magnification)
     }
 
     func updateExposureBias(_ value: Double) {
@@ -151,11 +166,12 @@ final class CameraViewModel: ObservableObject {
 
             appState.photoStore.add(exportResult.record)
             appState.recordShot()
-            result = CaptureResult(
+            latestResult = CaptureResult(
                 image: processedImage,
                 record: exportResult.record,
                 warningMessage: exportResult.warningMessage
             )
+            statusMessage = exportResult.warningMessage
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -235,6 +251,14 @@ final class CameraViewModel: ObservableObject {
         recordingTimer?.invalidate()
         recordingTimer = nil
         recordingStartedAt = nil
+    }
+
+    private func refreshZoomState() {
+        cameraService.currentZoomState { [weak self] state in
+            DispatchQueue.main.async {
+                self?.zoomState = state
+            }
+        }
     }
 }
 

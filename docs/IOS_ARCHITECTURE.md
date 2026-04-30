@@ -5,7 +5,7 @@ StillLight is now scoped as an iOS-only project.
 ## Stack
 
 - SwiftUI for UI
-- AVFoundation for camera preview, focus, exposure, photo capture and movie recording
+- AVFoundation for camera preview, focus, exposure, photo capture, movie recording and virtual-device zoom
 - CoreImage for the MVP film pipeline
 - Photos for saving developed images
 - JSON document storage for MVP photo records and current film roll state
@@ -29,6 +29,20 @@ SwiftUI App
 -> GalleryScreen
 -> ImportLabScreen
 -> FilmRecommender
+```
+
+## Camera Capture
+
+```text
+AVCaptureSession
+-> best available camera device: triple / dual-wide / dual / wide fallback
+-> AVCaptureVideoPreviewLayer
+-> tap focus and exposure
+-> pinch zoom plus 0.5x / 1x / 3x style lens controls when available
+-> AVCapturePhotoOutput
+-> non-blocking recent-frame thumbnail
+-> FilmImagePipeline
+-> PhotoExporter
 ```
 
 ## Import Lab

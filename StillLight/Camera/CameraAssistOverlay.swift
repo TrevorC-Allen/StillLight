@@ -4,14 +4,12 @@ import SwiftUI
 struct CameraAssistOverlay: View {
     let showGrid: Bool
     let showLevel: Bool
+    let aspectRatio: CGFloat
     let rollAngle: Double
 
     var body: some View {
         ZStack {
-            if showGrid {
-                RuleOfThirdsGrid()
-                    .opacity(0.46)
-            }
+            CaptureFrameGuide(showGrid: showGrid, aspectRatio: aspectRatio)
 
             if showLevel {
                 HorizonLevel(rollAngle: rollAngle)
@@ -21,25 +19,66 @@ struct CameraAssistOverlay: View {
     }
 }
 
-private struct RuleOfThirdsGrid: View {
+private struct CaptureFrameGuide: View {
+    let showGrid: Bool
+    let aspectRatio: CGFloat
+
     var body: some View {
         GeometryReader { geometry in
+            let frame = guideFrame(in: geometry.size)
+
             Path { path in
-                let width = geometry.size.width
-                let height = geometry.size.height
-
-                for multiplier in [1.0 / 3.0, 2.0 / 3.0] {
-                    let x = width * multiplier
-                    path.move(to: CGPoint(x: x, y: 0))
-                    path.addLine(to: CGPoint(x: x, y: height))
-
-                    let y = height * multiplier
-                    path.move(to: CGPoint(x: 0, y: y))
-                    path.addLine(to: CGPoint(x: width, y: y))
-                }
+                path.addRect(CGRect(origin: .zero, size: geometry.size))
+                path.addRoundedRect(in: frame, cornerSize: CGSize(width: 8, height: 8))
             }
-            .stroke(StillLightTheme.text.opacity(0.34), lineWidth: 0.7)
+            .fill(.black.opacity(0.16), style: FillStyle(eoFill: true))
+
+            Path { path in
+                path.addRoundedRect(in: frame, cornerSize: CGSize(width: 8, height: 8))
+            }
+            .stroke(StillLightTheme.text.opacity(0.40), lineWidth: 0.9)
+
+            if showGrid {
+                Path { path in
+                for multiplier in [1.0 / 3.0, 2.0 / 3.0] {
+                        let x = frame.minX + frame.width * multiplier
+                        path.move(to: CGPoint(x: x, y: frame.minY))
+                        path.addLine(to: CGPoint(x: x, y: frame.maxY))
+
+                        let y = frame.minY + frame.height * multiplier
+                        path.move(to: CGPoint(x: frame.minX, y: y))
+                        path.addLine(to: CGPoint(x: frame.maxX, y: y))
+                    }
+                }
+                .stroke(StillLightTheme.text.opacity(0.34), lineWidth: 0.7)
+            }
         }
+    }
+
+    private func guideFrame(in size: CGSize) -> CGRect {
+        let horizontalInset: CGFloat = 18
+        let topInset: CGFloat = 96
+        let bottomInset: CGFloat = 172
+        let available = CGRect(
+            x: horizontalInset,
+            y: topInset,
+            width: max(1, size.width - horizontalInset * 2),
+            height: max(1, size.height - topInset - bottomInset)
+        )
+
+        var width = available.width
+        var height = width / max(aspectRatio, 0.01)
+        if height > available.height {
+            height = available.height
+            width = height * aspectRatio
+        }
+
+        return CGRect(
+            x: available.midX - width / 2,
+            y: available.midY - height / 2,
+            width: width,
+            height: height
+        )
     }
 }
 

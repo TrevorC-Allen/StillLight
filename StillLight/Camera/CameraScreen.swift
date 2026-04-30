@@ -83,6 +83,7 @@ struct CameraScreen: View {
             CameraAssistOverlay(
                 showGrid: appState.showGrid,
                 showLevel: appState.showLevel,
+                aspectRatio: appState.selectedAspectRatio.value,
                 rollAngle: levelMonitor.rollAngle
             )
             .ignoresSafeArea()

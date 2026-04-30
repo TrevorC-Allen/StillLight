@@ -24,11 +24,15 @@ Choose a film roll
 - Haptic shutter feedback
 - Aspect ratios: 3:2, 4:3, 1:1, 16:9, Half
 - Lightweight film roll counter with persistent remaining shots
-- Dazz-like style library with 24 switchable film/camera presets across color negative, classic camera, instant, black-and-white, digital and experimental categories
+- Dazz-like style library with 27 switchable film/camera presets across featured, portrait, color negative, classic camera, instant, black-and-white, digital and experimental categories
+- Featured scene-first presets: Human Warm 400, Human Vignette 800 and Muse Portrait 400
 - HNCS-inspired natural color, compact rangefinder, GR-style street, 500C medium-format, half-frame diary, CCD and instant looks
 - White-frame and instant/paper border output with the selected camera/model label burned into the exported image
 - English / Chinese UI switch in Settings
-- 24 film presets, including:
+- 27 film presets, including:
+  - Human Warm 400
+  - Human Vignette 800
+  - Muse Portrait 400
   - Sunlit Gold 200
   - Soft Portrait 400
   - Silver HP5

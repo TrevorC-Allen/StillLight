@@ -32,7 +32,11 @@ enum FilmRecommender {
         let reason: String
         let localizedReason: String
 
-        if metrics.brightness < 0.30 {
+        if metrics.brightness < 0.30 && metrics.contrast > 0.18 {
+            filmId = "human-vignette-800"
+            reason = "Low light and strong contrast can use a moodier vignette roll to pull the eye inward."
+            localizedReason = "低光和强反差适合人文暗角卷，把视线往画面中心收。"
+        } else if metrics.brightness < 0.30 {
             filmId = "tungsten-800"
             reason = "Low light with room for warm highlight bloom."
             localizedReason = "低光场景适合保留暖色高光和轻微泛光。"
@@ -41,9 +45,9 @@ enum FilmRecommender {
             reason = "Low color and clear contrast suit a monochrome documentary roll."
             localizedReason = "低饱和但反差清晰，适合黑白纪实胶卷。"
         } else if metrics.brightness > 0.70 && metrics.saturation < 0.30 {
-            filmId = "soft-portrait-400"
-            reason = "Bright, gentle color works well with soft highlights."
-            localizedReason = "明亮柔和的色彩适合更温润的人像高光。"
+            filmId = "muse-portrait-400"
+            reason = "Bright, gentle color works well with a soft portrait roll and protected highlights."
+            localizedReason = "明亮柔和的色彩适合女友人像卷，让高光更稳、肤色更软。"
         } else if metrics.warmth < -0.06 {
             filmId = "green-street-400"
             reason = "Cool tones can lean into a cyan-green street palette."
@@ -57,9 +61,9 @@ enum FilmRecommender {
             reason = "Warm daylight is a natural fit for a gold color negative roll."
             localizedReason = "暖色日光适合宽容、明快的金色彩负。"
         } else {
-            filmId = "sunlit-gold-200"
-            reason = "Balanced light and color call for the most forgiving everyday roll."
-            localizedReason = "光线和色彩比较均衡，适合日常宽容度最高的胶卷。"
+            filmId = "human-warm-400"
+            reason = "Balanced light and color suit the featured humanistic warm roll."
+            localizedReason = "光线和色彩比较均衡，适合主推的人文暖调卷。"
         }
 
         guard let film = presets.first(where: { $0.id == filmId }) ?? presets.first else {

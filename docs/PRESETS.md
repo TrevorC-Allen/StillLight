@@ -1,9 +1,12 @@
 # Film Presets
 
-StillLight currently ships 24 original film/camera presets. They are inspired by familiar film stocks, classic camera color, compact digital cameras and instant-photo formats, but use original names and local parameters.
+StillLight currently ships 27 original film/camera presets. They are inspired by familiar film stocks, classic camera color, compact digital cameras and instant-photo formats, but use original names and local parameters.
 
 | Preset | Intent | Technical Bias |
 | --- | --- | --- |
+| Human Warm 400 | Pleasing humanistic scenes, cafes and interiors | warm creamy highlights, clean greens, medium vignette |
+| Human Vignette 800 | Moodier street, museum and architecture scenes | stronger edge falloff, deeper blacks, subdued color |
+| Muse Portrait 400 | Girlfriend-friendly portrait look | warm skin, low contrast, lifted shadows, protected highlights |
 | Sunlit Gold 200 | Warm daylight and travel | warm temperature, soft S curve, low grain |
 | Soft Portrait 400 | Skin-friendly portraits | lifted shadows, low contrast, gentle saturation |
 | Silver HP5 | Monochrome documentary | zero saturation, stronger contrast, larger grain |
@@ -31,6 +34,8 @@ StillLight currently ships 24 original film/camera presets. They are inspired by
 
 ## Categories
 
+- Featured: scene-first rolls for the main humanistic use cases
+- Portrait: soft skin-first portrait rolls
 - Color Negative: forgiving everyday film rolls
 - Classic Camera: camera-model color behavior and frame labels
 - Instant: instant-photo borders and softer contrast

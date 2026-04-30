@@ -10,7 +10,9 @@ StillLight is an iOS-only fast MVP for a quiet film-camera app: choose a roll, s
 - Aspect-ratio frame guide, camera grid and horizon level
 - Capture ratios: 3:2, 4:3, 1:1, 16:9 and Half
 - Persistent current film roll with remaining-shot counter
-- 24 switchable film/camera presets, grouped by style category:
+- 27 switchable film/camera presets, grouped by style category:
+  - featured
+  - portrait
   - color negative
   - classic camera
   - instant
@@ -18,6 +20,9 @@ StillLight is an iOS-only fast MVP for a quiet film-camera app: choose a roll, s
   - digital
   - experimental
 - Representative presets:
+  - Human Warm 400
+  - Human Vignette 800
+  - Muse Portrait 400
   - Sunlit Gold 200
   - Soft Portrait 400
   - Silver HP5

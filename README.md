@@ -19,10 +19,11 @@ Choose a film roll
 - Front/back camera switch
 - Flash mode: off / on / auto
 - Exposure compensation
-- Tap to focus and meter
-- Grid lines and horizon level
+- Tap to focus and meter with animated focus reticle
+- Aspect-ratio frame guide, grid lines and horizon level
 - Haptic shutter feedback
-- Aspect ratios: 3:2, 4:3, 1:1
+- Aspect ratios: 3:2, 4:3, 1:1, 16:9, Half
+- Lightweight film roll counter with persistent remaining shots
 - 8 film presets:
   - Sunlit Gold 200
   - Soft Portrait 400
@@ -45,11 +46,11 @@ Choose a film roll
   - luminance-aware grain
   - timestamp
   - simple paper border
-- Processed photo export to Photos
+- Processed photo export to local Roll first, then Photos when permission allows
 - Film metadata written into exported JPEG metadata
 - Optional original photo retention
 - Local JSON photo records
-- Roll gallery and photo detail
+- Roll gallery and photo detail with long-press original comparison
 - Import Lab with PhotosPicker, strength control and shared pipeline processing
 - Local smart film recommendation based on image brightness, color, warmth and contrast
 - Share sheet

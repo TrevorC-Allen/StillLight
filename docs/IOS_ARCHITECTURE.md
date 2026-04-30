@@ -8,7 +8,7 @@ StillLight is now scoped as an iOS-only project.
 - AVFoundation for camera preview, focus, exposure and capture
 - CoreImage for the MVP film pipeline
 - Photos for saving developed images
-- JSON document storage for MVP photo records
+- JSON document storage for MVP photo records and current film roll state
 - PhotosUI for imported-photo Lab
 - CoreMotion for horizon level
 - Metal later for realtime preview and GPU film effects
@@ -19,7 +19,7 @@ StillLight is now scoped as an iOS-only project.
 SwiftUI App
 -> CameraScreen
 -> CameraService
--> FilmPreset / FilmLibrary
+-> FilmPreset / FilmLibrary / FilmRollStore
 -> FilmImagePipeline
 -> PhotoExporter
 -> PhotoStore
@@ -45,8 +45,8 @@ Captured JPEG
 -> timestamp / paper border
 -> JPEG export
 -> JPEG metadata
--> Photos save
 -> local PhotoRecord
+-> best-effort Photos save
 ```
 
 ## Near-Term iOS Roadmap

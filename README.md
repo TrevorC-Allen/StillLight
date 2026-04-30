@@ -1,5 +1,7 @@
 # StillLight
 
+[中文文档](README.zh-CN.md) | English
+
 StillLight is an iOS-only quiet film-camera MVP built with SwiftUI, AVFoundation and CoreImage.
 
 The first version focuses on one complete loop:
@@ -91,6 +93,7 @@ StillLight/
 │   ├── Resources/        # asset catalog, app icon and accent color
 │   └── Supporting/       # Info.plist and permissions
 ├── docs/
+│   ├── zh-CN/
 │   ├── DEVICE_RUNBOOK.md
 │   ├── IOS_ARCHITECTURE.md
 │   ├── MVP.md

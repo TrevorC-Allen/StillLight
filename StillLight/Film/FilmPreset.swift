@@ -68,6 +68,8 @@ enum CaptureAspectRatio: String, CaseIterable, Identifiable, Codable {
     case ratio3x2
     case ratio4x3
     case square
+    case ratio16x9
+    case halfFrame
 
     var id: String { rawValue }
 
@@ -79,6 +81,10 @@ enum CaptureAspectRatio: String, CaseIterable, Identifiable, Codable {
             return "4:3"
         case .square:
             return "1:1"
+        case .ratio16x9:
+            return "16:9"
+        case .halfFrame:
+            return "Half"
         }
     }
 
@@ -90,6 +96,10 @@ enum CaptureAspectRatio: String, CaseIterable, Identifiable, Codable {
             return 4.0 / 3.0
         case .square:
             return 1.0
+        case .ratio16x9:
+            return 16.0 / 9.0
+        case .halfFrame:
+            return 3.0 / 4.0
         }
     }
 }

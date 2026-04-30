@@ -12,14 +12,22 @@ final class AppState: ObservableObject {
     @Published var jpegQuality: Double = 0.93
     @Published var photoStore = PhotoStore()
     @Published private(set) var currentRoll: FilmRoll
+    @Published var language: AppLanguage {
+        didSet {
+            UserDefaults.standard.set(language.rawValue, forKey: Self.languageKey)
+        }
+    }
 
     let filmLibrary = FilmLibrary()
     private let filmRollStore = FilmRollStore()
+    private static let languageKey = "StillLight.language"
 
     init() {
         let firstFilm = filmLibrary.presets[0]
         selectedFilm = firstFilm
         currentRoll = filmRollStore.loadOrCreate(for: firstFilm)
+        let storedLanguage = UserDefaults.standard.string(forKey: Self.languageKey)
+        language = storedLanguage.flatMap(AppLanguage.init(rawValue:)) ?? .english
         photoStore.load()
     }
 
@@ -30,5 +38,9 @@ final class AppState: ObservableObject {
 
     func recordShot() {
         currentRoll = filmRollStore.recordShot(for: selectedFilm)
+    }
+
+    func t(_ key: AppText.Key) -> String {
+        AppText.get(key, language: language)
     }
 }

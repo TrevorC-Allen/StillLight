@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ResultView: View {
     let result: CaptureResult
+    @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
     @State private var showsShareSheet = false
     @State private var showsOriginal = false
@@ -13,10 +14,10 @@ struct ResultView: View {
             VStack(spacing: 16) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Developed")
+                        Text(appState.t(.developed))
                             .font(.headline)
                             .foregroundStyle(StillLightTheme.text)
-                        Text(result.record.filmName)
+                        Text(displayFilmName)
                             .font(.subheadline)
                             .foregroundStyle(StillLightTheme.secondaryText)
                     }
@@ -41,7 +42,7 @@ struct ResultView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                     if showsOriginal, originalImage != nil {
-                        Text("Original")
+                        Text(appState.t(.original))
                             .font(.caption.monospaced())
                             .foregroundStyle(StillLightTheme.text)
                             .padding(.horizontal, 10)
@@ -67,7 +68,7 @@ struct ResultView: View {
                     Button {
                         showsShareSheet = true
                     } label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                        Label(appState.t(.share), systemImage: "square.and.arrow.up")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(ResultButtonStyle())
@@ -75,7 +76,7 @@ struct ResultView: View {
                     Button {
                         dismiss()
                     } label: {
-                        Label("Done", systemImage: "checkmark")
+                        Label(appState.t(.done), systemImage: "checkmark")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(ResultButtonStyle(isPrimary: true))
@@ -90,7 +91,7 @@ struct ResultView: View {
                         .stillLightPanel()
                         .padding(.horizontal, 18)
                 } else {
-                    Text("Saved to Photos and StillLight Roll")
+                    Text(appState.t(.savedToPhotosAndRoll))
                         .font(.footnote)
                         .foregroundStyle(StillLightTheme.secondaryText)
                 }
@@ -113,6 +114,12 @@ struct ResultView: View {
             return originalImage
         }
         return result.image
+    }
+
+    private var displayFilmName: String {
+        appState.filmLibrary.presets
+            .first { $0.id == result.record.filmPresetId }?
+            .displayName(language: appState.language) ?? result.record.filmName
     }
 }
 

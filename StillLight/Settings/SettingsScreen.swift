@@ -9,13 +9,22 @@ struct SettingsScreen: View {
                 StillLightTheme.background.ignoresSafeArea()
 
                 Form {
-                    Section("Output") {
-                        Toggle("Save original photo", isOn: $appState.saveOriginalPhoto)
-                        Toggle("Add date stamp", isOn: $appState.addTimestamp)
+                    Section(appState.t(.language)) {
+                        Picker(appState.t(.language), selection: $appState.language) {
+                            ForEach(AppLanguage.allCases) { language in
+                                Text(language.displayName).tag(language)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    Section(appState.t(.output)) {
+                        Toggle(appState.t(.saveOriginalPhoto), isOn: $appState.saveOriginalPhoto)
+                        Toggle(appState.t(.addDateStamp), isOn: $appState.addTimestamp)
 
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("JPEG quality")
+                                Text(appState.t(.jpegQuality))
                                 Spacer()
                                 Text("\(Int(appState.jpegQuality * 100))")
                                     .font(.caption.monospacedDigit())
@@ -25,29 +34,29 @@ struct SettingsScreen: View {
                         }
                     }
 
-                    Section("Camera") {
-                        Toggle("Haptic shutter", isOn: $appState.enableHaptics)
-                        Toggle("Grid lines", isOn: $appState.showGrid)
-                        Toggle("Horizon level", isOn: $appState.showLevel)
-                        Picker("Default ratio", selection: $appState.selectedAspectRatio) {
+                    Section(appState.t(.camera)) {
+                        Toggle(appState.t(.hapticShutter), isOn: $appState.enableHaptics)
+                        Toggle(appState.t(.gridLines), isOn: $appState.showGrid)
+                        Toggle(appState.t(.horizonLevel), isOn: $appState.showLevel)
+                        Picker(appState.t(.defaultRatio), selection: $appState.selectedAspectRatio) {
                             ForEach(CaptureAspectRatio.allCases) { ratio in
                                 Text(ratio.label).tag(ratio)
                             }
                         }
                     }
 
-                    Section("MVP") {
-                        LabeledContent("Pipeline") {
+                    Section(appState.t(.styleLibrary)) {
+                        LabeledContent(appState.t(.pipeline)) {
                             Text("CoreImage + Grain")
                         }
-                        LabeledContent("Presets") {
+                        LabeledContent(appState.t(.presets)) {
                             Text("\(appState.filmLibrary.presets.count)")
                         }
                     }
                 }
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Settings")
+            .navigationTitle(appState.t(.settings))
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
     }

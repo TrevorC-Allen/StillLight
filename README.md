@@ -24,7 +24,11 @@ Choose a film roll
 - Haptic shutter feedback
 - Aspect ratios: 3:2, 4:3, 1:1, 16:9, Half
 - Lightweight film roll counter with persistent remaining shots
-- 8 film presets:
+- Dazz-like style library with 24 switchable film/camera presets across color negative, classic camera, instant, black-and-white, digital and experimental categories
+- HNCS-inspired natural color, compact rangefinder, GR-style street, 500C medium-format, half-frame diary, CCD and instant looks
+- White-frame and instant/paper border output with the selected camera/model label burned into the exported image
+- English / Chinese UI switch in Settings
+- 24 film presets, including:
   - Sunlit Gold 200
   - Soft Portrait 400
   - Silver HP5
@@ -33,6 +37,12 @@ Choose a film roll
   - Pocket Flash
   - CCD 2003
   - Instant Square
+  - HNCS Natural
+  - M Rangefinder Color
+  - GR Street Snap
+  - Medium 500C
+  - Instant Wide
+  - Half Frame Diary
 - Film simulation pipeline:
   - orientation-aware downsampling
   - center crop
@@ -45,7 +55,8 @@ Choose a film roll
   - light leak
   - luminance-aware grain
   - timestamp
-  - simple paper border
+  - instant, paper and white-frame borders
+  - camera/model frame label
 - Processed photo export to local Roll first, then Photos when permission allows
 - Film metadata written into exported JPEG metadata
 - Optional original photo retention

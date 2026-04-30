@@ -111,7 +111,8 @@ final class CameraViewModel: ObservableObject {
                 originalData: saveOriginal ? data : nil,
                 film: film,
                 aspectRatio: aspectRatio,
-                jpegQuality: jpegQuality
+                jpegQuality: jpegQuality,
+                photosSaveFailedPrefix: appState.t(.photosSaveFailed)
             )
 
             appState.photoStore.add(exportResult.record)

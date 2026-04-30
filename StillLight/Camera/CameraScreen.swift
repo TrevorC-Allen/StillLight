@@ -20,16 +20,16 @@ struct CameraScreen: View {
                 cameraExperience
             case .denied:
                 permissionMessage(
-                    title: "Camera Access Needed",
-                    message: "Enable camera permission in Settings to shoot with StillLight.",
-                    buttonTitle: "Open Settings",
+                    title: appState.t(.cameraAccessNeeded),
+                    message: appState.t(.cameraAccessMessage),
+                    buttonTitle: appState.t(.openSettings),
                     action: openAppSettings
                 )
             case .unavailable:
                 permissionMessage(
-                    title: "Camera Unavailable",
-                    message: "This device or simulator cannot open a live camera right now.",
-                    buttonTitle: "Try Again",
+                    title: appState.t(.cameraUnavailable),
+                    message: appState.t(.cameraUnavailableMessage),
+                    buttonTitle: appState.t(.tryAgain),
                     action: viewModel.start
                 )
             case .unknown:
@@ -128,7 +128,7 @@ struct CameraScreen: View {
                     Circle()
                         .fill(StillLightTheme.accent)
                         .frame(width: 8, height: 8)
-                    Text(appState.selectedFilm.shortName)
+                    Text(appState.selectedFilm.displayShortName(language: appState.language))
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                     Text("\(appState.currentRoll.remainingShots)")
                         .font(.caption.monospacedDigit())
@@ -267,7 +267,7 @@ struct CameraScreen: View {
         VStack(spacing: 12) {
             ProgressView()
                 .tint(StillLightTheme.accent)
-            Text("Developing")
+            Text(appState.t(.developing))
                 .font(.caption.monospaced())
                 .foregroundStyle(StillLightTheme.secondaryText)
         }

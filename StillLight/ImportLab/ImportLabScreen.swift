@@ -22,7 +22,7 @@ struct ImportLabScreen: View {
                     .padding(18)
                 }
             }
-            .navigationTitle("Lab")
+            .navigationTitle(appState.t(.lab))
             .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(isPresented: $showsFilmPicker) {
                 FilmPickerSheet()
@@ -36,7 +36,11 @@ struct ImportLabScreen: View {
             }
             .onChange(of: pickerItem) { _, newItem in
                 guard let newItem else { return }
-                viewModel.load(item: newItem, presets: appState.filmLibrary.presets)
+                viewModel.load(
+                    item: newItem,
+                    presets: appState.filmLibrary.presets,
+                    frameLoadedMessage: appState.t(.frameLoaded)
+                )
             }
         }
     }
@@ -65,10 +69,10 @@ struct ImportLabScreen: View {
                     Image(systemName: "photo.badge.plus")
                         .font(.system(size: 38, weight: .light))
                         .foregroundStyle(StillLightTheme.accent)
-                    Text("Import a frame")
+                    Text(appState.t(.importFrame))
                         .font(.headline)
                         .foregroundStyle(StillLightTheme.text)
-                    Text("Develop an existing photo with the same film pipeline.")
+                    Text(appState.t(.importFrameSubtitle))
                         .font(.subheadline)
                         .foregroundStyle(StillLightTheme.secondaryText)
                         .multilineTextAlignment(.center)
@@ -80,7 +84,7 @@ struct ImportLabScreen: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .tint(StillLightTheme.accent)
-                    Text("Developing")
+                    Text(appState.t(.developing))
                         .font(.caption.monospaced())
                         .foregroundStyle(StillLightTheme.secondaryText)
                 }
@@ -90,10 +94,13 @@ struct ImportLabScreen: View {
     }
 
     private var controls: some View {
-        VStack(spacing: 12) {
+        let importPhotoTitle = appState.t(.importPhoto)
+        let selectedFilmTitle = appState.selectedFilm.displayShortName(language: appState.language)
+
+        return VStack(spacing: 12) {
             HStack(spacing: 12) {
                 PhotosPicker(selection: $pickerItem, matching: .images) {
-                    Label("Import", systemImage: "photo.on.rectangle")
+                    Label(importPhotoTitle, systemImage: "photo.on.rectangle")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(LabButtonStyle())
@@ -101,14 +108,14 @@ struct ImportLabScreen: View {
                 Button {
                     showsFilmPicker = true
                 } label: {
-                    Label(appState.selectedFilm.shortName, systemImage: "film")
+                    Label(selectedFilmTitle, systemImage: "film")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(LabButtonStyle())
             }
 
             HStack {
-                Text("Strength")
+                Text(appState.t(.strength))
                     .font(.caption)
                     .foregroundStyle(StillLightTheme.secondaryText)
                 Slider(value: $viewModel.strength, in: 0.35...1.0, step: 0.05)
@@ -123,7 +130,7 @@ struct ImportLabScreen: View {
             .background(StillLightTheme.panel)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-            Picker("Ratio", selection: $viewModel.aspectRatio) {
+            Picker(appState.t(.ratio), selection: $viewModel.aspectRatio) {
                 ForEach(CaptureAspectRatio.allCases) { ratio in
                     Text(ratio.label).tag(ratio)
                 }
@@ -135,7 +142,7 @@ struct ImportLabScreen: View {
                     HStack {
                         Image(systemName: "sparkle.magnifyingglass")
                             .foregroundStyle(StillLightTheme.accent)
-                        Text("Suggested Roll")
+                        Text(appState.t(.suggestedRoll))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(StillLightTheme.secondaryText)
                         Spacer()
@@ -146,10 +153,10 @@ struct ImportLabScreen: View {
 
                     HStack(spacing: 10) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(recommendation.film.name)
+                            Text(recommendation.film.displayName(language: appState.language))
                                 .font(.headline)
                                 .foregroundStyle(StillLightTheme.text)
-                            Text(recommendation.reason)
+                            Text(recommendation.displayReason(language: appState.language))
                                 .font(.caption)
                                 .foregroundStyle(StillLightTheme.secondaryText)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -157,7 +164,7 @@ struct ImportLabScreen: View {
 
                         Spacer()
 
-                        Button("Use") {
+                        Button(appState.t(.use)) {
                             appState.selectFilm(recommendation.film)
                         }
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
@@ -178,10 +185,12 @@ struct ImportLabScreen: View {
             Button {
                 viewModel.develop(
                     film: appState.selectedFilm,
-                    addTimestamp: appState.addTimestamp
+                    addTimestamp: appState.addTimestamp,
+                    developedWithPrefix: appState.t(.developedWith),
+                    language: appState.language
                 )
             } label: {
-                Label("Develop", systemImage: "sparkles")
+                Label(appState.t(.develop), systemImage: "sparkles")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(LabButtonStyle(isPrimary: true))
@@ -195,11 +204,13 @@ struct ImportLabScreen: View {
                                 film: appState.selectedFilm,
                                 jpegQuality: appState.jpegQuality,
                                 saveOriginal: appState.saveOriginalPhoto,
-                                photoStore: appState.photoStore
+                                photoStore: appState.photoStore,
+                                successMessage: appState.t(.savedToRoll),
+                                photosSaveFailedPrefix: appState.t(.photosSaveFailed)
                             )
                         }
                     } label: {
-                        Label("Save", systemImage: "square.and.arrow.down")
+                        Label(appState.t(.save), systemImage: "square.and.arrow.down")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(LabButtonStyle())
@@ -207,7 +218,7 @@ struct ImportLabScreen: View {
                     Button {
                         showsShareSheet = true
                     } label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                        Label(appState.t(.share), systemImage: "square.and.arrow.up")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(LabButtonStyle())
@@ -247,7 +258,7 @@ final class ImportLabViewModel: ObservableObject {
     @Published var strength = 1.0
     @Published var aspectRatio: CaptureAspectRatio = .ratio3x2
 
-    func load(item: PhotosPickerItem, presets: [FilmPreset]) {
+    func load(item: PhotosPickerItem, presets: [FilmPreset], frameLoadedMessage: String) {
         isProcessing = true
         errorMessage = nil
         statusMessage = nil
@@ -267,7 +278,7 @@ final class ImportLabViewModel: ObservableObject {
                 recommendation = await Task.detached(priority: .utility) {
                     FilmRecommender.recommend(image: image, presets: presets)
                 }.value
-                statusMessage = "Frame loaded"
+                statusMessage = frameLoadedMessage
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -275,7 +286,12 @@ final class ImportLabViewModel: ObservableObject {
         }
     }
 
-    func develop(film: FilmPreset, addTimestamp: Bool) {
+    func develop(
+        film: FilmPreset,
+        addTimestamp: Bool,
+        developedWithPrefix: String,
+        language: AppLanguage
+    ) {
         guard let originalImage else { return }
         isProcessing = true
         errorMessage = nil
@@ -299,7 +315,7 @@ final class ImportLabViewModel: ObservableObject {
                 }.value
 
                 processedImage = output
-                statusMessage = "Developed with \(film.shortName)"
+                statusMessage = "\(developedWithPrefix) \(film.displayShortName(language: language))"
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -311,7 +327,9 @@ final class ImportLabViewModel: ObservableObject {
         film: FilmPreset,
         jpegQuality: Double,
         saveOriginal: Bool,
-        photoStore: PhotoStore
+        photoStore: PhotoStore,
+        successMessage: String,
+        photosSaveFailedPrefix: String
     ) async {
         guard let processedImage else { return }
         isProcessing = true
@@ -324,11 +342,12 @@ final class ImportLabViewModel: ObservableObject {
                 originalData: saveOriginal ? originalData : nil,
                 film: film,
                 aspectRatio: aspectRatio,
-                jpegQuality: jpegQuality
+                jpegQuality: jpegQuality,
+                photosSaveFailedPrefix: photosSaveFailedPrefix
             )
             savedRecord = exportResult.record
             photoStore.add(exportResult.record)
-            statusMessage = exportResult.warningMessage ?? "Saved to Photos and Roll"
+            statusMessage = exportResult.warningMessage ?? successMessage
         } catch {
             errorMessage = error.localizedDescription
         }

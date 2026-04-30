@@ -311,9 +311,12 @@ enum FilmImagePipeline {
         case .none:
             borderPadding = 0
             bottomPadding = 0
+        case .whiteFrame:
+            borderPadding = max(22, imageSize.width * 0.045)
+            bottomPadding = max(54, imageSize.width * 0.075)
         case .paper:
             borderPadding = max(18, imageSize.width * 0.035)
-            bottomPadding = max(26, imageSize.width * 0.052)
+            bottomPadding = max(48, imageSize.width * 0.068)
         case .instant:
             borderPadding = max(28, imageSize.width * 0.055)
             bottomPadding = max(88, imageSize.width * 0.19)
@@ -329,9 +332,15 @@ enum FilmImagePipeline {
             if film.borderStyle == .none {
                 image.draw(in: CGRect(origin: .zero, size: imageSize))
             } else {
-                UIColor(red: 0.93, green: 0.90, blue: 0.84, alpha: 1).setFill()
+                paperColor(for: film.borderStyle).setFill()
                 context.fill(CGRect(origin: .zero, size: canvasSize))
                 image.draw(in: CGRect(x: borderPadding, y: borderPadding, width: imageSize.width, height: imageSize.height))
+                drawFrameLabel(
+                    film: film,
+                    canvasSize: canvasSize,
+                    borderPadding: borderPadding,
+                    bottomPadding: bottomPadding
+                )
             }
 
             guard addTimestamp else { return }
@@ -353,6 +362,66 @@ enum FilmImagePipeline {
             )
             stamp.draw(in: rect, withAttributes: attributes)
         }
+    }
+
+    private static func paperColor(for borderStyle: BorderStyle) -> UIColor {
+        switch borderStyle {
+        case .none:
+            return .clear
+        case .paper:
+            return UIColor(red: 0.93, green: 0.90, blue: 0.84, alpha: 1)
+        case .instant:
+            return UIColor(red: 0.955, green: 0.94, blue: 0.89, alpha: 1)
+        case .whiteFrame:
+            return UIColor(red: 0.965, green: 0.955, blue: 0.925, alpha: 1)
+        }
+    }
+
+    private static func drawFrameLabel(
+        film: FilmPreset,
+        canvasSize: CGSize,
+        borderPadding: CGFloat,
+        bottomPadding: CGFloat
+    ) {
+        guard film.borderStyle != .none else { return }
+
+        let primaryColor = UIColor(red: 0.13, green: 0.12, blue: 0.10, alpha: 0.72)
+        let secondaryColor = UIColor(red: 0.13, green: 0.12, blue: 0.10, alpha: 0.42)
+        let fontSize = max(13, min(24, canvasSize.width * 0.022))
+        let smallFontSize = max(10, fontSize * 0.72)
+        let y = canvasSize.height - bottomPadding + max(12, bottomPadding * 0.28)
+        let leftX = max(16, borderPadding)
+        let availableWidth = canvasSize.width - leftX * 2
+
+        let labelAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.monospacedSystemFont(ofSize: fontSize, weight: .semibold),
+            .foregroundColor: primaryColor,
+            .kern: 0.6
+        ]
+        let subAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.monospacedSystemFont(ofSize: smallFontSize, weight: .medium),
+            .foregroundColor: secondaryColor,
+            .kern: 0.5
+        ]
+
+        let cameraText = film.cameraName.uppercased()
+        cameraText.draw(
+            in: CGRect(x: leftX, y: y, width: availableWidth * 0.62, height: fontSize * 1.4),
+            withAttributes: labelAttributes
+        )
+
+        let rollText = "STILLLIGHT  \(film.shortName.uppercased())"
+        rollText.draw(
+            in: CGRect(x: leftX, y: y + fontSize * 1.22, width: availableWidth * 0.70, height: smallFontSize * 1.5),
+            withAttributes: subAttributes
+        )
+
+        let cameraMark = "ISO \(film.iso)"
+        let markSize = cameraMark.size(withAttributes: subAttributes)
+        cameraMark.draw(
+            in: CGRect(x: canvasSize.width - leftX - markSize.width, y: y, width: markSize.width, height: smallFontSize * 1.5),
+            withAttributes: subAttributes
+        )
     }
 
     private static func makeTimestamp(_ date: Date) -> String {

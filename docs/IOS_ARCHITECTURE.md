@@ -11,6 +11,7 @@ StillLight is now scoped as an iOS-only project.
 - JSON document storage for MVP photo records and current film roll state
 - PhotosUI for imported-photo Lab
 - CoreMotion for horizon level
+- Lightweight in-app English / Chinese text table for fast portfolio iteration
 - Metal later for realtime preview and GPU film effects
 
 ## MVP Modules
@@ -20,6 +21,7 @@ SwiftUI App
 -> CameraScreen
 -> CameraService
 -> FilmPreset / FilmLibrary / FilmRollStore
+-> AppLanguage / AppText
 -> FilmImagePipeline
 -> PhotoExporter
 -> PhotoStore
@@ -42,7 +44,8 @@ Captured JPEG
 -> vignette
 -> light leak
 -> luminance-aware grain
--> timestamp / paper border
+-> timestamp / instant, paper or white-frame border
+-> camera/model frame label
 -> JPEG export
 -> JPEG metadata
 -> local PhotoRecord

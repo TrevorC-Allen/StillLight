@@ -14,7 +14,8 @@ enum PhotoExporter {
         originalData: Data?,
         film: FilmPreset,
         aspectRatio: CaptureAspectRatio,
-        jpegQuality: Double
+        jpegQuality: Double,
+        photosSaveFailedPrefix: String = "Saved to StillLight Roll. Photos save failed:"
     ) async throws -> PhotoExportResult {
         let id = UUID()
         let createdAt = Date()
@@ -39,7 +40,7 @@ enum PhotoExporter {
             try await saveToPhotoLibrary(processedURL)
             warningMessage = nil
         } catch {
-            warningMessage = "Saved to StillLight Roll. Photos save failed: \(error.localizedDescription)"
+            warningMessage = "\(photosSaveFailedPrefix) \(error.localizedDescription)"
         }
 
         let record = PhotoRecord(
@@ -91,10 +92,10 @@ enum PhotoExporter {
             kCGImageDestinationLossyCompressionQuality: quality,
             kCGImagePropertyTIFFDictionary: [
                 kCGImagePropertyTIFFSoftware: "StillLight",
-                kCGImagePropertyTIFFImageDescription: "StillLight \(film.name) / ISO \(film.iso) / \(aspectRatio.label)"
+                kCGImagePropertyTIFFImageDescription: "StillLight \(film.name) / \(film.cameraName) / ISO \(film.iso) / \(aspectRatio.label)"
             ],
             kCGImagePropertyExifDictionary: [
-                kCGImagePropertyExifUserComment: "Film=\(film.name); ISO=\(film.iso); Preset=\(film.id); Ratio=\(aspectRatio.label)"
+                kCGImagePropertyExifUserComment: "Film=\(film.name); Camera=\(film.cameraName); Category=\(film.category.rawValue); ISO=\(film.iso); Preset=\(film.id); Ratio=\(aspectRatio.label)"
             ]
         ]
 

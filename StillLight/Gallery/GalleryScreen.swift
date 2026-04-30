@@ -30,7 +30,7 @@ struct GalleryScreen: View {
                     }
                 }
             }
-            .navigationTitle("Roll")
+            .navigationTitle(appState.t(.rollTitle))
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
     }
@@ -40,10 +40,10 @@ struct GalleryScreen: View {
             Image(systemName: "film.stack")
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(StillLightTheme.accent)
-            Text("First roll is empty")
+            Text(appState.t(.firstRollEmpty))
                 .font(.headline)
                 .foregroundStyle(StillLightTheme.text)
-            Text("Shoot a frame and it will appear here.")
+            Text(appState.t(.firstRollEmptySubtitle))
                 .font(.subheadline)
                 .foregroundStyle(StillLightTheme.secondaryText)
         }
@@ -89,7 +89,7 @@ private struct PhotoDetailView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                         if showsOriginal, originalImage != nil {
-                            Text("Original")
+                            Text(appState.t(.original))
                                 .font(.caption.monospaced())
                                 .foregroundStyle(StillLightTheme.text)
                                 .padding(.horizontal, 10)
@@ -114,7 +114,7 @@ private struct PhotoDetailView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(record.filmName)
+                        Text(displayFilmName)
                             .font(.headline)
                             .foregroundStyle(StillLightTheme.text)
                         Spacer()
@@ -135,7 +135,7 @@ private struct PhotoDetailView: View {
                 Spacer()
             }
         }
-        .navigationTitle("Frame")
+        .navigationTitle(appState.t(.frame))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
@@ -171,5 +171,11 @@ private struct PhotoDetailView: View {
             return originalImage
         }
         return processedImage
+    }
+
+    private var displayFilmName: String {
+        appState.filmLibrary.presets
+            .first { $0.id == record.filmPresetId }?
+            .displayName(language: appState.language) ?? record.filmName
     }
 }

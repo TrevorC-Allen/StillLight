@@ -3,6 +3,7 @@ import SwiftUI
 struct FilmPickerSheet: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedCategory: FilmCategory?
 
     var body: some View {
         ZStack {
@@ -11,8 +12,9 @@ struct FilmPickerSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
+                    categoryPicker
 
-                    ForEach(appState.filmLibrary.presets) { film in
+                    ForEach(filteredPresets) { film in
                         Button {
                             appState.selectFilm(film)
                             dismiss()
@@ -20,7 +22,8 @@ struct FilmPickerSheet: View {
                             FilmPresetRow(
                                 film: film,
                                 isSelected: film.id == appState.selectedFilm.id,
-                                currentRoll: film.id == appState.currentRoll.filmPresetId ? appState.currentRoll : nil
+                                currentRoll: film.id == appState.currentRoll.filmPresetId ? appState.currentRoll : nil,
+                                language: appState.language
                             )
                         }
                         .buttonStyle(.plain)
@@ -33,15 +36,44 @@ struct FilmPickerSheet: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Film Roll")
+            Text(appState.t(.filmRoll))
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(StillLightTheme.text)
-            Text("Choose before shooting. The roll defines color, contrast, grain, and timestamp behavior.")
+            Text(appState.t(.filmRollSubtitle))
                 .font(.subheadline)
                 .foregroundStyle(StillLightTheme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.bottom, 4)
+    }
+
+    private var categoryPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                CategoryChip(
+                    title: appState.t(.all),
+                    isSelected: selectedCategory == nil
+                ) {
+                    selectedCategory = nil
+                }
+
+                ForEach(FilmCategory.allCases) { category in
+                    CategoryChip(
+                        title: category.title(language: appState.language),
+                        isSelected: selectedCategory == category
+                    ) {
+                        selectedCategory = category
+                    }
+                }
+            }
+        }
+    }
+
+    private var filteredPresets: [FilmPreset] {
+        guard let selectedCategory else {
+            return appState.filmLibrary.presets
+        }
+        return appState.filmLibrary.presets.filter { $0.category == selectedCategory }
     }
 }
 
@@ -49,6 +81,7 @@ private struct FilmPresetRow: View {
     let film: FilmPreset
     let isSelected: Bool
     let currentRoll: FilmRoll?
+    let language: AppLanguage
 
     var body: some View {
         HStack(spacing: 14) {
@@ -67,7 +100,7 @@ private struct FilmPresetRow: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(film.name)
+                    Text(film.displayName(language: language))
                         .font(.headline)
                         .foregroundStyle(StillLightTheme.text)
                     if isSelected {
@@ -75,16 +108,19 @@ private struct FilmPresetRow: View {
                             .foregroundStyle(StillLightTheme.accent)
                     }
                 }
-                Text(film.description)
+                Text(film.displayDescription(language: language))
                     .font(.subheadline)
                     .foregroundStyle(StillLightTheme.secondaryText)
                     .lineLimit(2)
-                Text(film.metadataLine)
+                Text(film.displayMetadataLine(language: language))
                     .font(.caption.monospaced())
                     .foregroundStyle(StillLightTheme.accent)
-                Text(rollLine)
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(StillLightTheme.secondaryText)
+                HStack(spacing: 8) {
+                    Text(film.displayCameraName(language: language))
+                    Text(rollLine)
+                }
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(StillLightTheme.secondaryText)
             }
 
             Spacer()
@@ -100,9 +136,9 @@ private struct FilmPresetRow: View {
 
     private var rollLine: String {
         if let currentRoll {
-            return "ROLL \(currentRoll.remainingShots)/\(currentRoll.totalShots)"
+            return "\(AppText.get(.roll, language: language)) \(currentRoll.remainingShots)/\(currentRoll.totalShots)"
         }
-        return "NEW ROLL \(film.defaultShotCount)"
+        return "\(AppText.get(.newRoll, language: language)) \(film.defaultShotCount)"
     }
 
     private var sampleGradient: LinearGradient {
@@ -123,5 +159,24 @@ private struct FilmPresetRow: View {
                 Color(red: 0.53, green: 0.61, blue: 0.44)
             ], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
+    }
+}
+
+private struct CategoryChip: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(isSelected ? StillLightTheme.background : StillLightTheme.text)
+                .padding(.horizontal, 13)
+                .padding(.vertical, 9)
+                .background(isSelected ? StillLightTheme.accent : StillLightTheme.panelElevated)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }

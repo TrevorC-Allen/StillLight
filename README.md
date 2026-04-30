@@ -70,32 +70,47 @@ StillLight/
 │   ├── AI/               # local film recommendation heuristics
 │   ├── Settings/         # MVP settings
 │   ├── UI/               # shared UI helpers
-│   ├── Resources/        # asset catalog placeholder
+│   ├── Resources/        # asset catalog, app icon and accent color
 │   └── Supporting/       # Info.plist and permissions
-└── docs/
-    └── MVP.md
+├── docs/
+│   ├── DEVICE_RUNBOOK.md
+│   ├── IOS_ARCHITECTURE.md
+│   ├── MVP.md
+│   └── PRESETS.md
+└── scripts/
+    ├── build_unsigned.sh
+    ├── check_ios_device.sh
+    └── run_on_iphone.sh
 ```
 
 ## Build
 
 Open `StillLight.xcodeproj` with Xcode and run the `StillLight` target on a real iPhone.
 
-CLI compile check used:
+CLI compile check:
 
 ```sh
-xcodebuild -project StillLight.xcodeproj \
-  -target StillLight \
-  -configuration Debug \
-  -sdk iphoneos26.4 \
-  build CODE_SIGNING_ALLOWED=NO
+scripts/build_unsigned.sh
 ```
 
-The app compiles with the installed iOS SDK. The local machine currently has no available simulator runtime, so simulator launching may require installing one from Xcode settings.
+Device readiness check:
+
+```sh
+scripts/check_ios_device.sh
+```
+
+After a real iPhone is connected, trusted and signed through Xcode Accounts, run:
+
+```sh
+scripts/run_on_iphone.sh
+```
+
+See `docs/DEVICE_RUNBOOK.md` for the exact iPhone setup flow.
 
 ## Next Steps
 
-- Add a real app icon and enable the asset catalog in the build phase
 - Add long-press original/processed comparison in Lab
 - Add batch import queue
+- Enable the prepared app icon asset catalog after the local Xcode install has an iOS simulator runtime
 - Move LUT, grain and vignette into Metal for realtime preview
 - Replace local smart recommendation with Vision/CoreML scene tags later

@@ -3,6 +3,11 @@ import Photos
 import UniformTypeIdentifiers
 import UIKit
 
+struct PhotoExportResult {
+    let record: PhotoRecord
+    let warningMessage: String?
+}
+
 enum PhotoExporter {
     static func export(
         processedImage: UIImage,
@@ -10,7 +15,7 @@ enum PhotoExporter {
         film: FilmPreset,
         aspectRatio: CaptureAspectRatio,
         jpegQuality: Double
-    ) async throws -> PhotoRecord {
+    ) async throws -> PhotoExportResult {
         let id = UUID()
         let createdAt = Date()
         let directory = try appDirectory()
@@ -29,9 +34,15 @@ enum PhotoExporter {
             try originalData.write(to: originalURL, options: .atomic)
         }
 
-        try await saveToPhotoLibrary(processedURL)
+        let warningMessage: String?
+        do {
+            try await saveToPhotoLibrary(processedURL)
+            warningMessage = nil
+        } catch {
+            warningMessage = "Saved to StillLight Roll. Photos save failed: \(error.localizedDescription)"
+        }
 
-        return PhotoRecord(
+        let record = PhotoRecord(
             id: id,
             originalPath: originalURL?.path,
             processedPath: processedURL.path,
@@ -43,6 +54,8 @@ enum PhotoExporter {
             height: Int(processedImage.size.height),
             isFavorite: false
         )
+
+        return PhotoExportResult(record: record, warningMessage: warningMessage)
     }
 
     private static func appDirectory() throws -> URL {

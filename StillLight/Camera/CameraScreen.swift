@@ -1,7 +1,9 @@
 import SwiftUI
+import UIKit
 
 struct CameraScreen: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.openURL) private var openURL
     @StateObject private var viewModel = CameraViewModel()
     @StateObject private var levelMonitor = LevelMonitor()
     @State private var showsFilmPicker = false
@@ -18,12 +20,16 @@ struct CameraScreen: View {
             case .denied:
                 permissionMessage(
                     title: "Camera Access Needed",
-                    message: "Enable camera permission in Settings to shoot with StillLight."
+                    message: "Enable camera permission in Settings to shoot with StillLight.",
+                    buttonTitle: "Open Settings",
+                    action: openAppSettings
                 )
             case .unavailable:
                 permissionMessage(
                     title: "Camera Unavailable",
-                    message: "This device or simulator cannot open a live camera right now."
+                    message: "This device or simulator cannot open a live camera right now.",
+                    buttonTitle: "Try Again",
+                    action: viewModel.start
                 )
             case .unknown:
                 ProgressView()
@@ -254,7 +260,12 @@ struct CameraScreen: View {
         .stillLightPanel()
     }
 
-    private func permissionMessage(title: String, message: String) -> some View {
+    private func permissionMessage(
+        title: String,
+        message: String,
+        buttonTitle: String? = nil,
+        action: (() -> Void)? = nil
+    ) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "camera.aperture")
                 .font(.system(size: 34, weight: .light))
@@ -267,6 +278,24 @@ struct CameraScreen: View {
                 .foregroundStyle(StillLightTheme.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 34)
+
+            if let buttonTitle, let action {
+                Button(buttonTitle) {
+                    action()
+                }
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(StillLightTheme.background)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .background(StillLightTheme.accent)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .padding(.top, 6)
+            }
         }
+    }
+
+    private func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(url)
     }
 }

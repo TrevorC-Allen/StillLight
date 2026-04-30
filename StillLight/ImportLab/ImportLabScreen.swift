@@ -319,16 +319,16 @@ final class ImportLabViewModel: ObservableObject {
         statusMessage = nil
 
         do {
-            let record = try await PhotoExporter.export(
+            let exportResult = try await PhotoExporter.export(
                 processedImage: processedImage,
                 originalData: saveOriginal ? originalData : nil,
                 film: film,
                 aspectRatio: aspectRatio,
                 jpegQuality: jpegQuality
             )
-            savedRecord = record
-            photoStore.add(record)
-            statusMessage = "Saved to Photos and Roll"
+            savedRecord = exportResult.record
+            photoStore.add(exportResult.record)
+            statusMessage = exportResult.warningMessage ?? "Saved to Photos and Roll"
         } catch {
             errorMessage = error.localizedDescription
         }

@@ -58,6 +58,19 @@ struct ResultView: View {
                 }
                 .padding(.horizontal, 18)
 
+                if let warningMessage = result.warningMessage {
+                    Text(warningMessage)
+                        .font(.footnote)
+                        .foregroundStyle(StillLightTheme.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .stillLightPanel()
+                        .padding(.horizontal, 18)
+                } else {
+                    Text("Saved to Photos and StillLight Roll")
+                        .font(.footnote)
+                        .foregroundStyle(StillLightTheme.secondaryText)
+                }
+
                 Spacer()
             }
         }

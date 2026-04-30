@@ -106,7 +106,7 @@ final class CameraViewModel: ObservableObject {
                 )
             }.value
 
-            let record = try await PhotoExporter.export(
+            let exportResult = try await PhotoExporter.export(
                 processedImage: processedImage,
                 originalData: saveOriginal ? data : nil,
                 film: film,
@@ -114,8 +114,12 @@ final class CameraViewModel: ObservableObject {
                 jpegQuality: jpegQuality
             )
 
-            photoStore.add(record)
-            result = CaptureResult(image: processedImage, record: record)
+            photoStore.add(exportResult.record)
+            result = CaptureResult(
+                image: processedImage,
+                record: exportResult.record,
+                warningMessage: exportResult.warningMessage
+            )
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -128,4 +132,5 @@ struct CaptureResult: Identifiable {
     let id = UUID()
     let image: UIImage
     let record: PhotoRecord
+    let warningMessage: String?
 }

@@ -68,7 +68,7 @@ Choose a film roll
 - Optional original photo retention
 - Local JSON photo records
 - Roll gallery and photo detail with long-press original comparison
-- Import Lab with PhotosPicker, strength control and shared pipeline processing
+- Import Lab with multi-photo PhotosPicker selection, current/all developing, current/all save and shared pipeline processing
 - Local smart film recommendation based on image brightness, color, warmth and contrast
 - Share sheet
 
@@ -128,7 +128,7 @@ See `docs/DEVICE_RUNBOOK.md` for the exact iPhone setup flow.
 ## Next Steps
 
 - Add long-press original/processed comparison in Lab
-- Add batch import queue
+- Add long-running batch progress details and cancellation for Lab
 - Enable the prepared app icon asset catalog after the local Xcode install has an iOS simulator runtime
 - Move LUT, grain and vignette into Metal for realtime preview
 - Replace local smart recommendation with Vision/CoreML scene tags later

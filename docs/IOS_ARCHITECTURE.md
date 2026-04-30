@@ -9,7 +9,7 @@ StillLight is now scoped as an iOS-only project.
 - CoreImage for the MVP film pipeline
 - Photos for saving developed images
 - JSON document storage for MVP photo records and current film roll state
-- PhotosUI for imported-photo Lab
+- PhotosUI for multi-photo Import Lab selection
 - CoreMotion for horizon level
 - Lightweight in-app English / Chinese text table for fast portfolio iteration
 - Metal later for realtime preview and GPU film effects
@@ -29,6 +29,18 @@ SwiftUI App
 -> GalleryScreen
 -> ImportLabScreen
 -> FilmRecommender
+```
+
+## Import Lab
+
+```text
+PhotosPicker multi-selection
+-> downsampled in-memory LabFrame queue
+-> per-frame local film recommendation
+-> selected-frame preview and horizontal queue
+-> develop current frame or all frames through FilmImagePipeline
+-> save current frame or all developed frames through PhotoExporter
+-> PhotoStore records and best-effort Photos save
 ```
 
 ## Pipeline

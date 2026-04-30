@@ -48,6 +48,15 @@ enum AppText {
         case importFrame
         case importFrameSubtitle
         case importPhoto
+        case selectedFrames
+        case framesLoaded
+        case developingFrame
+        case developCurrent
+        case developAll
+        case saveCurrent
+        case saveAll
+        case savingFrame
+        case savedFrames
         case strength
         case ratio
         case suggestedRoll
@@ -103,9 +112,18 @@ enum AppText {
         .done: "Done",
         .savedToPhotosAndRoll: "Saved to Photos and StillLight Roll",
         .lab: "Lab",
-        .importFrame: "Import a frame",
-        .importFrameSubtitle: "Develop an existing photo with the same film pipeline.",
-        .importPhoto: "Import",
+        .importFrame: "Import frames",
+        .importFrameSubtitle: "Select one or more photos and develop them with the same film pipeline.",
+        .importPhoto: "Import Photos",
+        .selectedFrames: "%d frames selected",
+        .framesLoaded: "%d frames loaded",
+        .developingFrame: "Developing %d/%d",
+        .developCurrent: "Develop Current",
+        .developAll: "Develop All",
+        .saveCurrent: "Save Current",
+        .saveAll: "Save All",
+        .savingFrame: "Saving %d/%d",
+        .savedFrames: "Saved %d frames",
         .strength: "Strength",
         .ratio: "Ratio",
         .suggestedRoll: "Suggested Roll",
@@ -161,9 +179,18 @@ enum AppText {
         .done: "完成",
         .savedToPhotosAndRoll: "已保存到照片和 StillLight 胶卷",
         .lab: "暗房",
-        .importFrame: "导入一张照片",
-        .importFrameSubtitle: "用同一套胶片 pipeline 冲洗已有照片。",
-        .importPhoto: "导入",
+        .importFrame: "导入照片",
+        .importFrameSubtitle: "一次选择一组照片，用同一套胶片管线冲洗。",
+        .importPhoto: "选择照片",
+        .selectedFrames: "已选择 %d 张",
+        .framesLoaded: "已载入 %d 张照片",
+        .developingFrame: "冲洗中 %d/%d",
+        .developCurrent: "冲洗当前",
+        .developAll: "冲洗全部",
+        .saveCurrent: "保存当前",
+        .saveAll: "保存全部",
+        .savingFrame: "保存中 %d/%d",
+        .savedFrames: "已保存 %d 张",
         .strength: "强度",
         .ratio: "比例",
         .suggestedRoll: "推荐胶卷",

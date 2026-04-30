@@ -57,7 +57,10 @@ StillLight is an iOS-only fast MVP for a quiet film-camera app: choose a roll, s
 - Local JSON photo records
 - App roll/gallery and photo detail with long-press original comparison
 - Import Lab:
-  - PhotosPicker image import
+  - PhotosPicker multi-image import
+  - horizontal selected-frame queue
+  - current/all developing
+  - current/all save
   - shared film pipeline processing
   - strength control
   - local smart film recommendation
@@ -69,7 +72,6 @@ StillLight is an iOS-only fast MVP for a quiet film-camera app: choose a roll, s
 - RAW/HEIC export
 - LUT authoring UI
 - cloud multimodal AI
-- batch import
 - full roll archive/history
 - cloud sync
 

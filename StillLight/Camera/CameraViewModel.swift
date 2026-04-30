@@ -79,7 +79,7 @@ final class CameraViewModel: ObservableObject {
                     saveOriginal: saveOriginal,
                     addTimestamp: addTimestamp,
                     jpegQuality: quality,
-                    photoStore: appState.photoStore
+                    appState: appState
                 )
             }
         }
@@ -92,7 +92,7 @@ final class CameraViewModel: ObservableObject {
         saveOriginal: Bool,
         addTimestamp: Bool,
         jpegQuality: Double,
-        photoStore: PhotoStore
+        appState: AppState
     ) async {
         do {
             let data = try captureResult.get()
@@ -114,7 +114,8 @@ final class CameraViewModel: ObservableObject {
                 jpegQuality: jpegQuality
             )
 
-            photoStore.add(exportResult.record)
+            appState.photoStore.add(exportResult.record)
+            appState.recordShot()
             result = CaptureResult(
                 image: processedImage,
                 record: exportResult.record,

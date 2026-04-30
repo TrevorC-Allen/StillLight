@@ -158,7 +158,7 @@ struct ImportLabScreen: View {
                         Spacer()
 
                         Button("Use") {
-                            appState.selectedFilm = recommendation.film
+                            appState.selectFilm(recommendation.film)
                         }
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundStyle(StillLightTheme.background)

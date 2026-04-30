@@ -26,6 +26,19 @@ struct FilmPreset: Identifiable, Codable, Hashable {
     var metadataLine: String {
         "ISO \(iso) - \(suitableScenes.joined(separator: " / "))"
     }
+
+    var defaultShotCount: Int {
+        switch id {
+        case "instant-square":
+            return 10
+        case "pocket-flash":
+            return 27
+        case "ccd-2003":
+            return 99
+        default:
+            return 36
+        }
+    }
 }
 
 struct ToneCurvePreset: Codable, Hashable {

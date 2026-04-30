@@ -14,12 +14,13 @@ struct FilmPickerSheet: View {
 
                     ForEach(appState.filmLibrary.presets) { film in
                         Button {
-                            appState.selectedFilm = film
+                            appState.selectFilm(film)
                             dismiss()
                         } label: {
                             FilmPresetRow(
                                 film: film,
-                                isSelected: film.id == appState.selectedFilm.id
+                                isSelected: film.id == appState.selectedFilm.id,
+                                currentRoll: film.id == appState.currentRoll.filmPresetId ? appState.currentRoll : nil
                             )
                         }
                         .buttonStyle(.plain)
@@ -47,6 +48,7 @@ struct FilmPickerSheet: View {
 private struct FilmPresetRow: View {
     let film: FilmPreset
     let isSelected: Bool
+    let currentRoll: FilmRoll?
 
     var body: some View {
         HStack(spacing: 14) {
@@ -80,6 +82,9 @@ private struct FilmPresetRow: View {
                 Text(film.metadataLine)
                     .font(.caption.monospaced())
                     .foregroundStyle(StillLightTheme.accent)
+                Text(rollLine)
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(StillLightTheme.secondaryText)
             }
 
             Spacer()
@@ -91,6 +96,13 @@ private struct FilmPresetRow: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(isSelected ? StillLightTheme.accent.opacity(0.55) : .clear, lineWidth: 1)
         }
+    }
+
+    private var rollLine: String {
+        if let currentRoll {
+            return "ROLL \(currentRoll.remainingShots)/\(currentRoll.totalShots)"
+        }
+        return "NEW ROLL \(film.defaultShotCount)"
     }
 
     private var sampleGradient: LinearGradient {

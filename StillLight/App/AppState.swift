@@ -11,11 +11,24 @@ final class AppState: ObservableObject {
     @Published var showLevel = true
     @Published var jpegQuality: Double = 0.93
     @Published var photoStore = PhotoStore()
+    @Published private(set) var currentRoll: FilmRoll
 
     let filmLibrary = FilmLibrary()
+    private let filmRollStore = FilmRollStore()
 
     init() {
-        selectedFilm = filmLibrary.presets[0]
+        let firstFilm = filmLibrary.presets[0]
+        selectedFilm = firstFilm
+        currentRoll = filmRollStore.loadOrCreate(for: firstFilm)
         photoStore.load()
+    }
+
+    func selectFilm(_ film: FilmPreset) {
+        selectedFilm = film
+        currentRoll = filmRollStore.switchRoll(to: film)
+    }
+
+    func recordShot() {
+        currentRoll = filmRollStore.recordShot(for: selectedFilm)
     }
 }

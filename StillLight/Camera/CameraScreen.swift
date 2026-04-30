@@ -129,6 +129,9 @@ struct CameraScreen: View {
                         .frame(width: 8, height: 8)
                     Text(appState.selectedFilm.shortName)
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    Text("\(appState.currentRoll.remainingShots)")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(StillLightTheme.secondaryText)
                 }
                 .foregroundStyle(StillLightTheme.text)
                 .stillLightPanel()
@@ -208,7 +211,7 @@ struct CameraScreen: View {
                 VStack(spacing: 5) {
                     Image(systemName: "film")
                         .font(.system(size: 21, weight: .medium))
-                    Text("\(appState.selectedFilm.iso)")
+                    Text("\(appState.currentRoll.remainingShots)/\(appState.currentRoll.totalShots)")
                         .font(.caption2.monospacedDigit())
                 }
                 .foregroundStyle(StillLightTheme.text)

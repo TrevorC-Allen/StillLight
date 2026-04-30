@@ -3,7 +3,7 @@ import SwiftUI
 
 struct CameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
-    let onFocus: (CGPoint) -> Void
+    let onFocus: (CGPoint, CGPoint) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -36,7 +36,7 @@ struct CameraPreview: UIViewRepresentable {
             guard let previewView else { return }
             let location = gesture.location(in: previewView)
             let focusPoint = previewView.previewLayer.captureDevicePointConverted(fromLayerPoint: location)
-            parent.onFocus(focusPoint)
+            parent.onFocus(focusPoint, location)
         }
     }
 }

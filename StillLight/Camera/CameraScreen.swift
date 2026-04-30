@@ -9,6 +9,7 @@ struct CameraScreen: View {
     @State private var showsFilmPicker = false
     @State private var showsGallery = false
     @State private var shutterFlash = false
+    @State private var focusIndicator: FocusIndicator?
 
     var body: some View {
         ZStack {
@@ -57,10 +58,19 @@ struct CameraScreen: View {
 
     private var cameraExperience: some View {
         ZStack {
-            CameraPreview(session: viewModel.cameraService.session) { point in
+            CameraPreview(session: viewModel.cameraService.session) { point, viewPoint in
                 viewModel.focus(at: point)
+                updateFocusIndicator(viewPoint)
             }
             .ignoresSafeArea()
+            .overlay {
+                if let focusIndicator {
+                    FocusReticle()
+                        .position(focusIndicator.point)
+                        .id(focusIndicator.id)
+                        .transition(.opacity)
+                }
+            }
 
             LinearGradient(
                 colors: [.black.opacity(0.60), .clear, .black.opacity(0.76)],
@@ -297,5 +307,47 @@ struct CameraScreen: View {
     private func openAppSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         openURL(url)
+    }
+
+    private func updateFocusIndicator(_ point: CGPoint) {
+        let indicator = FocusIndicator(point: point)
+        withAnimation(.easeOut(duration: 0.10)) {
+            focusIndicator = indicator
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) {
+            guard focusIndicator?.id == indicator.id else { return }
+            withAnimation(.easeOut(duration: 0.18)) {
+                focusIndicator = nil
+            }
+        }
+    }
+}
+
+private struct FocusIndicator: Identifiable {
+    let id = UUID()
+    let point: CGPoint
+}
+
+private struct FocusReticle: View {
+    @State private var isSettled = false
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 4, style: .continuous)
+            .stroke(StillLightTheme.accent.opacity(0.96), lineWidth: 1.4)
+            .frame(width: 74, height: 74)
+            .overlay {
+                Circle()
+                    .fill(StillLightTheme.accent.opacity(0.95))
+                    .frame(width: 4, height: 4)
+            }
+            .scaleEffect(isSettled ? 0.76 : 1.08)
+            .opacity(isSettled ? 0.86 : 1)
+            .allowsHitTesting(false)
+            .onAppear {
+                withAnimation(.spring(response: 0.22, dampingFraction: 0.72)) {
+                    isSettled = true
+                }
+            }
     }
 }

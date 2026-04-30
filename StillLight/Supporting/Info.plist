@@ -22,8 +22,10 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>StillLight needs camera access to capture film-style photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>StillLight uses the microphone when recording videos.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>StillLight saves developed photos to your photo library.</string>
+	<string>StillLight saves developed photos and recorded videos to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>StillLight can access the photo library for saving and future import features.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

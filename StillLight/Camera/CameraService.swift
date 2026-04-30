@@ -41,8 +41,11 @@ final class CameraService: NSObject, ObservableObject {
 
     private let sessionQueue = DispatchQueue(label: "com.stilllight.camera.session")
     private let photoOutput = AVCapturePhotoOutput()
+    private let movieOutput = AVCaptureMovieFileOutput()
     private var videoInput: AVCaptureDeviceInput?
+    private var audioInput: AVCaptureDeviceInput?
     private var photoDelegate: PhotoCaptureDelegate?
+    private var movieDelegate: MovieCaptureDelegate?
     private(set) var position: AVCaptureDevice.Position = .back
 
     func checkPermission(_ completion: @escaping (CameraPermissionState) -> Void) {
@@ -96,6 +99,10 @@ final class CameraService: NSObject, ObservableObject {
     func switchCamera(completion: @escaping (CameraPermissionState) -> Void) {
         sessionQueue.async { [weak self] in
             guard let self else { return }
+            guard !self.movieOutput.isRecording else {
+                completion(.authorized)
+                return
+            }
             let newPosition: AVCaptureDevice.Position = self.position == .back ? .front : .back
             do {
                 try self.configureSession(position: newPosition)
@@ -162,9 +169,65 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
 
+    func startVideoRecording(completion: @escaping (Result<URL, Error>) -> Void) {
+        let startRecording = { [weak self] in
+            self?.sessionQueue.async {
+                guard let self, !self.movieOutput.isRecording else { return }
+                do {
+                    try self.configureAudioInputIfAllowed()
+                    let outputURL = try self.temporaryMovieURL()
+                    if FileManager.default.fileExists(atPath: outputURL.path) {
+                        try FileManager.default.removeItem(at: outputURL)
+                    }
+
+                    if let connection = self.movieOutput.connection(with: .video) {
+                        if #available(iOS 17.0, *) {
+                            if connection.isVideoRotationAngleSupported(90) {
+                                connection.videoRotationAngle = 90
+                            }
+                        } else if connection.isVideoOrientationSupported {
+                            connection.videoOrientation = .portrait
+                        }
+                        if connection.isVideoMirroringSupported {
+                            connection.isVideoMirrored = self.position == .front
+                        }
+                        if connection.isVideoStabilizationSupported {
+                            connection.preferredVideoStabilizationMode = .cinematic
+                        }
+                    }
+
+                    let delegate = MovieCaptureDelegate { [weak self] result in
+                        completion(result)
+                        self?.movieDelegate = nil
+                    }
+                    self.movieDelegate = delegate
+                    self.movieOutput.startRecording(to: outputURL, recordingDelegate: delegate)
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }
+
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .audio) { _ in
+                startRecording()
+            }
+        default:
+            startRecording()
+        }
+    }
+
+    func stopVideoRecording() {
+        sessionQueue.async { [weak self] in
+            guard let self, self.movieOutput.isRecording else { return }
+            self.movieOutput.stopRecording()
+        }
+    }
+
     private func configureSession(position: AVCaptureDevice.Position) throws {
         session.beginConfiguration()
-        session.sessionPreset = .photo
+        session.sessionPreset = .high
 
         if let videoInput {
             session.removeInput(videoInput)
@@ -186,14 +249,68 @@ final class CameraService: NSObject, ObservableObject {
         if !session.outputs.contains(photoOutput), session.canAddOutput(photoOutput) {
             session.addOutput(photoOutput)
         }
+        if !session.outputs.contains(movieOutput), session.canAddOutput(movieOutput) {
+            session.addOutput(movieOutput)
+        }
 
         session.commitConfiguration()
+    }
+
+    private func configureAudioInputIfAllowed() throws {
+        guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else {
+            return
+        }
+        guard audioInput == nil else { return }
+        guard let audioDevice = AVCaptureDevice.default(for: .audio) else { return }
+
+        let input = try AVCaptureDeviceInput(device: audioDevice)
+        session.beginConfiguration()
+        if session.canAddInput(input) {
+            session.addInput(input)
+            audioInput = input
+        }
+        session.commitConfiguration()
+    }
+
+    private func temporaryMovieURL() throws -> URL {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("StillLight", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: directory.path) {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        return directory.appendingPathComponent("\(UUID().uuidString).mov")
     }
 }
 
 private enum CameraError: Error {
     case deviceUnavailable
     case cannotAddInput
+}
+
+private final class MovieCaptureDelegate: NSObject, AVCaptureFileOutputRecordingDelegate {
+    private let completion: (Result<URL, Error>) -> Void
+
+    init(completion: @escaping (Result<URL, Error>) -> Void) {
+        self.completion = completion
+    }
+
+    func fileOutput(
+        _ output: AVCaptureFileOutput,
+        didFinishRecordingTo outputFileURL: URL,
+        from connections: [AVCaptureConnection],
+        error: Error?
+    ) {
+        if let error {
+            let didFinish = (error as NSError).userInfo[AVErrorRecordingSuccessfullyFinishedKey] as? Bool
+            if didFinish == true {
+                completion(.success(outputFileURL))
+            } else {
+                completion(.failure(error))
+            }
+            return
+        }
+
+        completion(.success(outputFileURL))
+    }
 }
 
 private final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {

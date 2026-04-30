@@ -16,6 +16,7 @@ Choose a film roll
 
 - Live camera preview with AVFoundation
 - Photo capture
+- Native video recording with audio, recording timer and Photos export
 - Front/back camera switch
 - Flash mode: off / on / auto
 - Exposure compensation

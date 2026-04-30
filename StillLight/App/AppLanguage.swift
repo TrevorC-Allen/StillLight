@@ -76,6 +76,11 @@ enum AppText {
         case presets
         case pipeline
         case photosSaveFailed
+        case photoMode
+        case videoMode
+        case recording
+        case videoSaved
+        case videoSaveFailed
         case appName
     }
 
@@ -129,6 +134,11 @@ enum AppText {
         .presets: "Presets",
         .pipeline: "Pipeline",
         .photosSaveFailed: "Saved to StillLight Roll. Photos save failed:",
+        .photoMode: "Photo",
+        .videoMode: "Video",
+        .recording: "REC",
+        .videoSaved: "Video saved to Photos",
+        .videoSaveFailed: "Video saved locally. Photos save failed:",
         .appName: "StillLight"
     ]
 
@@ -182,6 +192,11 @@ enum AppText {
         .presets: "预设数量",
         .pipeline: "图像管线",
         .photosSaveFailed: "已保存到 StillLight 胶卷。系统照片保存失败：",
+        .photoMode: "拍照",
+        .videoMode: "录像",
+        .recording: "录制中",
+        .videoSaved: "视频已保存到照片",
+        .videoSaveFailed: "视频已保存在本地。系统照片保存失败：",
         .appName: "StillLight"
     ]
 }

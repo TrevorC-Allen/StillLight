@@ -32,6 +32,7 @@
 		000000000000000000000223 /* FilmRoll.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000123 /* FilmRoll.swift */; };
 		000000000000000000000224 /* FilmRollStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000124 /* FilmRollStore.swift */; };
 		000000000000000000000225 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000125 /* AppLanguage.swift */; };
+		000000000000000000000226 /* VideoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000126 /* VideoExporter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +64,7 @@
 		000000000000000000000123 /* FilmRoll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmRoll.swift; sourceTree = "<group>"; };
 		000000000000000000000124 /* FilmRollStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmRollStore.swift; sourceTree = "<group>"; };
 		000000000000000000000125 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
+		000000000000000000000126 /* VideoExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoExporter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -158,6 +160,7 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000108 /* PhotoExporter.swift */,
+				000000000000000000000126 /* VideoExporter.swift */,
 			);
 			path = Export;
 			sourceTree = "<group>";
@@ -315,6 +318,7 @@
 				000000000000000000000223 /* FilmRoll.swift in Sources */,
 				000000000000000000000224 /* FilmRollStore.swift in Sources */,
 				000000000000000000000225 /* AppLanguage.swift in Sources */,
+				000000000000000000000226 /* VideoExporter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

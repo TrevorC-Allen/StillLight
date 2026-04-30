@@ -6,6 +6,7 @@ StillLight is an iOS-only fast MVP for a quiet film-camera app: choose a roll, s
 
 - AVFoundation live camera preview
 - Photo capture with flash, front/back switch, exposure compensation and tap focus
+- Native video recording with audio, recording timer and Photos export
 - Animated focus reticle after tap focus
 - Aspect-ratio frame guide, camera grid and horizon level
 - Capture ratios: 3:2, 4:3, 1:1, 16:9 and Half
@@ -64,6 +65,7 @@ StillLight is an iOS-only fast MVP for a quiet film-camera app: choose a roll, s
 ## Not In MVP
 
 - Real-time film preview
+- Film-processed video export
 - RAW/HEIC export
 - LUT authoring UI
 - cloud multimodal AI

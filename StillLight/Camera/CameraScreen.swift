@@ -99,17 +99,22 @@ struct CameraScreen: View {
                 topBar
                 Spacer()
                 exposureControl
+                captureModeControl
                 bottomControls
+            }
+
+            if viewModel.isRecording {
+                recordingBadge
             }
 
             if viewModel.isProcessing {
                 processingOverlay
             }
 
-            if let errorMessage = viewModel.errorMessage {
+            if viewModel.errorMessage != nil || viewModel.statusMessage != nil {
                 VStack {
                     Spacer()
-                    Text(errorMessage)
+                    Text(viewModel.errorMessage ?? viewModel.statusMessage ?? "")
                         .font(.footnote)
                         .foregroundStyle(StillLightTheme.text)
                         .stillLightPanel()
@@ -222,26 +227,21 @@ struct CameraScreen: View {
             Spacer()
 
             Button {
-                withAnimation(.easeOut(duration: 0.10)) {
-                    shutterFlash = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                    withAnimation(.easeOut(duration: 0.16)) {
-                        shutterFlash = false
+                if viewModel.captureMode == .photo {
+                    withAnimation(.easeOut(duration: 0.10)) {
+                        shutterFlash = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                        withAnimation(.easeOut(duration: 0.16)) {
+                            shutterFlash = false
+                        }
                     }
                 }
-                viewModel.capture(appState: appState)
+                viewModel.primaryAction(appState: appState)
             } label: {
-                ZStack {
-                    Circle()
-                        .strokeBorder(StillLightTheme.text.opacity(0.95), lineWidth: 4)
-                        .frame(width: 78, height: 78)
-                    Circle()
-                        .fill(StillLightTheme.text.opacity(0.92))
-                        .frame(width: 62, height: 62)
-                }
+                shutterButton
             }
-            .disabled(viewModel.isProcessing)
+            .disabled(viewModel.isProcessing && !viewModel.isRecording)
 
             Spacer()
 
@@ -263,6 +263,73 @@ struct CameraScreen: View {
         .padding(.bottom, 20)
     }
 
+    private var captureModeControl: some View {
+        HStack(spacing: 8) {
+            CameraModeButton(
+                title: appState.t(.photoMode),
+                isSelected: viewModel.captureMode == .photo
+            ) {
+                viewModel.setCaptureMode(.photo)
+            }
+
+            CameraModeButton(
+                title: appState.t(.videoMode),
+                isSelected: viewModel.captureMode == .video
+            ) {
+                viewModel.setCaptureMode(.video)
+            }
+        }
+        .padding(5)
+        .background(StillLightTheme.panel.opacity(0.74))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.bottom, 16)
+        .opacity(viewModel.isRecording ? 0.45 : 1)
+    }
+
+    private var shutterButton: some View {
+        ZStack {
+            Circle()
+                .strokeBorder(shutterColor.opacity(0.95), lineWidth: 4)
+                .frame(width: 78, height: 78)
+
+            if viewModel.captureMode == .video && viewModel.isRecording {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(shutterColor.opacity(0.94))
+                    .frame(width: 35, height: 35)
+            } else {
+                Circle()
+                    .fill(shutterColor.opacity(0.92))
+                    .frame(width: viewModel.captureMode == .video ? 56 : 62, height: viewModel.captureMode == .video ? 56 : 62)
+            }
+        }
+    }
+
+    private var shutterColor: Color {
+        viewModel.captureMode == .video ? Color(red: 0.88, green: 0.16, blue: 0.13) : StillLightTheme.text
+    }
+
+    private var recordingBadge: some View {
+        VStack {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(Color(red: 0.92, green: 0.10, blue: 0.08))
+                    .frame(width: 8, height: 8)
+                Text(appState.t(.recording))
+                Text(recordingDurationText)
+                    .font(.caption.monospacedDigit())
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(StillLightTheme.text)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(StillLightTheme.panel.opacity(0.86))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .padding(.top, 72)
+
+            Spacer()
+        }
+    }
+
     private var processingOverlay: some View {
         VStack(spacing: 12) {
             ProgressView()
@@ -272,6 +339,11 @@ struct CameraScreen: View {
                 .foregroundStyle(StillLightTheme.secondaryText)
         }
         .stillLightPanel()
+    }
+
+    private var recordingDurationText: String {
+        let totalSeconds = max(0, Int(viewModel.recordingDuration.rounded(.down)))
+        return String(format: "%02d:%02d", totalSeconds / 60, totalSeconds % 60)
     }
 
     private func permissionMessage(
@@ -331,6 +403,24 @@ struct CameraScreen: View {
 private struct FocusIndicator: Identifiable {
     let id = UUID()
     let point: CGPoint
+}
+
+private struct CameraModeButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title.uppercased())
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(isSelected ? StillLightTheme.background : StillLightTheme.text)
+                .frame(width: 70, height: 30)
+                .background(isSelected ? StillLightTheme.accent : Color.clear)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 private struct FocusReticle: View {

@@ -21,8 +21,8 @@ StillLight is an iOS-only fast MVP for a quiet film-camera app: choose a roll, s
   - experimental
 - Representative presets:
   - Human Warm 400
-  - Human Vignette 800
-  - Muse Portrait 400
+  - Shadow Walk 800
+  - Soft Muse 400
   - Sunlit Gold 200
   - Soft Portrait 400
   - Silver HP5

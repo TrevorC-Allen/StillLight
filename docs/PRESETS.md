@@ -5,8 +5,8 @@ StillLight currently ships 27 original film/camera presets. They are inspired by
 | Preset | Intent | Technical Bias |
 | --- | --- | --- |
 | Human Warm 400 | Pleasing humanistic scenes, cafes and interiors | warm creamy highlights, clean greens, medium vignette |
-| Human Vignette 800 | Moodier street, museum and architecture scenes | stronger edge falloff, deeper blacks, subdued color |
-| Muse Portrait 400 | Girlfriend-friendly portrait look | warm skin, low contrast, lifted shadows, protected highlights |
+| Shadow Walk 800 | Moodier street, museum and architecture scenes | stronger edge falloff, deeper blacks, subdued color |
+| Soft Muse 400 | Soft portrait look | warm skin, low contrast, lifted shadows, protected highlights |
 | Sunlit Gold 200 | Warm daylight and travel | warm temperature, soft S curve, low grain |
 | Soft Portrait 400 | Skin-friendly portraits | lifted shadows, low contrast, gentle saturation |
 | Silver HP5 | Monochrome documentary | zero saturation, stronger contrast, larger grain |

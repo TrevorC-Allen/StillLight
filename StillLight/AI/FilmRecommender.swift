@@ -35,7 +35,7 @@ enum FilmRecommender {
         if metrics.brightness < 0.30 && metrics.contrast > 0.18 {
             filmId = "human-vignette-800"
             reason = "Low light and strong contrast can use a moodier vignette roll to pull the eye inward."
-            localizedReason = "低光和强反差适合人文暗角卷，把视线往画面中心收。"
+            localizedReason = "低光和强反差适合街影卷，把视线往画面中心收。"
         } else if metrics.brightness < 0.30 {
             filmId = "tungsten-800"
             reason = "Low light with room for warm highlight bloom."
@@ -47,7 +47,7 @@ enum FilmRecommender {
         } else if metrics.brightness > 0.70 && metrics.saturation < 0.30 {
             filmId = "muse-portrait-400"
             reason = "Bright, gentle color works well with a soft portrait roll and protected highlights."
-            localizedReason = "明亮柔和的色彩适合女友人像卷，让高光更稳、肤色更软。"
+            localizedReason = "明亮柔和的色彩适合柔光人像卷，让高光更稳、肤色更软。"
         } else if metrics.warmth < -0.06 {
             filmId = "green-street-400"
             reason = "Cool tones can lean into a cyan-green street palette."

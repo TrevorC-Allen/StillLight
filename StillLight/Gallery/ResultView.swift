@@ -4,6 +4,7 @@ struct ResultView: View {
     let result: CaptureResult
     @Environment(\.dismiss) private var dismiss
     @State private var showsShareSheet = false
+    @State private var showsOriginal = false
 
     var body: some View {
         ZStack {
@@ -33,11 +34,34 @@ struct ResultView: View {
                 .padding(.horizontal, 18)
                 .padding(.top, 18)
 
-                Image(uiImage: result.image)
-                    .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .padding(.horizontal, 14)
+                ZStack(alignment: .topTrailing) {
+                    Image(uiImage: displayedImage)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                    if showsOriginal, originalImage != nil {
+                        Text("Original")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(StillLightTheme.text)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(StillLightTheme.panel.opacity(0.82))
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .padding(10)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .onLongPressGesture(
+                    minimumDuration: 0.16,
+                    pressing: { isPressing in
+                        guard originalImage != nil else { return }
+                        withAnimation(.easeOut(duration: 0.12)) {
+                            showsOriginal = isPressing
+                        }
+                    },
+                    perform: {}
+                )
 
                 HStack(spacing: 12) {
                     Button {
@@ -77,6 +101,18 @@ struct ResultView: View {
         .sheet(isPresented: $showsShareSheet) {
             ShareSheet(activityItems: [result.record.processedURL])
         }
+    }
+
+    private var originalImage: UIImage? {
+        guard let originalURL = result.record.originalURL else { return nil }
+        return UIImage(contentsOfFile: originalURL.path)
+    }
+
+    private var displayedImage: UIImage {
+        if showsOriginal, let originalImage {
+            return originalImage
+        }
+        return result.image
     }
 }
 

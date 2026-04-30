@@ -74,18 +74,42 @@ private struct PhotoDetailView: View {
     @EnvironmentObject private var appState: AppState
     let record: PhotoRecord
     @State private var showsShareSheet = false
+    @State private var showsOriginal = false
 
     var body: some View {
         ZStack {
             StillLightTheme.background.ignoresSafeArea()
 
             VStack(spacing: 16) {
-                if let image = UIImage(contentsOfFile: record.processedPath) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .padding(.horizontal, 14)
+                if let image = displayedImage {
+                    ZStack(alignment: .topTrailing) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                        if showsOriginal, originalImage != nil {
+                            Text("Original")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(StillLightTheme.text)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(StillLightTheme.panel.opacity(0.82))
+                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .padding(10)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .onLongPressGesture(
+                        minimumDuration: 0.16,
+                        pressing: { isPressing in
+                            guard originalImage != nil else { return }
+                            withAnimation(.easeOut(duration: 0.12)) {
+                                showsOriginal = isPressing
+                            }
+                        },
+                        perform: {}
+                    )
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -131,5 +155,21 @@ private struct PhotoDetailView: View {
         .sheet(isPresented: $showsShareSheet) {
             ShareSheet(activityItems: [record.processedURL])
         }
+    }
+
+    private var processedImage: UIImage? {
+        UIImage(contentsOfFile: record.processedPath)
+    }
+
+    private var originalImage: UIImage? {
+        guard let originalURL = record.originalURL else { return nil }
+        return UIImage(contentsOfFile: originalURL.path)
+    }
+
+    private var displayedImage: UIImage? {
+        if showsOriginal, let originalImage {
+            return originalImage
+        }
+        return processedImage
     }
 }

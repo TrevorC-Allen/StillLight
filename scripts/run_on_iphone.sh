@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
 BUNDLE_ID="${BUNDLE_ID:-com.trevorcui.StillLight}"
+BUILD_ROOT="${BUILD_ROOT:-/tmp/StillLightBuild}"
+OBJ_ROOT="${OBJ_ROOT:-/tmp/StillLightObj}"
 DEVICE_ID="${1:-}"
 
 if [[ ! -d "$DEVELOPER_DIR" ]]; then
@@ -30,15 +32,16 @@ cd "$ROOT_DIR"
 
 xcodebuild \
   -project StillLight.xcodeproj \
-  -scheme StillLight \
+  -target StillLight \
   -configuration Debug \
-  -destination "platform=iOS,id=$DEVICE_ID" \
-  -derivedDataPath build/DerivedData \
+  -sdk iphoneos \
+  SYMROOT="$BUILD_ROOT" \
+  OBJROOT="$OBJ_ROOT" \
   build
 
-APP_PATH="$(find build/DerivedData/Build/Products/Debug-iphoneos -name StillLight.app -maxdepth 2 -print -quit)"
-if [[ -z "$APP_PATH" ]]; then
-  echo "Build succeeded, but StillLight.app was not found under build/DerivedData."
+APP_PATH="$BUILD_ROOT/Debug-iphoneos/StillLight.app"
+if [[ ! -d "$APP_PATH" ]]; then
+  echo "Build succeeded, but $APP_PATH does not exist."
   exit 3
 fi
 

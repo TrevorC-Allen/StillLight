@@ -54,6 +54,16 @@ If multiple devices are connected, pass the device id shown by `scripts/check_io
 scripts/run_on_iphone.sh YOUR_DEVICE_ID
 ```
 
+If the install step says **Developer Mode is disabled**, enable it on the iPhone:
+
+1. Open **Settings > Privacy & Security**.
+2. Tap **Developer Mode**.
+3. Turn it on and restart when iOS asks.
+4. After the phone restarts, unlock it and confirm Developer Mode.
+5. Run `scripts/run_on_iphone.sh` again.
+
+The run script builds into `/tmp/StillLightBuild` so code signing avoids Desktop/iCloud extended attributes that can make `codesign` reject the app bundle.
+
 ## 5. Current MVP Smoke Test
 
 On the phone:

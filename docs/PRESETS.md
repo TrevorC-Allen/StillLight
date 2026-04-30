@@ -43,6 +43,20 @@ StillLight currently ships 27 original film/camera presets. They are inspired by
 - Digital: CCD / early compact-camera looks
 - Experimental: stronger stylization such as tungsten bloom and toy-camera leak
 
+## Cover Art
+
+Each preset has a separate `FilmCoverStyle` in the roll picker. The cover style controls:
+
+- palette
+- center glow color and position
+- vignette strength
+- light leak accent
+- paper/instant edge
+- icon mark
+- short cover code
+
+This keeps the film picker visually scannable without shipping heavy sample-image assets.
+
 ## Frame Output
 
 `BorderStyle.whiteFrame`, `paper` and `instant` all render a bottom frame area with:

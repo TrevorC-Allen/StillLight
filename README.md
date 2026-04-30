@@ -27,6 +27,7 @@ Choose a film roll
 - Dazz-like style library with 27 switchable film/camera presets across featured, portrait, color negative, classic camera, instant, black-and-white, digital and experimental categories
 - Featured scene-first presets: Human Warm 400, Shadow Walk 800 and Soft Muse 400
 - HNCS-inspired natural color, compact rangefinder, GR-style street, 500C medium-format, half-frame diary, CCD and instant looks
+- Individually designed film cover art for every preset in the roll picker
 - White-frame and instant/paper border output with the selected camera/model label burned into the exported image
 - English / Chinese UI switch in Settings
 - 27 film presets, including:

@@ -323,9 +323,9 @@ struct CameraScreen: View {
         .contentShape(Capsule())
         .overlay(alignment: .top) {
             if isDraggingZoomControl {
-                ZoomValueBubble(value: viewModel.zoomState.displayFactorText)
-                    .offset(y: -44)
-                    .transition(.scale(scale: 0.88).combined(with: .opacity))
+                ZoomScrubRuler(state: viewModel.zoomState)
+                    .offset(y: -52)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .simultaneousGesture(zoomControlDragGesture)
@@ -651,30 +651,85 @@ private struct ZoomLensButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text("\(option.label)x")
-                .font(.system(size: isSelected ? 13 : 12, weight: .bold, design: .rounded))
-                .foregroundStyle(isSelected ? StillLightTheme.background : StillLightTheme.text)
-                .frame(width: isSelected ? 42 : 34, height: isSelected ? 34 : 30)
-                .background(isSelected ? StillLightTheme.accent : StillLightTheme.panelElevated.opacity(0.86))
-                .clipShape(Capsule())
+            HStack(alignment: .firstTextBaseline, spacing: 1) {
+                Text(option.label)
+                    .font(.system(size: isSelected ? 14 : 12, weight: .bold, design: .rounded).monospacedDigit())
+                Text("x")
+                    .font(.system(size: isSelected ? 9 : 8, weight: .bold, design: .rounded))
+                    .baselineOffset(1)
+            }
+            .foregroundStyle(isSelected ? Color.black.opacity(0.86) : StillLightTheme.text.opacity(0.92))
+            .frame(width: isSelected ? 42 : 34, height: isSelected ? 34 : 30)
+            .background(isSelected ? NativeCameraZoomColors.selected : StillLightTheme.panelElevated.opacity(0.78))
+            .clipShape(Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.08), lineWidth: 1)
+            }
         }
         .buttonStyle(.plain)
     }
 }
 
-private struct ZoomValueBubble: View {
-    let value: String
+private enum NativeCameraZoomColors {
+    static let selected = Color(red: 1.0, green: 0.84, blue: 0.36)
+}
+
+private struct ZoomScrubRuler: View {
+    let state: CameraZoomState
 
     var body: some View {
-        Text("\(value)x")
-            .font(.system(size: 13, weight: .bold, design: .rounded).monospacedDigit())
-            .foregroundStyle(StillLightTheme.background)
-            .padding(.horizontal, 12)
-            .frame(height: 30)
-            .background(StillLightTheme.accent)
-            .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.28), radius: 12, y: 7)
-            .allowsHitTesting(false)
+        VStack(spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 1) {
+                Text(state.displayFactorText)
+                    .font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
+                Text("x")
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .baselineOffset(1)
+            }
+            .foregroundStyle(NativeCameraZoomColors.selected)
+
+            ZStack {
+                HStack(alignment: .center, spacing: 5) {
+                    ForEach(0..<23, id: \.self) { index in
+                        Capsule()
+                            .fill(tickColor(index))
+                            .frame(width: index == 11 ? 2 : 1, height: tickHeight(index))
+                    }
+                }
+
+                Capsule()
+                    .fill(NativeCameraZoomColors.selected)
+                    .frame(width: 2, height: 22)
+                    .shadow(color: NativeCameraZoomColors.selected.opacity(0.32), radius: 5, y: 1)
+            }
+            .frame(height: 24)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(Color.black.opacity(0.52))
+        .clipShape(Capsule())
+        .overlay {
+            Capsule()
+                .stroke(Color.white.opacity(0.09), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.30), radius: 14, y: 8)
+        .allowsHitTesting(false)
+    }
+
+    private func tickHeight(_ index: Int) -> CGFloat {
+        if index == 11 {
+            return 20
+        }
+        return index.isMultiple(of: 4) ? 15 : 8
+    }
+
+    private func tickColor(_ index: Int) -> Color {
+        if index == 11 {
+            return NativeCameraZoomColors.selected
+        }
+        let distance = abs(index - 11)
+        return StillLightTheme.text.opacity(distance < 4 ? 0.52 : 0.30)
     }
 }
 

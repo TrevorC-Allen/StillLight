@@ -34,6 +34,7 @@ Choose a film roll
 - Tuned scene-first presets for the current product direction: Human Warm 400, Shadow Walk 800 and Soft Muse 400
 - HNCS-inspired natural color, compact rangefinder, GR-style street, 500C medium-format, half-frame diary, CCD and instant looks
 - Dazz-inspired physical film drawer with individually drawn film boxes, canisters, instant packs, paper sleeves, disposable cameras, half-frame tickets and camera bodies
+- Per-roll miniature sample scenes embedded in film objects, so rolls communicate a visual mood instead of only numbers and icons
 - Deterministic paper wear, package speckles, contact shadows, shelf depth and layered lens glass drawn in SwiftUI
 - White-frame and instant/paper border output with the selected camera/model label burned into the exported image
 - English / Chinese UI switch in Settings
@@ -64,6 +65,7 @@ Choose a film roll
   - contrast and saturation
   - tone curve
   - highlight/shadow adjustment
+  - film rendering profiles for local micro-contrast, midtone softness and highlight recovery
   - film-specific color response matrix
   - highlight-masked warm halation
   - soft radial lens falloff

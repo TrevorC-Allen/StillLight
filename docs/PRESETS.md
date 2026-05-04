@@ -60,12 +60,13 @@ Each preset has a separate `FilmCoverStyle` in the roll picker. The cover style 
 - palette
 - center glow color and position
 - paper, canister, pack, sleeve or camera-body material
+- per-roll miniature sample scene
 - deterministic paper texture and worn edges
 - contact shadows and drawer depth
 - layered lens reflections
 - short cover code
 
-This keeps the film library visually scannable and object-like without shipping heavy generated sample-image assets.
+The sample scenes map each roll id / category to visual moods such as cafe tables, low-key street atriums, soft portraits, neon nights, CCD campus scenes, instant tabletops, beaches, flowers and half-frame diaries. This keeps the library visually scannable and mood-led without shipping heavy external sample-image assets.
 
 ## Current Pipeline Focus
 
@@ -75,6 +76,7 @@ The current output is not a single LUT. Each preset drives a modular image pipel
 - exposure, white balance, tint, contrast and saturation
 - tone curve
 - highlight / shadow adjustment
+- film rendering profiles for local micro-contrast, midtone softness, highlight recovery and skin protection
 - film-specific color response matrix
 - highlight-masked warm halation
 - soft radial lens falloff

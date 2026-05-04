@@ -73,9 +73,9 @@ enum FilmImagePipeline {
         addTimestamp: Bool,
         intensity: Double = 1.0
     ) throws -> ProcessingResult {
-        var timing = ProcessingTiming(maxInputPixelSize: 2400)
+        var timing = ProcessingTiming(maxInputPixelSize: processingMaxPixelSize)
         let baseImage = try measureStage("downsample") {
-            try downsample(photoData: photoData, maxPixelSize: 3200)
+            try downsample(photoData: photoData, maxPixelSize: timing.maxInputPixelSize)
         } record: { timing.record($0, milliseconds: $1) }
 
         return try processWithTiming(
@@ -115,9 +115,9 @@ enum FilmImagePipeline {
         addTimestamp: Bool,
         intensity: Double = 1.0
     ) throws -> ProcessingResult {
-        var timing = ProcessingTiming(maxInputPixelSize: 2400)
+        var timing = ProcessingTiming(maxInputPixelSize: processingMaxPixelSize)
         let baseImage = measureStage("normalize") {
-            image.normalizedForProcessing(maxPixelSize: 3200)
+            image.normalizedForProcessing(maxPixelSize: timing.maxInputPixelSize)
         } record: { timing.record($0, milliseconds: $1) }
 
         return try processWithTiming(
@@ -130,6 +130,8 @@ enum FilmImagePipeline {
             timing: timing
         )
     }
+
+    private static let processingMaxPixelSize: CGFloat = 3200
 
     private static func processWithTiming(
         baseImage: UIImage,

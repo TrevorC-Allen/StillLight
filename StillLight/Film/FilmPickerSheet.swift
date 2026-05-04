@@ -577,6 +577,15 @@ private struct FilmPhysicalPackageView: View {
         scale.size
     }
 
+    private var isHeroScale: Bool {
+        switch scale {
+        case .hero:
+            return true
+        case .shelf:
+            return false
+        }
+    }
+
     var body: some View {
         Group {
             switch FilmPackageKind.kind(for: film) {
@@ -600,190 +609,604 @@ private struct FilmPhysicalPackageView: View {
     }
 
     private var paperBox: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+        ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(style.paper)
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(LinearGradient(colors: style.wash, startPoint: .topLeading, endPoint: .bottomTrailing))
-                .padding(6)
-            paperTexture
-            VStack(alignment: .leading, spacing: size.height * 0.045) {
+
+            VStack(spacing: 0) {
+                Rectangle()
+                    .fill(style.wash[0].opacity(0.86))
+                    .frame(height: size.height * 0.25)
+                Rectangle()
+                    .fill(style.paper.opacity(0.92))
+                Rectangle()
+                    .fill(style.wash[1].opacity(0.68))
+                    .frame(height: size.height * 0.18)
+                Rectangle()
+                    .fill(style.wash[2].opacity(0.76))
+                    .frame(height: size.height * 0.17)
+            }
+            .padding(size.width * 0.055)
+            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [style.ink.opacity(0.18), style.ink.opacity(0.02)],
+                        startPoint: .trailing,
+                        endPoint: .leading
+                    )
+                )
+                .frame(width: size.width * 0.13)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.vertical, size.width * 0.055)
+
+            packageMotif
+                .frame(width: size.width * 0.58, height: size.height * 0.38)
+                .padding(.leading, size.width * 0.13)
+                .padding(.top, size.height * 0.28)
+
+            VStack(alignment: .leading, spacing: size.height * 0.022) {
+                Text("STILL LIGHT")
+                    .font(.system(size: size.width * 0.054, weight: .bold, design: .monospaced))
+                    .tracking(0.9)
+                    .foregroundStyle(style.ink.opacity(0.55))
+
                 Text(style.label)
-                    .font(.system(size: size.width * 0.105, weight: .black, design: .monospaced))
-                    .tracking(0.8)
-                    .foregroundStyle(style.ink.opacity(0.78))
+                    .font(.system(size: size.width * 0.112, weight: .black, design: .monospaced))
+                    .tracking(0.4)
+                    .foregroundStyle(style.ink.opacity(0.84))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.65)
+                    .minimumScaleFactor(0.58)
+
                 Spacer()
-                Text("STILLLIGHT")
-                    .font(.system(size: size.width * 0.063, weight: .bold, design: .monospaced))
-                    .tracking(1.0)
-                    .foregroundStyle(style.ink.opacity(0.58))
-                HStack {
-                    Text("\(film.iso)")
-                    Spacer()
-                    Text("\(film.defaultShotCount) EXP")
+
+                HStack(spacing: 5) {
+                    ForEach(0..<3, id: \.self) { index in
+                        Rectangle()
+                            .fill(style.swatches[index].opacity(0.90))
+                            .frame(width: size.width * 0.16, height: 3)
+                    }
                 }
-                .font(.system(size: size.width * 0.075, weight: .bold, design: .monospaced))
-                .foregroundStyle(style.ink.opacity(0.72))
+
+                HStack {
+                    Text("ISO \(film.iso)")
+                    Spacer()
+                    Text("\(film.defaultShotCount)")
+                }
+                .font(.system(size: size.width * 0.071, weight: .bold, design: .monospaced))
+                .foregroundStyle(style.ink.opacity(0.76))
             }
             .padding(size.width * 0.12)
-            Rectangle()
-                .fill(style.accent.opacity(0.78))
-                .frame(width: size.width * 0.09)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.vertical, 7)
+
+            boxFoldLines
+            paperTexture
         }
-        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-        .overlay(packageStroke)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(packageStroke(cornerRadius: 8))
+        .shadow(color: style.ink.opacity(0.18), radius: isHeroScale ? 11 : 7, x: 0, y: isHeroScale ? 8 : 5)
     }
 
     private var canister: some View {
         ZStack {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(StillLightTheme.panel.opacity(0.01))
+
             Capsule()
-                .fill(LinearGradient(colors: [style.ink.opacity(0.92), style.ink.opacity(0.58)], startPoint: .top, endPoint: .bottom))
-                .frame(width: size.width * 0.74, height: size.height * 0.78)
-            Capsule()
-                .stroke(style.paper.opacity(0.72), lineWidth: 5)
-                .frame(width: size.width * 0.82, height: size.height * 0.86)
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(style.paper.opacity(0.88))
-                .frame(width: size.width * 0.62, height: size.height * 0.32)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            style.ink.opacity(0.94),
+                            style.ink.opacity(0.66),
+                            style.ink.opacity(0.92)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: size.width * 0.90, height: size.height * 0.42)
+                .shadow(color: .black.opacity(0.26), radius: 9, x: 0, y: 7)
+
+            HStack(spacing: 0) {
+                canisterCap
+                Spacer()
+                canisterCap
+            }
+            .frame(width: size.width * 0.98, height: size.height * 0.46)
+
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(style.paper.opacity(0.94))
+                .frame(width: size.width * 0.60, height: size.height * 0.35)
                 .overlay(alignment: .leading) {
                     Rectangle()
-                        .fill(style.accent.opacity(0.82))
+                        .fill(style.accent.opacity(0.88))
                         .frame(width: size.width * 0.09)
                 }
+                .overlay(alignment: .trailing) {
+                    VStack(spacing: 2) {
+                        ForEach(0..<4, id: \.self) { _ in
+                            Rectangle()
+                                .fill(style.ink.opacity(0.18))
+                                .frame(width: size.width * 0.08, height: 1)
+                        }
+                    }
+                    .padding(.trailing, size.width * 0.05)
+                }
                 .overlay {
-                    VStack(spacing: 4) {
+                    VStack(spacing: 2) {
                         Text(style.label)
-                            .font(.system(size: size.width * 0.07, weight: .bold, design: .monospaced))
+                            .font(.system(size: size.width * 0.068, weight: .black, design: .monospaced))
+                            .tracking(0.2)
                             .foregroundStyle(style.ink.opacity(0.78))
                             .lineLimit(1)
+                            .minimumScaleFactor(0.65)
                         Text("B&W \(film.iso)")
-                            .font(.system(size: size.width * 0.065, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(style.ink.opacity(0.62))
+                            .font(.system(size: size.width * 0.060, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(style.ink.opacity(0.56))
                     }
                     .padding(.leading, size.width * 0.08)
                 }
+
+            VStack(spacing: size.height * 0.14) {
+                canisterRidges
+                canisterRidges
+            }
+            .opacity(0.7)
         }
-        .overlay(packageStroke)
+        .rotationEffect(.degrees(-5))
     }
 
     private var instantPack: some View {
-        ZStack {
+        ZStack(alignment: .top) {
+            ForEach(0..<3, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(style.paper.opacity(0.42 - Double(index) * 0.09))
+                    .frame(width: size.width * (0.82 + CGFloat(index) * 0.04), height: size.height * 0.82)
+                    .offset(y: size.height * (0.10 + CGFloat(index) * 0.035))
+            }
+
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(style.paper.opacity(0.96))
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(style.wash[1].opacity(0.42))
-                .padding(.top, size.height * 0.14)
-                .padding(.horizontal, size.width * 0.14)
-                .padding(.bottom, size.height * 0.28)
-            Rectangle()
-                .fill(style.accent.opacity(0.76))
-                .frame(height: size.height * 0.08)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-                .padding(.horizontal, size.width * 0.16)
-                .padding(.bottom, size.height * 0.12)
-            Text(style.label)
-                .font(.system(size: size.width * 0.085, weight: .bold, design: .monospaced))
-                .tracking(0.6)
-                .foregroundStyle(style.ink.opacity(0.72))
-                .frame(maxHeight: .infinity, alignment: .top)
-                .padding(.top, size.height * 0.08)
+                .fill(style.paper.opacity(0.98))
+                .overlay(alignment: .top) {
+                    Capsule()
+                        .fill(style.ink.opacity(0.80))
+                        .frame(width: size.width * 0.42, height: size.height * 0.032)
+                        .padding(.top, size.height * 0.075)
+                }
+
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [style.wash[0].opacity(0.36), style.wash[1].opacity(0.42)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: size.width * 0.56, height: size.width * 0.56)
+                .padding(.top, size.height * 0.19)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .stroke(style.ink.opacity(0.13), lineWidth: 1)
+                        .frame(width: size.width * 0.56, height: size.width * 0.56)
+                        .padding(.top, size.height * 0.19)
+                }
+
+            VStack(spacing: size.height * 0.018) {
+                Spacer()
+                Text(style.label)
+                    .font(.system(size: size.width * 0.077, weight: .black, design: .monospaced))
+                    .tracking(0.5)
+                    .foregroundStyle(style.ink.opacity(0.72))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.62)
+                Rectangle()
+                    .fill(style.accent.opacity(0.80))
+                    .frame(width: size.width * 0.48, height: 4)
+                Text("\(film.defaultShotCount) INSTANT")
+                    .font(.system(size: size.width * 0.052, weight: .bold, design: .monospaced))
+                    .foregroundStyle(style.ink.opacity(0.42))
+            }
+            .padding(.bottom, size.height * 0.09)
+
+            paperTexture.opacity(0.36)
         }
         .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-        .overlay(packageStroke)
+        .overlay(packageStroke(cornerRadius: 9))
     }
 
     private var cameraBody: some View {
-        CameraModelPlate(film: film)
-            .frame(width: size.width, height: size.height * 0.72)
-            .overlay(alignment: .bottomLeading) {
-                Text(style.label)
-                    .font(.system(size: size.width * 0.07, weight: .bold, design: .monospaced))
-                    .foregroundStyle(style.paper.opacity(0.82))
-                    .padding(.leading, size.width * 0.12)
-                    .padding(.bottom, size.height * 0.09)
-            }
+        VStack(spacing: size.height * 0.045) {
+            CameraModelPlate(film: film)
+                .frame(width: size.width, height: size.height * 0.72)
+
+            Text(style.label)
+                .font(.system(size: size.width * 0.066, weight: .bold, design: .monospaced))
+                .tracking(0.4)
+                .foregroundStyle(style.ink.opacity(0.72))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.horizontal, size.width * 0.10)
+                .padding(.vertical, size.height * 0.035)
+                .background(style.paper.opacity(0.86))
+                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+        }
     }
 
     private var paperSleeve: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(style.paper.opacity(0.72))
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .stroke(style.ink.opacity(0.2), lineWidth: 1)
-                .padding(8)
+            negativeStrip
+                .rotationEffect(.degrees(-7))
+                .offset(y: size.height * 0.02)
+
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(style.paper.opacity(0.66))
+                .background(.ultraThinMaterial.opacity(0.42))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .stroke(style.ink.opacity(0.17), lineWidth: 1)
+                }
+
             Rectangle()
-                .fill(style.accent.opacity(0.74))
-                .frame(height: size.height * 0.13)
-                .rotationEffect(.degrees(-12))
-            Text(style.label)
-                .font(.system(size: size.width * 0.085, weight: .bold, design: .monospaced))
-                .foregroundStyle(style.ink.opacity(0.74))
-                .rotationEffect(.degrees(-6))
+                .fill(style.accent.opacity(0.72))
+                .frame(width: size.width * 1.18, height: size.height * 0.12)
+                .rotationEffect(.degrees(-15))
+                .offset(y: -size.height * 0.15)
+
+            VStack(spacing: size.height * 0.035) {
+                Text(style.label)
+                    .font(.system(size: size.width * 0.083, weight: .black, design: .monospaced))
+                    .tracking(0.2)
+                    .foregroundStyle(style.ink.opacity(0.78))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.62)
+                Text("120 / \(film.iso)")
+                    .font(.system(size: size.width * 0.058, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(style.ink.opacity(0.50))
+            }
+            .padding(.top, size.height * 0.24)
+
+            paperTexture.opacity(0.28)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-        .overlay(packageStroke)
+        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .overlay(packageStroke(cornerRadius: 5))
     }
 
     private var disposable: some View {
-        ZStack(alignment: .topTrailing) {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(style.wash[0])
+        ZStack {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [style.wash[0], style.wash[1]],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
             Rectangle()
-                .fill(style.wash[1].opacity(0.76))
-                .frame(height: size.height * 0.34)
+                .fill(style.paper.opacity(0.80))
+                .frame(height: size.height * 0.35)
                 .frame(maxHeight: .infinity, alignment: .bottom)
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(style.paper.opacity(0.82))
-                .frame(width: size.width * 0.34, height: size.height * 0.20)
-                .padding(size.width * 0.10)
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(style.accent.opacity(0.82))
+                        .frame(height: 4)
+                }
+
+            HStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(style.paper.opacity(0.84))
+                    .frame(width: size.width * 0.28, height: size.height * 0.16)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .fill(style.ink.opacity(0.35))
+                            .padding(size.width * 0.035)
+                    }
+                Spacer()
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(style.accent.opacity(0.78))
+                    .frame(width: size.width * 0.23, height: size.height * 0.18)
+                    .overlay {
+                        VStack(spacing: 2) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                Rectangle()
+                                    .fill(style.paper.opacity(0.58))
+                                    .frame(width: size.width * 0.12, height: 1)
+                            }
+                        }
+                    }
+            }
+            .padding(size.width * 0.11)
+
             Circle()
-                .fill(style.ink.opacity(0.72))
-                .frame(width: size.width * 0.28)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            Text(style.label)
-                .font(.system(size: size.width * 0.075, weight: .bold, design: .monospaced))
-                .foregroundStyle(style.ink.opacity(0.72))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                .padding(size.width * 0.12)
+                .fill(style.ink.opacity(0.86))
+                .frame(width: size.width * 0.36)
+                .overlay {
+                    Circle()
+                        .stroke(style.paper.opacity(0.82), lineWidth: isHeroScale ? 5 : 4)
+                        .padding(size.width * 0.035)
+                }
+                .overlay {
+                    Circle()
+                        .fill(style.swatches[2].opacity(0.82))
+                        .padding(size.width * 0.12)
+                }
+                .offset(y: -size.height * 0.02)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Spacer()
+                Text("ONE TIME")
+                    .font(.system(size: size.width * 0.050, weight: .bold, design: .monospaced))
+                    .tracking(0.6)
+                    .foregroundStyle(style.ink.opacity(0.48))
+                Text(style.label)
+                    .font(.system(size: size.width * 0.080, weight: .black, design: .monospaced))
+                    .foregroundStyle(style.ink.opacity(0.76))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.64)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(size.width * 0.11)
+
+            paperTexture.opacity(0.26)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(packageStroke)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(packageStroke(cornerRadius: 10))
     }
 
     private var halfFrameTicket: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .fill(style.paper)
-            HStack(spacing: size.width * 0.07) {
+
+            HStack(spacing: size.width * 0.052) {
                 ForEach(0..<2, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(style.swatches[index].opacity(0.74))
+                        .fill(
+                            LinearGradient(
+                                colors: [style.swatches[index].opacity(0.80), style.swatches[index + 1].opacity(0.62)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay(alignment: .topLeading) {
+                            Circle()
+                                .fill(style.paper.opacity(0.36))
+                                .frame(width: size.width * 0.10)
+                                .blur(radius: 4)
+                                .offset(x: size.width * 0.10, y: size.height * 0.05)
+                        }
                         .overlay {
                             RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .stroke(style.ink.opacity(0.16), lineWidth: 1)
+                                .stroke(style.ink.opacity(0.18), lineWidth: 1)
                         }
                 }
             }
-            .padding(size.width * 0.13)
-            Text(style.label)
-                .font(.system(size: size.width * 0.067, weight: .bold, design: .monospaced))
-                .foregroundStyle(style.ink.opacity(0.72))
-                .frame(maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, size.height * 0.08)
+            .padding(.horizontal, size.width * 0.13)
+            .padding(.top, size.height * 0.16)
+            .padding(.bottom, size.height * 0.30)
+
+            Rectangle()
+                .fill(style.ink.opacity(0.13))
+                .frame(width: 1)
+                .padding(.vertical, size.height * 0.11)
+
+            VStack(spacing: size.height * 0.025) {
+                HStack(spacing: size.width * 0.07) {
+                    ForEach(0..<6, id: \.self) { _ in
+                        Circle()
+                            .fill(style.ink.opacity(0.25))
+                            .frame(width: size.width * 0.035)
+                    }
+                }
+                Spacer()
+                Text(style.label)
+                    .font(.system(size: size.width * 0.066, weight: .black, design: .monospaced))
+                    .tracking(0.3)
+                    .foregroundStyle(style.ink.opacity(0.72))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.62)
+                Text("18 x 24")
+                    .font(.system(size: size.width * 0.050, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(style.ink.opacity(0.44))
+            }
+            .padding(size.width * 0.10)
+
+            paperTexture.opacity(0.30)
         }
         .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-        .overlay(packageStroke)
+        .overlay(packageStroke(cornerRadius: 5))
+    }
+
+    @ViewBuilder
+    private var packageMotif: some View {
+        switch style.kind {
+        case .filmStrip:
+            HStack(spacing: size.width * 0.025) {
+                perforationRail
+                VStack(spacing: size.height * 0.018) {
+                    ForEach(0..<3, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .fill(style.swatches[index].opacity(0.80))
+                    }
+                }
+                .padding(size.width * 0.045)
+                .background(style.ink.opacity(0.72))
+                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                perforationRail
+            }
+            .rotationEffect(.degrees(style.tilt))
+
+        case .contactSheet:
+            VStack(spacing: size.height * 0.025) {
+                ForEach(0..<2, id: \.self) { row in
+                    HStack(spacing: size.width * 0.025) {
+                        ForEach(0..<2, id: \.self) { column in
+                            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                .fill(style.paper.opacity(0.76))
+                                .overlay {
+                                    Rectangle()
+                                        .fill(style.swatches[(row + column) % style.swatches.count].opacity(0.55))
+                                        .padding(size.width * 0.025)
+                                }
+                        }
+                    }
+                }
+            }
+
+        case .darkroomCard:
+            ZStack {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(style.ink.opacity(0.70))
+                RadialGradient(
+                    colors: [style.accent.opacity(0.48), .clear],
+                    center: style.glowCenter,
+                    startRadius: 2,
+                    endRadius: size.width * 0.32
+                )
+                Circle()
+                    .stroke(style.paper.opacity(0.20), lineWidth: 1)
+                    .frame(width: size.width * 0.28)
+            }
+
+        case .colorRecipe:
+            HStack(alignment: .bottom, spacing: size.width * 0.035) {
+                ForEach(0..<3, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(style.swatches[index].opacity(0.78))
+                        .frame(height: size.height * CGFloat(0.16 + Double(index) * 0.07))
+                }
+            }
+            .padding(.horizontal, size.width * 0.03)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(style.ink.opacity(0.30))
+                    .frame(height: 1)
+            }
+
+        case .instantFrame:
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(style.paper.opacity(0.90))
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(style.swatches[0].opacity(0.48))
+                        .padding(size.width * 0.05)
+                        .padding(.bottom, size.height * 0.12)
+                }
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(style.ink.opacity(0.10))
+                        .frame(height: size.height * 0.10)
+                }
+
+        case .halfFrame:
+            HStack(spacing: size.width * 0.03) {
+                ForEach(0..<2, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(style.swatches[index].opacity(0.74))
+                }
+            }
+
+        case .negativeSleeve:
+            negativeStrip
+        }
+    }
+
+    private var perforationRail: some View {
+        VStack(spacing: 3) {
+            ForEach(0..<5, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(style.paper.opacity(0.55))
+                    .frame(width: size.width * 0.045, height: size.height * 0.024)
+            }
+        }
+        .padding(.vertical, 3)
+        .background(style.ink.opacity(0.70))
+        .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
+    }
+
+    private var canisterCap: some View {
+        Capsule()
+            .fill(
+                LinearGradient(
+                    colors: [style.paper.opacity(0.86), style.paper.opacity(0.42), style.ink.opacity(0.48)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(width: size.width * 0.22, height: size.height * 0.50)
+            .overlay {
+                Capsule()
+                    .stroke(style.ink.opacity(0.18), lineWidth: 1)
+                    .padding(2)
+            }
+    }
+
+    private var canisterRidges: some View {
+        HStack(spacing: 2) {
+            ForEach(0..<9, id: \.self) { _ in
+                Capsule()
+                    .fill(style.paper.opacity(0.10))
+                    .frame(width: 1.2, height: size.height * 0.11)
+            }
+        }
+    }
+
+    private var negativeStrip: some View {
+        HStack(spacing: size.width * 0.035) {
+            ForEach(0..<3, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(style.swatches[index % style.swatches.count].opacity(0.58))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 1, style: .continuous)
+                            .stroke(style.paper.opacity(0.16), lineWidth: 1)
+                    }
+            }
+        }
+        .padding(.horizontal, size.width * 0.08)
+        .padding(.vertical, size.height * 0.11)
+        .background(style.ink.opacity(0.84))
+        .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+        .overlay(alignment: .top) {
+            sprocketRow
+                .padding(.top, size.height * 0.025)
+        }
+        .overlay(alignment: .bottom) {
+            sprocketRow
+                .padding(.bottom, size.height * 0.025)
+        }
+    }
+
+    private var sprocketRow: some View {
+        HStack(spacing: size.width * 0.036) {
+            ForEach(0..<8, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(style.paper.opacity(0.50))
+                    .frame(width: size.width * 0.035, height: size.height * 0.018)
+            }
+        }
+    }
+
+    private var boxFoldLines: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(style.ink.opacity(0.10))
+                .frame(height: 1)
+                .padding(.horizontal, size.width * 0.12)
+                .padding(.top, size.height * 0.18)
+            Spacer()
+            Rectangle()
+                .fill(style.paper.opacity(0.20))
+                .frame(height: 1)
+                .padding(.horizontal, size.width * 0.08)
+                .padding(.bottom, size.height * 0.14)
+        }
     }
 
     private var paperTexture: some View {
         ZStack {
-            ForEach(0..<12, id: \.self) { index in
+            ForEach(0..<16, id: \.self) { index in
                 Rectangle()
-                    .fill(style.ink.opacity(index.isMultiple(of: 3) ? 0.08 : 0.045))
+                    .fill(style.ink.opacity(index.isMultiple(of: 4) ? 0.075 : 0.038))
                     .frame(width: CGFloat(9 + (index % 4) * 7), height: 1)
                     .rotationEffect(.degrees(index.isMultiple(of: 2) ? -7 : 9))
                     .offset(
@@ -792,12 +1215,38 @@ private struct FilmPhysicalPackageView: View {
                     )
             }
         }
-        .opacity(0.55)
+        .opacity(0.50)
     }
 
-    private var packageStroke: some View {
-        RoundedRectangle(cornerRadius: 7, style: .continuous)
+    private func packageStroke(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .stroke(style.ink.opacity(0.16), lineWidth: 1)
+    }
+}
+
+private enum CameraPlateKind {
+    case rangefinder
+    case medium
+    case compact
+    case ccd
+    case instant
+    case toy
+
+    static func kind(for film: FilmPreset) -> CameraPlateKind {
+        switch film.id {
+        case "medium-500c", "hncs-natural":
+            return .medium
+        case "ccd-2003", "cyber-ccd-blue":
+            return .ccd
+        case "instant-square", "instant-wide", "sx-fade":
+            return .instant
+        case "pocket-flash", "holga-120-dream", "lca-vivid":
+            return .toy
+        case "t-compact-gold", "gr-street-snap", "classic-chrome-x", "half-frame-diary":
+            return .compact
+        default:
+            return .rangefinder
+        }
     }
 }
 
@@ -808,42 +1257,310 @@ private struct CameraModelPlate: View {
         FilmCoverStyle.style(for: film)
     }
 
+    private var kind: CameraPlateKind {
+        CameraPlateKind.kind(for: film)
+    }
+
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
             let height = proxy.size.height
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(LinearGradient(colors: [style.ink.opacity(0.90), style.ink.opacity(0.58)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(style.paper.opacity(0.18))
-                    .frame(height: height * 0.34)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(style.paper.opacity(0.78))
-                    .frame(width: width * 0.20, height: height * 0.16)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .padding(width * 0.10)
-                Circle()
-                    .fill(style.paper.opacity(0.20))
-                    .frame(width: min(width, height) * 0.48)
-                    .overlay {
-                        Circle()
-                            .stroke(style.paper.opacity(0.70), lineWidth: 3)
-                            .padding(5)
-                    }
-                    .overlay {
-                        Circle()
-                            .fill(style.ink.opacity(0.74))
-                            .padding(14)
-                    }
-                Capsule()
-                    .fill(style.accent.opacity(0.72))
-                    .frame(width: width * 0.26, height: 4)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .padding(width * 0.12)
+                switch kind {
+                case .rangefinder:
+                    rangefinder(width: width, height: height)
+                case .medium:
+                    mediumCamera(width: width, height: height)
+                case .compact:
+                    compactCamera(width: width, height: height)
+                case .ccd:
+                    ccdCamera(width: width, height: height)
+                case .instant:
+                    instantCamera(width: width, height: height)
+                case .toy:
+                    toyCamera(width: width, height: height)
+                }
             }
             .shadow(color: .black.opacity(0.28), radius: 18, x: 0, y: 10)
+        }
+    }
+
+    private func cameraShell(width: CGFloat, height: CGFloat, radius: CGFloat = 12) -> some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        style.ink.opacity(0.92),
+                        style.ink.opacity(0.72),
+                        style.ink.opacity(0.54)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(style.paper.opacity(0.13))
+                    .frame(height: height * 0.22)
+            }
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(style.paper.opacity(0.17))
+                    .frame(height: height * 0.36)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(style.paper.opacity(0.15), lineWidth: 1)
+            }
+    }
+
+    private func lens(width: CGFloat, height: CGFloat, diameter: CGFloat) -> some View {
+        Circle()
+            .fill(style.ink.opacity(0.96))
+            .frame(width: diameter, height: diameter)
+            .overlay {
+                Circle()
+                    .stroke(style.paper.opacity(0.70), lineWidth: Swift.max(2, diameter * 0.08))
+                    .padding(diameter * 0.08)
+            }
+            .overlay {
+                Circle()
+                    .stroke(style.accent.opacity(0.46), lineWidth: Swift.max(1, diameter * 0.025))
+                    .padding(diameter * 0.22)
+            }
+            .overlay(alignment: .topLeading) {
+                Circle()
+                    .fill(style.paper.opacity(0.50))
+                    .frame(width: diameter * 0.16, height: diameter * 0.16)
+                    .blur(radius: 1.2)
+                    .offset(x: diameter * 0.27, y: diameter * 0.25)
+            }
+    }
+
+    private func viewfinder(width: CGFloat, height: CGFloat, isRound: Bool = false) -> some View {
+        Group {
+            if isRound {
+                Circle()
+                    .fill(style.paper.opacity(0.68))
+                    .overlay {
+                        Circle()
+                            .fill(style.ink.opacity(0.36))
+                            .padding(width * 0.015)
+                    }
+            } else {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(style.paper.opacity(0.70))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .fill(style.ink.opacity(0.34))
+                            .padding(width * 0.012)
+                    }
+            }
+        }
+        .frame(width: width * 0.17, height: height * 0.16)
+    }
+
+    private func rangefinder(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            cameraShell(width: width, height: height)
+
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(style.paper.opacity(0.20))
+                .frame(height: height * 0.30)
+                .padding(.horizontal, width * 0.08)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+
+            HStack {
+                viewfinder(width: width, height: height)
+                Spacer()
+                Capsule()
+                    .fill(style.accent.opacity(0.72))
+                    .frame(width: width * 0.20, height: 4)
+            }
+            .padding(.horizontal, width * 0.10)
+            .padding(.top, height * 0.14)
+            .frame(maxHeight: .infinity, alignment: .top)
+
+            lens(width: width, height: height, diameter: min(width, height) * 0.48)
+                .offset(x: width * 0.06, y: height * 0.06)
+
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(style.paper.opacity(0.28))
+                .frame(width: width * 0.18, height: height * 0.05)
+                .offset(x: -width * 0.27, y: -height * 0.28)
+        }
+    }
+
+    private func mediumCamera(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(style.ink.opacity(0.88))
+                .frame(width: width * 0.86, height: height * 0.82)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(style.paper.opacity(0.20), lineWidth: 1)
+                }
+
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(style.paper.opacity(0.20))
+                .frame(width: width * 0.34, height: height * 0.27)
+                .offset(y: -height * 0.23)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .stroke(style.paper.opacity(0.28), lineWidth: 1)
+                        .padding(4)
+                        .offset(y: -height * 0.23)
+                }
+
+            lens(width: width, height: height, diameter: min(width, height) * 0.54)
+                .offset(y: height * 0.08)
+
+            HStack {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(style.paper.opacity(0.42))
+                    .frame(width: width * 0.16, height: height * 0.10)
+                Spacer()
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(style.accent.opacity(0.40))
+                    .frame(width: width * 0.12, height: height * 0.10)
+            }
+            .padding(.horizontal, width * 0.16)
+            .offset(y: -height * 0.12)
+        }
+    }
+
+    private func compactCamera(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            cameraShell(width: width, height: height, radius: 14)
+
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(style.paper.opacity(0.16))
+                .frame(width: width * 0.46, height: height * 0.48)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, width * 0.08)
+
+            lens(width: width, height: height, diameter: min(width, height) * 0.42)
+                .offset(x: width * 0.12, y: height * 0.06)
+
+            HStack {
+                viewfinder(width: width, height: height)
+                    .frame(width: width * 0.18, height: height * 0.13)
+                Spacer()
+                Circle()
+                    .fill(style.accent.opacity(0.72))
+                    .frame(width: height * 0.08, height: height * 0.08)
+            }
+            .padding(.horizontal, width * 0.11)
+            .padding(.top, height * 0.14)
+            .frame(maxHeight: .infinity, alignment: .top)
+        }
+    }
+
+    private func ccdCamera(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [style.paper.opacity(0.94), style.swatches[1].opacity(0.76), style.ink.opacity(0.80)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .stroke(style.paper.opacity(0.25), lineWidth: 1)
+                }
+
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(style.ink.opacity(0.78))
+                .frame(width: width * 0.30, height: height * 0.34)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, width * 0.12)
+                .overlay {
+                    Rectangle()
+                        .fill(style.accent.opacity(0.40))
+                        .frame(width: width * 0.18, height: height * 0.18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, width * 0.18)
+                }
+
+            lens(width: width, height: height, diameter: min(width, height) * 0.36)
+                .offset(x: width * 0.18)
+
+            Capsule()
+                .fill(style.ink.opacity(0.44))
+                .frame(width: width * 0.22, height: 4)
+                .offset(y: -height * 0.30)
+        }
+    }
+
+    private func instantCamera(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(style.paper.opacity(0.94))
+                .overlay(alignment: .bottom) {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(style.ink.opacity(0.62))
+                        .frame(height: height * 0.26)
+                        .padding(.horizontal, width * 0.12)
+                        .padding(.bottom, height * 0.09)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(style.ink.opacity(0.13), lineWidth: 1)
+                }
+
+            lens(width: width, height: height, diameter: min(width, height) * 0.35)
+                .offset(x: width * 0.12, y: -height * 0.06)
+
+            HStack {
+                viewfinder(width: width, height: height, isRound: true)
+                    .frame(width: height * 0.18, height: height * 0.18)
+                Spacer()
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(style.accent.opacity(0.62))
+                    .frame(width: width * 0.20, height: height * 0.16)
+            }
+            .padding(.horizontal, width * 0.14)
+            .offset(y: -height * 0.22)
+        }
+    }
+
+    private func toyCamera(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [style.wash[0].opacity(0.92), style.wash[1].opacity(0.86), style.ink.opacity(0.72)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(style.paper.opacity(0.22))
+                .frame(height: height * 0.32)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+
+            lens(width: width, height: height, diameter: min(width, height) * 0.43)
+                .offset(y: height * 0.05)
+
+            HStack {
+                viewfinder(width: width, height: height)
+                    .frame(width: width * 0.18, height: height * 0.14)
+                Spacer()
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(style.accent.opacity(0.64))
+                    .frame(width: width * 0.22, height: height * 0.16)
+            }
+            .padding(.horizontal, width * 0.12)
+            .padding(.top, height * 0.15)
+            .frame(maxHeight: .infinity, alignment: .top)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(style.paper.opacity(0.16), lineWidth: 1)
         }
     }
 }

@@ -207,11 +207,13 @@ final class CameraViewModel: ObservableObject {
 
         let saveFailedPrefix = appState.t(.videoSaveFailed)
         let successMessage = appState.t(.videoSaved)
+        let film = appState.selectedFilm
 
         cameraService.startVideoRecording { [weak self] recordingResult in
             Task { @MainActor in
                 await self?.processVideoRecording(
                     recordingResult,
+                    film: film,
                     successMessage: successMessage,
                     saveFailedPrefix: saveFailedPrefix
                 )
@@ -221,6 +223,7 @@ final class CameraViewModel: ObservableObject {
 
     private func processVideoRecording(
         _ recordingResult: Result<URL, Error>,
+        film: FilmPreset,
         successMessage: String,
         saveFailedPrefix: String
     ) async {
@@ -232,6 +235,7 @@ final class CameraViewModel: ObservableObject {
             isProcessing = true
             let exportResult = try await VideoExporter.export(
                 temporaryURL: temporaryURL,
+                film: film,
                 photosSaveFailedPrefix: saveFailedPrefix
             )
             if let warningMessage = exportResult.warningMessage {

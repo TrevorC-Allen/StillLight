@@ -1,3 +1,5 @@
+import AVFoundation
+import CoreImage
 import Photos
 import UIKit
 
@@ -9,6 +11,7 @@ struct VideoExportResult {
 enum VideoExporter {
     static func export(
         temporaryURL: URL,
+        film: FilmPreset,
         photosSaveFailedPrefix: String = "Video saved locally. Photos save failed:"
     ) async throws -> VideoExportResult {
         let id = UUID()
@@ -18,7 +21,8 @@ enum VideoExporter {
         if FileManager.default.fileExists(atPath: localURL.path) {
             try FileManager.default.removeItem(at: localURL)
         }
-        try FileManager.default.moveItem(at: temporaryURL, to: localURL)
+        try await renderStyledVideo(from: temporaryURL, to: localURL, film: film)
+        try? FileManager.default.removeItem(at: temporaryURL)
 
         let warningMessage: String?
         do {
@@ -29,6 +33,47 @@ enum VideoExporter {
         }
 
         return VideoExportResult(localURL: localURL, warningMessage: warningMessage)
+    }
+
+    private static func renderStyledVideo(
+        from sourceURL: URL,
+        to destinationURL: URL,
+        film: FilmPreset
+    ) async throws {
+        let asset = AVAsset(url: sourceURL)
+        let videoComposition = AVVideoComposition(asset: asset) { request in
+            let source = request.sourceImage.clampedToExtent()
+            let styled = FilmImagePipeline.processVideoFrame(source, film: film)
+                .cropped(to: request.sourceImage.extent)
+            request.finish(with: styled, context: nil)
+        }
+
+        guard let exportSession = AVAssetExportSession(
+            asset: asset,
+            presetName: AVAssetExportPresetHighestQuality
+        ) else {
+            throw ExportError.cannotCreateVideoExporter
+        }
+
+        exportSession.outputURL = destinationURL
+        exportSession.outputFileType = .mov
+        exportSession.videoComposition = videoComposition
+        exportSession.shouldOptimizeForNetworkUse = true
+
+        let exportBox = ExportSessionBox(exportSession)
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            exportSession.exportAsynchronously {
+                let session = exportBox.session
+                switch session.status {
+                case .completed:
+                    continuation.resume()
+                case .failed, .cancelled:
+                    continuation.resume(throwing: session.error ?? ExportError.videoExportFailed)
+                default:
+                    continuation.resume(throwing: ExportError.videoExportFailed)
+                }
+            }
+        }
     }
 
     private static func videoDirectory() throws -> URL {
@@ -76,5 +121,13 @@ enum VideoExporter {
                 continuation.resume(returning: status == .authorized || status == .limited)
             }
         }
+    }
+}
+
+private final class ExportSessionBox: @unchecked Sendable {
+    let session: AVAssetExportSession
+
+    init(_ session: AVAssetExportSession) {
+        self.session = session
     }
 }

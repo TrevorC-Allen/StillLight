@@ -149,17 +149,23 @@ enum PhotoExporter {
 
 enum ExportError: LocalizedError {
     case cannotEncodeImage
+    case cannotCreateVideoExporter
     case photoLibraryDenied
     case photoLibrarySaveFailed
+    case videoExportFailed
 
     var errorDescription: String? {
         switch self {
         case .cannotEncodeImage:
             return "Could not encode the processed photo."
+        case .cannotCreateVideoExporter:
+            return "Could not create the film video exporter."
         case .photoLibraryDenied:
             return "Photo library permission is required to save the processed image."
         case .photoLibrarySaveFailed:
             return "Could not save the processed image to Photos."
+        case .videoExportFailed:
+            return "Could not render the film video."
         }
     }
 }

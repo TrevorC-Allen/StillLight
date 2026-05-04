@@ -133,6 +133,27 @@ enum FilmImagePipeline {
 
     private static let processingMaxPixelSize: CGFloat = 3200
 
+    static func processVideoFrame(
+        _ image: CIImage,
+        film: FilmPreset,
+        intensity: Double = 0.88
+    ) -> CIImage {
+        let extent = image.extent
+        let original = image.cropped(to: extent)
+        var styledImage = applyExposure(original, ev: film.exposureBias)
+        styledImage = applyTemperature(styledImage, film: film)
+        styledImage = applyColorControls(styledImage, film: film)
+        styledImage = applyToneCurve(styledImage, curve: film.toneCurve)
+        styledImage = applyHighlightShadow(styledImage, film: film)
+        styledImage = applyLocalRendering(styledImage, film: film)
+        styledImage = applyFilmColorResponse(styledImage, film: film)
+        styledImage = applyHalation(styledImage, amount: film.halationAmount * 0.62)
+        styledImage = applyVignette(styledImage, film: film)
+        styledImage = applyLightLeak(styledImage, film: film)
+        return blend(original: original, styled: styledImage, intensity: intensity)
+            .cropped(to: extent)
+    }
+
     private static func processWithTiming(
         baseImage: UIImage,
         film: FilmPreset,

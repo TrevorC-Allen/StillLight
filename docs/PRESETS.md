@@ -4,9 +4,9 @@ StillLight currently ships 27 original film/camera presets. They are inspired by
 
 | Preset | Intent | Technical Bias |
 | --- | --- | --- |
-| Human Warm 400 | Pleasing humanistic scenes, cafes and interiors | warm creamy highlights, clean greens, medium vignette |
-| Shadow Walk 800 | Moodier street, museum and architecture scenes | stronger edge falloff, deeper blacks, subdued color |
-| Soft Muse 400 | Soft portrait look | warm skin, low contrast, lifted shadows, protected highlights |
+| Human Warm 400 | Pleasing humanistic scenes, cafes and interiors | creamy warm whites, protected highlight shoulder, light grain, medium vignette |
+| Shadow Walk 800 | Moodier street, museum and architecture scenes | stronger edge falloff, deeper blacks, subdued color, restrained leak |
+| Soft Muse 400 | Soft portrait look | warm skin, low contrast, very light grain, lifted shadows, protected highlights |
 | Sunlit Gold 200 | Warm daylight and travel | warm temperature, soft S curve, low grain |
 | Soft Portrait 400 | Skin-friendly portraits | lifted shadows, low contrast, gentle saturation |
 | Silver HP5 | Monochrome documentary | zero saturation, stronger contrast, larger grain |
@@ -43,46 +43,50 @@ StillLight currently ships 27 original film/camera presets. They are inspired by
 - Digital: CCD / early compact-camera looks
 - Experimental: stronger stylization such as tungsten bloom and toy-camera leak
 
-## Cover Art
+## Physical Film Objects
+
+The picker is a Dazz-like object drawer instead of a plain filter list. Each preset maps to a recognizable physical object:
+
+- 135 color-negative paper boxes
+- black-and-white film canisters
+- instant film packs
+- 120 / experimental paper sleeves
+- disposable cameras
+- half-frame diary tickets
+- classic camera / CCD / medium-format camera bodies
 
 Each preset has a separate `FilmCoverStyle` in the roll picker. The cover style controls:
 
 - palette
 - center glow color and position
-- vignette strength
-- light leak accent
-- paper/instant edge
-- icon mark
+- paper, canister, pack, sleeve or camera-body material
+- deterministic paper texture and worn edges
+- contact shadows and drawer depth
+- layered lens reflections
 - short cover code
 
-This keeps the film picker visually scannable without shipping heavy sample-image assets.
+This keeps the film library visually scannable and object-like without shipping heavy generated sample-image assets.
+
+## Current Pipeline Focus
+
+The current output is not a single LUT. Each preset drives a modular image pipeline:
+
+- 3200px high-quality processing path
+- exposure, white balance, tint, contrast and saturation
+- tone curve
+- highlight / shadow adjustment
+- film-specific color response matrix
+- highlight-masked warm halation
+- soft radial lens falloff
+- stable seeded light leak
+- skin-protected finishing texture and luminance-aware grain
+- textured paper borders, imperfect timestamp, camera/model labels
 
 ## Frame Output
 
 `BorderStyle.whiteFrame`, `paper` and `instant` all render a bottom frame area with:
 
-- selected camera/model name
+- selected camera / model name
 - StillLight roll short name
 - ISO mark
 - optional timestamp
-
-## Current Pipeline Parameters
-
-Each preset controls:
-
-- ISO
-- exposure bias
-- temperature shift
-- tint shift
-- contrast
-- brightness
-- saturation
-- tone curve
-- grain amount and size
-- vignette
-- halation
-- light leak
-- timestamp color
-- border style
-- localized English / Chinese display text
-- camera/model frame label

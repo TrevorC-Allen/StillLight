@@ -537,6 +537,7 @@ enum FilmImagePipeline {
             let pixelBuffer = baseAddress.bindMemory(to: UInt8.self, capacity: pixelCount)
             var generator = LCG(seed: grainSeed(width: width, height: height, film: film))
             let renderingProfile = FilmRenderingProfile.profile(for: film)
+            let toneSeparation = FilmToneSeparation.profile(for: film)
             let amount = max(0.0, min(1.0, film.grainAmount))
             let isoScale = sqrt(Double(max(50, film.iso)) / 400.0).clamped(to: 0.72...1.48)
             let lumaAmplitude = amount * 17.5 * isoScale * film.grainSize.clamped(to: 0.7...1.45)
@@ -581,6 +582,27 @@ enum FilmImagePipeline {
                             r = r * (1.0 - highlightRecovery * 0.20) + recoveredLuma * (highlightRecovery * 0.20)
                             g = g * (1.0 - highlightRecovery * 0.18) + recoveredLuma * (highlightRecovery * 0.18)
                             b = b * (1.0 - highlightRecovery * 0.14) + recoveredLuma * (highlightRecovery * 0.14)
+                        }
+
+                        let shadowToneWeight = (1.0 - smoothstep(edge0: 0.16, edge1: 0.62, x: luminance)) * toneSeparation.intensity
+                        let highlightToneWeight = highlightWeight * toneSeparation.intensity * (1.0 - skinWeight * 0.38)
+                        let midtoneToneWeight = (1.0 - abs(luminance - 0.52) * 2.2).clamped(to: 0...1) * toneSeparation.intensity
+
+                        r += shadowToneWeight * toneSeparation.shadowR
+                            + highlightToneWeight * toneSeparation.highlightR
+                            + midtoneToneWeight * toneSeparation.midtoneR
+                        g += shadowToneWeight * toneSeparation.shadowG
+                            + highlightToneWeight * toneSeparation.highlightG
+                            + midtoneToneWeight * toneSeparation.midtoneG
+                        b += shadowToneWeight * toneSeparation.shadowB
+                            + highlightToneWeight * toneSeparation.highlightB
+                            + midtoneToneWeight * toneSeparation.midtoneB
+
+                        let redDominance = ((r - max(g, b)) / 96.0).clamped(to: 0...1)
+                        if redDominance > 0 {
+                            let compressedRed = r * 0.72 + g * 0.20 + b * 0.08
+                            let compression = redDominance * toneSeparation.redCompression
+                            r = r * (1.0 - compression) + compressedRed * compression
                         }
                     }
 
@@ -964,6 +986,107 @@ private struct FilmRenderingProfile {
             )
         }
     }
+}
+
+private struct FilmToneSeparation {
+    let intensity: Double
+    let shadowR: Double
+    let shadowG: Double
+    let shadowB: Double
+    let midtoneR: Double
+    let midtoneG: Double
+    let midtoneB: Double
+    let highlightR: Double
+    let highlightG: Double
+    let highlightB: Double
+    let redCompression: Double
+
+    static func profile(for film: FilmPreset) -> FilmToneSeparation {
+        guard film.category != .blackWhite else {
+            return .neutral
+        }
+
+        switch film.id {
+        case "human-warm-400":
+            return .init(
+                intensity: 0.72,
+                shadowR: 0.4, shadowG: 1.2, shadowB: -2.2,
+                midtoneR: 1.0, midtoneG: 0.5, midtoneB: -1.2,
+                highlightR: 4.0, highlightG: 1.6, highlightB: -3.2,
+                redCompression: 0.070
+            )
+        case "human-vignette-800":
+            return .init(
+                intensity: 0.78,
+                shadowR: -2.4, shadowG: 0.7, shadowB: -3.8,
+                midtoneR: 0.2, midtoneG: 0.2, midtoneB: -1.0,
+                highlightR: 2.0, highlightG: 0.8, highlightB: -1.8,
+                redCompression: 0.060
+            )
+        case "muse-portrait-400", "soft-portrait-400":
+            return .init(
+                intensity: 0.62,
+                shadowR: 0.8, shadowG: 0.4, shadowB: -1.0,
+                midtoneR: 1.2, midtoneG: 0.5, midtoneB: -1.2,
+                highlightR: 3.4, highlightG: 1.4, highlightB: -2.8,
+                redCompression: 0.090
+            )
+        case "green-street-400", "superia-green", "classic-chrome-x":
+            return .init(
+                intensity: 0.68,
+                shadowR: -2.2, shadowG: 1.8, shadowB: -0.4,
+                midtoneR: -0.4, midtoneG: 0.8, midtoneB: -0.4,
+                highlightR: 1.0, highlightG: 0.4, highlightB: -1.0,
+                redCompression: 0.050
+            )
+        case "tungsten-800":
+            return .init(
+                intensity: 0.82,
+                shadowR: -1.4, shadowG: 0.4, shadowB: 3.4,
+                midtoneR: 0.8, midtoneG: -0.2, midtoneB: 1.2,
+                highlightR: 4.8, highlightG: 1.2, highlightB: -2.2,
+                redCompression: 0.040
+            )
+        case "ccd-2003", "cyber-ccd-blue":
+            return .init(
+                intensity: 0.70,
+                shadowR: -1.8, shadowG: 0.4, shadowB: 3.2,
+                midtoneR: -0.6, midtoneG: 0.2, midtoneB: 1.4,
+                highlightR: -0.4, highlightG: 0.6, highlightB: 2.4,
+                redCompression: 0.030
+            )
+        case "instant-square", "instant-wide", "sx-fade":
+            return .init(
+                intensity: 0.50,
+                shadowR: 1.2, shadowG: 0.8, shadowB: -1.0,
+                midtoneR: 0.8, midtoneG: 0.4, midtoneB: -0.8,
+                highlightR: 3.0, highlightG: 1.6, highlightB: -1.8,
+                redCompression: 0.080
+            )
+        default:
+            return .init(
+                intensity: film.temperatureShift > 120 ? 0.50 : 0.42,
+                shadowR: film.temperatureShift > 120 ? 0.2 : -0.8,
+                shadowG: film.tintShift < 0 ? 1.0 : 0.3,
+                shadowB: film.temperatureShift > 120 ? -1.4 : 0.8,
+                midtoneR: film.temperatureShift > 120 ? 0.7 : -0.2,
+                midtoneG: 0.2,
+                midtoneB: film.temperatureShift > 120 ? -0.7 : 0.4,
+                highlightR: film.temperatureShift > 120 ? 2.2 : 0.8,
+                highlightG: film.temperatureShift > 120 ? 0.9 : 0.4,
+                highlightB: film.temperatureShift > 120 ? -1.8 : 0.0,
+                redCompression: 0.045
+            )
+        }
+    }
+
+    static let neutral = FilmToneSeparation(
+        intensity: 0,
+        shadowR: 0, shadowG: 0, shadowB: 0,
+        midtoneR: 0, midtoneG: 0, midtoneB: 0,
+        highlightR: 0, highlightG: 0, highlightB: 0,
+        redCompression: 0
+    )
 }
 
 private struct FilmColorResponse {

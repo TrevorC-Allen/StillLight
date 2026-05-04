@@ -161,9 +161,10 @@ enum FilmImagePipeline {
             styledImage = applyColorControls(styledImage, film: film)
             styledImage = applyToneCurve(styledImage, curve: film.toneCurve)
             styledImage = applyHighlightShadow(styledImage, film: film)
+            styledImage = applyLocalRendering(styledImage, film: film)
             styledImage = applyFilmColorResponse(styledImage, film: film)
             styledImage = applyHalation(styledImage, amount: film.halationAmount)
-            styledImage = applyVignette(styledImage, amount: film.vignetteAmount)
+            styledImage = applyVignette(styledImage, film: film)
             styledImage = applyLightLeak(styledImage, film: film)
             let blendedImage = blend(original: original, styled: styledImage, intensity: intensity)
 
@@ -297,13 +298,57 @@ enum FilmImagePipeline {
             return image
         }
 
-        let highlightProtection = (1.0 - film.halationAmount * 0.44 - max(0, film.brightness) * 1.8).clamped(to: 0.68...0.98)
-        let shadowLift = (0.04 + max(0, film.toneCurve.p0.y) * 1.8 + max(0, 1.0 - film.contrast) * 0.18).clamped(to: 0.02...0.28)
+        let profile = FilmRenderingProfile.profile(for: film)
+        let highlightProtection = (
+            1.0
+                - film.halationAmount * 0.36
+                - max(0, film.brightness) * 1.45
+                - profile.highlightRecovery
+        ).clamped(to: 0.58...0.98)
+        let shadowLift = (
+            0.035
+                + max(0, film.toneCurve.p0.y) * 1.55
+                + max(0, 1.0 - film.contrast) * 0.16
+                + profile.shadowCushion
+        ).clamped(to: 0.02...0.32)
 
         filter.setValue(image, forKey: kCIInputImageKey)
         filter.setValue(highlightProtection, forKey: "inputHighlightAmount")
         filter.setValue(shadowLift, forKey: "inputShadowAmount")
         return filter.outputImage?.cropped(to: image.extent) ?? image
+    }
+
+    private static func applyLocalRendering(_ image: CIImage, film: FilmPreset) -> CIImage {
+        let profile = FilmRenderingProfile.profile(for: film)
+        let extent = image.extent
+        let maxDimension = max(extent.width, extent.height)
+        var rendered = image
+
+        if profile.microContrast > 0.001 {
+            let unsharp = CIFilter.unsharpMask()
+            unsharp.inputImage = rendered
+            unsharp.radius = Float(max(0.85, maxDimension * profile.microContrastRadius))
+            unsharp.intensity = Float(profile.microContrast)
+            rendered = unsharp.outputImage?.cropped(to: extent) ?? rendered
+        }
+
+        if profile.midtoneSoftness > 0.001 {
+            let blur = CIFilter.gaussianBlur()
+            blur.inputImage = rendered.clampedToExtent()
+            blur.radius = Float(max(1.0, maxDimension * profile.softnessRadius))
+
+            let softLayer = CIFilter.colorControls()
+            softLayer.inputImage = blur.outputImage?.cropped(to: extent)
+            softLayer.saturation = Float(1.0 - profile.midtoneSoftness * 0.08)
+            softLayer.contrast = Float(1.0 - profile.midtoneSoftness * 0.16)
+            softLayer.brightness = Float(profile.midtoneSoftness * 0.012)
+
+            if let softened = softLayer.outputImage?.cropped(to: extent) {
+                rendered = blend(original: rendered, styled: softened, intensity: profile.midtoneSoftness)
+            }
+        }
+
+        return rendered.cropped(to: extent)
     }
 
     private static func applyFilmColorResponse(_ image: CIImage, film: FilmPreset) -> CIImage {
@@ -320,33 +365,54 @@ enum FilmImagePipeline {
         return filter.outputImage?.cropped(to: image.extent) ?? image
     }
 
-    private static func applyVignette(_ image: CIImage, amount: Double) -> CIImage {
-        guard amount > 0 else { return image }
+    private static func applyVignette(_ image: CIImage, film: FilmPreset) -> CIImage {
+        guard film.vignetteAmount > 0 else { return image }
 
         let extent = image.extent
         let maxDimension = max(extent.width, extent.height)
-        let softenedAmount = amount.clamped(to: 0...0.62)
+        let profile = FilmRenderingProfile.profile(for: film)
+        let softenedAmount = film.vignetteAmount.clamped(to: 0...0.68)
+        let edgeAlpha = (softenedAmount * profile.vignetteDensity).clamped(to: 0...0.34)
 
-        let gradient = CIFilter.radialGradient()
-        gradient.center = CGPoint(x: extent.midX, y: extent.midY)
-        gradient.radius0 = Float(maxDimension * (0.50 + CGFloat(softenedAmount) * 0.08))
-        gradient.radius1 = Float(maxDimension * (0.92 + CGFloat(softenedAmount) * 0.08))
-        gradient.color0 = CIColor(red: 0.08, green: 0.065, blue: 0.048, alpha: 0.0)
-        gradient.color1 = CIColor(
-            red: 0.08,
-            green: 0.062,
-            blue: 0.045,
-            alpha: (softenedAmount * 0.46).clamped(to: 0...0.30)
+        let edgeGradient = CIFilter.radialGradient()
+        edgeGradient.center = CGPoint(x: extent.midX, y: extent.midY)
+        edgeGradient.radius0 = Float(maxDimension * (0.48 + CGFloat(softenedAmount) * 0.10))
+        edgeGradient.radius1 = Float(maxDimension * (0.94 + CGFloat(softenedAmount) * 0.06))
+        edgeGradient.color0 = CIColor(red: 0.18, green: 0.145, blue: 0.105, alpha: 0.0)
+        edgeGradient.color1 = CIColor(
+            red: 0.15,
+            green: 0.118,
+            blue: 0.085,
+            alpha: edgeAlpha
         )
 
-        guard let edgeFalloff = gradient.outputImage?.cropped(to: extent) else {
+        guard let edgeFalloff = edgeGradient.outputImage?.cropped(to: extent) else {
             return image
         }
 
-        let composite = CIFilter.sourceOverCompositing()
-        composite.inputImage = edgeFalloff
-        composite.backgroundImage = image
-        return composite.outputImage?.cropped(to: extent) ?? image
+        let multiply = CIFilter(name: "CIMultiplyBlendMode")
+        multiply?.setValue(edgeFalloff, forKey: kCIInputImageKey)
+        multiply?.setValue(image, forKey: kCIInputBackgroundImageKey)
+        var vignetted = multiply?.outputImage?.cropped(to: extent) ?? image
+
+        let centerGlowAmount = (softenedAmount * profile.centerLift).clamped(to: 0...0.12)
+        if centerGlowAmount > 0.001 {
+            let centerGradient = CIFilter.radialGradient()
+            centerGradient.center = CGPoint(x: extent.midX, y: extent.midY)
+            centerGradient.radius0 = Float(maxDimension * 0.08)
+            centerGradient.radius1 = Float(maxDimension * 0.54)
+            centerGradient.color0 = CIColor(red: 1.0, green: 0.90, blue: 0.74, alpha: centerGlowAmount)
+            centerGradient.color1 = CIColor(red: 1.0, green: 0.88, blue: 0.70, alpha: 0.0)
+
+            if let glow = centerGradient.outputImage?.cropped(to: extent),
+               let screen = CIFilter(name: "CIScreenBlendMode") {
+                screen.setValue(glow, forKey: kCIInputImageKey)
+                screen.setValue(vignetted, forKey: kCIInputBackgroundImageKey)
+                vignetted = screen.outputImage?.cropped(to: extent) ?? vignetted
+            }
+        }
+
+        return vignetted
     }
 
     private static func applyHalation(_ image: CIImage, amount: Double) -> CIImage {
@@ -470,6 +536,7 @@ enum FilmImagePipeline {
 
             let pixelBuffer = baseAddress.bindMemory(to: UInt8.self, capacity: pixelCount)
             var generator = LCG(seed: grainSeed(width: width, height: height, film: film))
+            let renderingProfile = FilmRenderingProfile.profile(for: film)
             let amount = max(0.0, min(1.0, film.grainAmount))
             let isoScale = sqrt(Double(max(50, film.iso)) / 400.0).clamped(to: 0.72...1.48)
             let lumaAmplitude = amount * 17.5 * isoScale * film.grainSize.clamped(to: 0.7...1.45)
@@ -493,23 +560,35 @@ enum FilmImagePipeline {
                     var b = Double(pixelBuffer[index + 2])
                     let luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
                     let skinWeight = appliesColorFinish ? skinToneWeight(red: r, green: g, blue: b, luminance: luminance) : 0.0
+                    let highlightWeight = smoothstep(edge0: 0.68, edge1: 0.96, x: luminance)
 
                     if appliesColorFinish {
                         let shadowWarmth = (1.0 - luminance).clamped(to: 0...1) * colorWarmth
-                        let skinWarmth = skinWeight * colorWarmth
+                        let skinWarmth = skinWeight * colorWarmth * (1.0 - highlightWeight * 0.58)
                         let skinLuma = luminance * 255.0
+                        let preservation = skinWeight * renderingProfile.skinProtection
 
-                        r = skinLuma + (r - skinLuma) * (1.0 - skinWeight * 0.035)
-                        g = skinLuma + (g - skinLuma) * (1.0 - skinWeight * 0.020)
-                        b = skinLuma + (b - skinLuma) * (1.0 - skinWeight * 0.050)
+                        r = skinLuma + (r - skinLuma) * (1.0 - preservation * 0.050)
+                        g = skinLuma + (g - skinLuma) * (1.0 - preservation * 0.030)
+                        b = skinLuma + (b - skinLuma) * (1.0 - preservation * 0.070)
                         r += skinWarmth * 4.2 + shadowWarmth * 1.4
                         g += skinWarmth * 1.0 + shadowWarmth * 0.45
                         b -= skinWarmth * 3.2 + shadowWarmth * 1.1
+
+                        let highlightRecovery = highlightWeight * renderingProfile.highlightRecovery
+                        if highlightRecovery > 0 {
+                            let recoveredLuma = min(246.0, skinLuma + (245.0 - skinLuma) * 0.18)
+                            r = r * (1.0 - highlightRecovery * 0.20) + recoveredLuma * (highlightRecovery * 0.20)
+                            g = g * (1.0 - highlightRecovery * 0.18) + recoveredLuma * (highlightRecovery * 0.18)
+                            b = b * (1.0 - highlightRecovery * 0.14) + recoveredLuma * (highlightRecovery * 0.14)
+                        }
                     }
 
                     let midtoneWeight = (1.0 - abs(luminance - 0.48) * 1.65).clamped(to: 0...1)
                     let shadowWeight = (1.0 - luminance).clamped(to: 0...1)
-                    let textureWeight = (0.20 + midtoneWeight * 0.48 + shadowWeight * 0.32) * (1.0 - skinWeight * 0.22)
+                    let textureWeight = (0.20 + midtoneWeight * 0.48 + shadowWeight * 0.32)
+                        * (1.0 - skinWeight * renderingProfile.skinTextureProtection)
+                        * (1.0 - highlightWeight * renderingProfile.highlightTextureProtection)
                     let rawNoise = triangularNoise(&generator)
                     let leftNoise = x > 0 ? currentRowNoise[x - 1] : rawNoise
                     let topNoise = y > 0 ? previousRowNoise[x] : rawNoise
@@ -543,6 +622,11 @@ enum FilmImagePipeline {
         let greenBlueSeparation = ((normalizedGreen - normalizedBlue) / 0.24).clamped(to: 0...1)
         let exposureWindow = (1.0 - abs(luminance - 0.58) / 0.40).clamped(to: 0...1)
         return warmth * redGreenBalance * greenBlueSeparation * exposureWindow
+    }
+
+    private static func smoothstep(edge0: Double, edge1: Double, x: Double) -> Double {
+        let t = ((x - edge0) / (edge1 - edge0)).clamped(to: 0...1)
+        return t * t * (3.0 - 2.0 * t)
     }
 
     private static func finishingWarmth(for film: FilmPreset) -> Double {
@@ -789,6 +873,95 @@ enum ImagePipelineError: LocalizedError {
             return "Could not read the captured photo."
         case .cannotRenderImage:
             return "Could not render the film simulation."
+        }
+    }
+}
+
+private struct FilmRenderingProfile {
+    let microContrast: Double
+    let microContrastRadius: CGFloat
+    let midtoneSoftness: Double
+    let softnessRadius: CGFloat
+    let highlightRecovery: Double
+    let shadowCushion: Double
+    let skinProtection: Double
+    let skinTextureProtection: Double
+    let highlightTextureProtection: Double
+    let vignetteDensity: Double
+    let centerLift: Double
+
+    static func profile(for film: FilmPreset) -> FilmRenderingProfile {
+        switch film.id {
+        case "human-warm-400":
+            return .init(
+                microContrast: 0.34,
+                microContrastRadius: 0.0016,
+                midtoneSoftness: 0.055,
+                softnessRadius: 0.0048,
+                highlightRecovery: 0.16,
+                shadowCushion: 0.010,
+                skinProtection: 0.82,
+                skinTextureProtection: 0.34,
+                highlightTextureProtection: 0.50,
+                vignetteDensity: 0.42,
+                centerLift: 0.095
+            )
+        case "human-vignette-800":
+            return .init(
+                microContrast: 0.42,
+                microContrastRadius: 0.0019,
+                midtoneSoftness: 0.035,
+                softnessRadius: 0.0042,
+                highlightRecovery: 0.10,
+                shadowCushion: 0.006,
+                skinProtection: 0.58,
+                skinTextureProtection: 0.24,
+                highlightTextureProtection: 0.36,
+                vignetteDensity: 0.46,
+                centerLift: 0.16
+            )
+        case "muse-portrait-400":
+            return .init(
+                microContrast: 0.18,
+                microContrastRadius: 0.0013,
+                midtoneSoftness: 0.15,
+                softnessRadius: 0.0054,
+                highlightRecovery: 0.23,
+                shadowCushion: 0.018,
+                skinProtection: 1.0,
+                skinTextureProtection: 0.48,
+                highlightTextureProtection: 0.66,
+                vignetteDensity: 0.30,
+                centerLift: 0.10
+            )
+        case "soft-portrait-400":
+            return .init(
+                microContrast: 0.22,
+                microContrastRadius: 0.0014,
+                midtoneSoftness: 0.11,
+                softnessRadius: 0.0050,
+                highlightRecovery: 0.18,
+                shadowCushion: 0.014,
+                skinProtection: 0.94,
+                skinTextureProtection: 0.42,
+                highlightTextureProtection: 0.58,
+                vignetteDensity: 0.34,
+                centerLift: 0.085
+            )
+        default:
+            return .init(
+                microContrast: film.category == .portrait ? 0.22 : 0.30,
+                microContrastRadius: film.category == .portrait ? 0.0014 : 0.0017,
+                midtoneSoftness: film.category == .portrait ? 0.10 : 0.035,
+                softnessRadius: film.category == .portrait ? 0.0050 : 0.0042,
+                highlightRecovery: film.category == .portrait ? 0.16 : 0.08,
+                shadowCushion: film.category == .portrait ? 0.012 : 0.004,
+                skinProtection: film.category == .portrait ? 0.90 : 0.60,
+                skinTextureProtection: film.category == .portrait ? 0.40 : 0.22,
+                highlightTextureProtection: film.category == .portrait ? 0.54 : 0.34,
+                vignetteDensity: film.vignetteAmount > 0.35 ? 0.44 : 0.38,
+                centerLift: film.vignetteAmount > 0.35 ? 0.13 : 0.070
+            )
         }
     }
 }

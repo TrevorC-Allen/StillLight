@@ -866,6 +866,13 @@ private struct FilmPhysicalPackageView: View {
                 .fill(style.paper.opacity(0.94))
                 .frame(width: size.width * 0.60, height: size.height * 0.35)
                 .shadow(color: .black.opacity(0.12), radius: 3, x: 0, y: 2)
+                .overlay {
+                    FilmSampleSceneView(film: film, style: style)
+                        .padding(.leading, size.width * 0.12)
+                        .padding(.trailing, size.width * 0.12)
+                        .padding(.vertical, size.height * 0.045)
+                        .opacity(0.72)
+                }
                 .overlay(alignment: .leading) {
                     Rectangle()
                         .fill(style.accent.opacity(0.88))
@@ -945,6 +952,11 @@ private struct FilmPhysicalPackageView: View {
                 .frame(width: size.width * 0.56, height: size.width * 0.56)
                 .padding(.top, size.height * 0.19)
                 .overlay {
+                    FilmSampleSceneView(film: film, style: style)
+                        .frame(width: size.width * 0.50, height: size.width * 0.50)
+                        .padding(.top, size.height * 0.19)
+                }
+                .overlay {
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .stroke(style.ink.opacity(0.13), lineWidth: 1)
                         .frame(width: size.width * 0.56, height: size.width * 0.56)
@@ -987,6 +999,16 @@ private struct FilmPhysicalPackageView: View {
                         .blur(radius: 5)
                         .offset(x: size.width * 0.10, y: size.height * 0.05)
                 }
+                .overlay(alignment: .bottomTrailing) {
+                    FilmSampleSceneView(film: film, style: style)
+                        .frame(width: size.width * 0.34, height: size.height * 0.24)
+                        .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .stroke(style.paper.opacity(0.26), lineWidth: 1)
+                        }
+                        .offset(x: -size.width * 0.08, y: -size.height * 0.08)
+                }
 
             Text(style.label)
                 .font(.system(size: size.width * 0.066, weight: .bold, design: .monospaced))
@@ -1027,6 +1049,15 @@ private struct FilmPhysicalPackageView: View {
                 .frame(width: size.width * 1.18, height: size.height * 0.12)
                 .rotationEffect(.degrees(-15))
                 .offset(y: -size.height * 0.15)
+
+            FilmSampleSceneView(film: film, style: style)
+                .frame(width: size.width * 0.52, height: size.height * 0.34)
+                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .stroke(style.ink.opacity(0.18), lineWidth: 1)
+                }
+                .offset(y: -size.height * 0.12)
 
             VStack(spacing: size.height * 0.035) {
                 Text(style.label)
@@ -1075,6 +1106,12 @@ private struct FilmPhysicalPackageView: View {
                     Rectangle()
                         .fill(style.accent.opacity(0.82))
                         .frame(height: 4)
+                }
+                .overlay(alignment: .leading) {
+                    FilmSampleSceneView(film: film, style: style)
+                        .frame(width: size.width * 0.34, height: size.height * 0.24)
+                        .padding(.leading, size.width * 0.10)
+                        .padding(.top, size.height * 0.08)
                 }
 
             HStack(alignment: .top) {
@@ -1148,13 +1185,11 @@ private struct FilmPhysicalPackageView: View {
             HStack(spacing: size.width * 0.052) {
                 ForEach(0..<2, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [style.swatches[index].opacity(0.80), style.swatches[index + 1].opacity(0.62)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(style.paper.opacity(0.20))
+                        .overlay {
+                            FilmSampleSceneView(film: film, style: style)
+                                .opacity(index == 0 ? 0.95 : 0.78)
+                        }
                         .overlay(alignment: .topLeading) {
                             Circle()
                                 .fill(style.paper.opacity(0.36))
@@ -1350,96 +1385,13 @@ private struct FilmPhysicalPackageView: View {
 
     @ViewBuilder
     private var packageMotif: some View {
-        switch style.kind {
-        case .filmStrip:
-            HStack(spacing: size.width * 0.025) {
-                perforationRail
-                VStack(spacing: size.height * 0.018) {
-                    ForEach(0..<3, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(style.swatches[index].opacity(0.80))
-                    }
-                }
-                .padding(size.width * 0.045)
-                .background(style.ink.opacity(0.72))
-                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
-                perforationRail
+        FilmSampleSceneView(film: film, style: style)
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .stroke(style.paper.opacity(0.24), lineWidth: 1)
             }
-            .rotationEffect(.degrees(style.tilt))
-
-        case .contactSheet:
-            VStack(spacing: size.height * 0.025) {
-                ForEach(0..<2, id: \.self) { row in
-                    HStack(spacing: size.width * 0.025) {
-                        ForEach(0..<2, id: \.self) { column in
-                            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                .fill(style.paper.opacity(0.76))
-                                .overlay {
-                                    Rectangle()
-                                        .fill(style.swatches[(row + column) % style.swatches.count].opacity(0.55))
-                                        .padding(size.width * 0.025)
-                                }
-                        }
-                    }
-                }
-            }
-
-        case .darkroomCard:
-            ZStack {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(style.ink.opacity(0.70))
-                RadialGradient(
-                    colors: [style.accent.opacity(0.48), .clear],
-                    center: style.glowCenter,
-                    startRadius: 2,
-                    endRadius: size.width * 0.32
-                )
-                Circle()
-                    .stroke(style.paper.opacity(0.20), lineWidth: 1)
-                    .frame(width: size.width * 0.28)
-            }
-
-        case .colorRecipe:
-            HStack(alignment: .bottom, spacing: size.width * 0.035) {
-                ForEach(0..<3, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(style.swatches[index].opacity(0.78))
-                        .frame(height: size.height * CGFloat(0.16 + Double(index) * 0.07))
-                }
-            }
-            .padding(.horizontal, size.width * 0.03)
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(style.ink.opacity(0.30))
-                    .frame(height: 1)
-            }
-
-        case .instantFrame:
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(style.paper.opacity(0.90))
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(style.swatches[0].opacity(0.48))
-                        .padding(size.width * 0.05)
-                        .padding(.bottom, size.height * 0.12)
-                }
-                .overlay(alignment: .bottom) {
-                    Rectangle()
-                        .fill(style.ink.opacity(0.10))
-                        .frame(height: size.height * 0.10)
-                }
-
-        case .halfFrame:
-            HStack(spacing: size.width * 0.03) {
-                ForEach(0..<2, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(style.swatches[index].opacity(0.74))
-                }
-            }
-
-        case .negativeSleeve:
-            negativeStrip
-        }
+            .rotationEffect(.degrees(style.tilt * 0.45))
     }
 
     private var perforationRail: some View {
@@ -2296,177 +2248,14 @@ private struct FilmCoverView: View {
 
     @ViewBuilder
     private var coverArtwork: some View {
-        switch style.kind {
-        case .filmStrip:
-            VStack(spacing: 5) {
-                HStack(spacing: 3) {
-                    sprocketRail
-                    Rectangle()
-                        .fill(style.ink.opacity(0.70))
-                        .frame(width: 19, height: 42)
-                        .overlay {
-                            VStack(spacing: 4) {
-                                ForEach(0..<3, id: \.self) { index in
-                                    Rectangle()
-                                        .fill(style.swatches[index % style.swatches.count].opacity(0.82))
-                                        .frame(height: 9)
-                                }
-                            }
-                            .padding(.horizontal, 4)
-                        }
-                    sprocketRail
-                }
-                Rectangle()
-                    .fill(style.accent.opacity(0.82))
-                    .frame(width: 37, height: 3)
+        FilmSampleSceneView(film: film, style: style)
+            .frame(width: 40, height: 48)
+            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .stroke(style.ink.opacity(0.20), lineWidth: 1)
             }
-            .rotationEffect(.degrees(style.tilt))
-
-        case .contactSheet:
-            VStack(spacing: 3) {
-                ForEach(0..<2, id: \.self) { row in
-                    HStack(spacing: 3) {
-                        ForEach(0..<2, id: \.self) { column in
-                            Rectangle()
-                                .fill(style.paper.opacity(0.82))
-                                .frame(width: 17, height: 20)
-                                .overlay {
-                                    Rectangle()
-                                        .fill(style.swatches[(row + column) % style.swatches.count].opacity(0.50))
-                                        .padding(3)
-                                }
-                                .overlay(alignment: .bottomTrailing) {
-                                    Rectangle()
-                                        .fill(style.ink.opacity(0.24))
-                                        .frame(width: 7, height: 1)
-                                        .padding(3)
-                                }
-                        }
-                    }
-                }
-            }
-            .padding(5)
-            .background(style.ink.opacity(0.12))
-            .rotationEffect(.degrees(style.tilt))
-
-        case .darkroomCard:
-            ZStack {
-                Rectangle()
-                    .fill(style.paper.opacity(0.78))
-                    .frame(width: 39, height: 48)
-                    .overlay(alignment: .top) {
-                        Rectangle()
-                            .fill(style.accent.opacity(0.74))
-                            .frame(height: 7)
-                    }
-                    .overlay {
-                        VStack(spacing: 5) {
-                            Rectangle().fill(style.ink.opacity(0.30)).frame(width: 25, height: 1)
-                            Rectangle().fill(style.ink.opacity(0.18)).frame(width: 30, height: 1)
-                            Rectangle().fill(style.ink.opacity(0.22)).frame(width: 18, height: 1)
-                        }
-                        .padding(.top, 7)
-                    }
-                ForEach(0..<2, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .stroke(style.swatches[index].opacity(0.54), lineWidth: 1.4)
-                        .frame(width: CGFloat(31 - index * 7), height: CGFloat(31 - index * 6))
-                        .offset(x: CGFloat(index * 4 - 2), y: CGFloat(index * 5 + 2))
-                }
-            }
-            .rotationEffect(.degrees(style.tilt))
-
-        case .colorRecipe:
-            Rectangle()
-                .fill(style.paper.opacity(0.74))
-                .frame(width: 40, height: 48)
-                .overlay(alignment: .leading) {
-                    Rectangle()
-                        .fill(style.accent.opacity(0.74))
-                        .frame(width: 7)
-                }
-                .overlay {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Rectangle().fill(style.ink.opacity(0.34)).frame(width: 24, height: 1)
-                        Rectangle().fill(style.ink.opacity(0.20)).frame(width: 19, height: 1)
-                        Rectangle().fill(style.ink.opacity(0.18)).frame(width: 27, height: 1)
-                        Spacer().frame(height: 2)
-                        Rectangle().fill(style.ink.opacity(0.26)).frame(width: 13, height: 1)
-                    }
-                    .padding(.leading, 13)
-                    .padding(.vertical, 10)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .stroke(style.ink.opacity(0.18), lineWidth: 1)
-                }
-                .rotationEffect(.degrees(style.tilt))
-
-        case .instantFrame:
-            VStack(spacing: 4) {
-                Rectangle()
-                    .fill(style.paper.opacity(0.92))
-                    .frame(width: 39, height: 44)
-                    .overlay {
-                        Rectangle()
-                            .fill(style.swatches[1].opacity(0.45))
-                            .padding(.top, 5)
-                            .padding(.horizontal, 5)
-                            .padding(.bottom, 13)
-                    }
-                    .overlay(alignment: .bottom) {
-                        HStack(spacing: 3) {
-                            Rectangle().fill(style.ink.opacity(0.20)).frame(width: 11, height: 1)
-                            Rectangle().fill(style.accent.opacity(0.70)).frame(width: 9, height: 1)
-                        }
-                        .padding(.bottom, 6)
-                    }
-            }
-            .rotationEffect(.degrees(style.tilt))
-
-        case .halfFrame:
-            HStack(spacing: 3) {
-                ForEach(0..<2, id: \.self) { index in
-                    Rectangle()
-                        .fill(style.ink.opacity(0.16))
-                        .frame(width: 18, height: 43)
-                        .overlay {
-                            Rectangle()
-                                .fill(style.swatches[index % style.swatches.count].opacity(0.52))
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 6)
-                        }
-                }
-            }
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(style.accent.opacity(0.78))
-                    .frame(width: 34, height: 3)
-            }
-            .rotationEffect(.degrees(style.tilt))
-
-        case .negativeSleeve:
-            VStack(spacing: 4) {
-                sprocketRow
-                HStack(spacing: 2) {
-                    ForEach(0..<4, id: \.self) { index in
-                        Rectangle()
-                            .fill(style.ink.opacity(0.56))
-                            .frame(width: 8, height: 24)
-                            .overlay {
-                                Rectangle()
-                                    .fill(style.swatches[index % style.swatches.count].opacity(0.38))
-                                    .padding(2)
-                            }
-                    }
-                }
-                sprocketRow
-            }
-            .padding(.vertical, 7)
-            .padding(.horizontal, 4)
-            .background(style.paper.opacity(0.48))
-            .rotationEffect(.degrees(style.tilt))
-        }
+            .rotationEffect(.degrees(style.tilt * 0.55))
     }
 
     private var sprocketRail: some View {
@@ -2514,6 +2303,867 @@ private struct FilmCoverView: View {
                     .frame(width: CGFloat(11 + index * 3), height: 1)
                     .rotationEffect(.degrees(index.isMultiple(of: 2) ? -8 : 10))
                     .offset(x: CGFloat(index * 14 - 16), y: CGFloat(index * 19 - 15))
+            }
+        }
+    }
+}
+
+private struct FilmSampleSceneView: View {
+    let film: FilmPreset
+    let style: FilmCoverStyle
+
+    private var scene: FilmSampleSceneKind {
+        FilmSampleSceneKind.kind(for: film)
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+
+            ZStack {
+                sceneBackdrop(width: width, height: height)
+                sceneContent(scene, width: width, height: height)
+                sceneTone(width: width, height: height)
+                sceneGrain(width: width, height: height)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: min(width, height) * 0.08, style: .continuous))
+        }
+    }
+
+    private func sceneBackdrop(width: CGFloat, height: CGFloat) -> some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        style.wash[0].opacity(0.94),
+                        style.swatches[1].opacity(0.70),
+                        style.swatches[2].opacity(0.86)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+    }
+
+    @ViewBuilder
+    private func sceneContent(_ scene: FilmSampleSceneKind, width: CGFloat, height: CGFloat) -> some View {
+        switch scene {
+        case .humanCafe:
+            humanCafeScene(width: width, height: height)
+        case .shadowStreet:
+            shadowStreetScene(width: width, height: height)
+        case .musePortrait:
+            musePortraitScene(width: width, height: height)
+        case .goldenLandscape:
+            goldenLandscapeScene(width: width, height: height)
+        case .softPortrait:
+            softPortraitScene(width: width, height: height)
+        case .monoStreet:
+            monoStreetScene(width: width, height: height)
+        case .greenCity:
+            greenCityScene(width: width, height: height)
+        case .tungstenNight:
+            tungstenNightScene(width: width, height: height)
+        case .flashParty:
+            flashPartyScene(width: width, height: height)
+        case .ccdCampus:
+            ccdCampusScene(width: width, height: height)
+        case .instantHome:
+            instantHomeScene(width: width, height: height)
+        case .naturalLandscape:
+            naturalLandscapeScene(width: width, height: height)
+        case .rangefinderRed:
+            rangefinderRedScene(width: width, height: height)
+        case .compactTravel:
+            compactTravelScene(width: width, height: height)
+        case .grStreet:
+            grStreetScene(width: width, height: height)
+        case .chromeCity:
+            chromeCityScene(width: width, height: height)
+        case .mediumStudio:
+            mediumStudioScene(width: width, height: height)
+        case .holgaDream:
+            holgaDreamScene(width: width, height: height)
+        case .lcaSunset:
+            lcaSunsetScene(width: width, height: height)
+        case .instantTable:
+            instantTableScene(width: width, height: height)
+        case .sxFlowers:
+            sxFlowersScene(width: width, height: height)
+        case .halfFrameDiary:
+            halfFrameDiaryScene(width: width, height: height)
+        case .vividLandscape:
+            vividLandscapeScene(width: width, height: height)
+        case .superiaBeach:
+            superiaBeachScene(width: width, height: height)
+        case .noirWindow:
+            noirWindowScene(width: width, height: height)
+        }
+    }
+
+    private func humanCafeScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle()
+                .fill(style.paper.opacity(0.26))
+                .frame(width: width * 0.70, height: height * 0.42)
+                .offset(x: width * 0.02, y: -height * 0.22)
+                .overlay {
+                    HStack(spacing: width * 0.10) {
+                        Rectangle().fill(style.ink.opacity(0.13)).frame(width: 1)
+                        Rectangle().fill(style.ink.opacity(0.10)).frame(width: 1)
+                    }
+                    .offset(y: -height * 0.22)
+                }
+
+            Circle()
+                .fill(style.accent.opacity(0.78))
+                .frame(width: width * 0.20, height: width * 0.20)
+                .blur(radius: 1.5)
+                .offset(x: -width * 0.22, y: -height * 0.60)
+
+            RoundedRectangle(cornerRadius: width * 0.04, style: .continuous)
+                .fill(style.ink.opacity(0.26))
+                .frame(width: width * 0.95, height: height * 0.25)
+
+            cafeCup(width: width, height: height)
+                .offset(x: width * 0.19, y: -height * 0.18)
+
+            plant(width: width, height: height)
+                .offset(x: -width * 0.30, y: -height * 0.15)
+
+            seatedPerson(width: width, height: height)
+                .offset(x: -width * 0.02, y: -height * 0.18)
+        }
+    }
+
+    private func shadowStreetScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle()
+                .fill(style.ink.opacity(0.62))
+
+            HStack(alignment: .bottom, spacing: width * 0.08) {
+                building(width: width * 0.24, height: height * 0.74, windows: 3)
+                Spacer()
+                building(width: width * 0.30, height: height * 0.86, windows: 4)
+            }
+            .padding(.horizontal, width * 0.08)
+
+            Path { path in
+                path.move(to: CGPoint(x: width * 0.40, y: height))
+                path.addLine(to: CGPoint(x: width * 0.52, y: height * 0.48))
+                path.addLine(to: CGPoint(x: width * 0.66, y: height))
+                path.closeSubpath()
+            }
+            .fill(style.paper.opacity(0.15))
+
+            Capsule()
+                .fill(style.accent.opacity(0.52))
+                .frame(width: width * 0.07, height: height * 0.56)
+                .offset(x: -width * 0.16, y: -height * 0.24)
+
+            person(width: width, height: height, color: style.paper.opacity(0.64))
+                .offset(x: width * 0.05, y: -height * 0.16)
+
+            RadialGradient(
+                colors: [.clear, style.ink.opacity(0.66), .black.opacity(0.62)],
+                center: .center,
+                startRadius: min(width, height) * 0.24,
+                endRadius: max(width, height) * 0.70
+            )
+        }
+    }
+
+    private func musePortraitScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Circle()
+                .fill(style.paper.opacity(0.48))
+                .frame(width: width * 0.86, height: width * 0.86)
+                .blur(radius: 3)
+                .offset(x: -width * 0.20, y: -height * 0.30)
+
+            RoundedRectangle(cornerRadius: width * 0.05, style: .continuous)
+                .fill(.white.opacity(0.22))
+                .frame(width: width * 0.24, height: height * 0.72)
+                .offset(x: -width * 0.34, y: -height * 0.18)
+
+            Capsule()
+                .fill(style.swatches[2].opacity(0.72))
+                .frame(width: width * 0.46, height: height * 0.50)
+                .offset(y: -height * 0.28)
+
+            Circle()
+                .fill(style.wash[0].opacity(0.92))
+                .frame(width: width * 0.34, height: width * 0.34)
+                .offset(x: width * 0.02, y: -height * 0.45)
+
+            Capsule()
+                .fill(style.wash[2].opacity(0.55))
+                .frame(width: width * 0.64, height: height * 0.34)
+                .offset(y: -height * 0.02)
+
+            HStack(spacing: width * 0.08) {
+                Circle().fill(style.ink.opacity(0.32)).frame(width: width * 0.035)
+                Circle().fill(style.ink.opacity(0.32)).frame(width: width * 0.035)
+            }
+            .offset(x: width * 0.02, y: -height * 0.48)
+
+            Capsule()
+                .fill(style.accent.opacity(0.74))
+                .frame(width: width * 0.18, height: height * 0.035)
+                .offset(x: width * 0.02, y: -height * 0.39)
+        }
+    }
+
+    private func goldenLandscapeScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Circle()
+                .fill(style.accent.opacity(0.86))
+                .frame(width: width * 0.25, height: width * 0.25)
+                .offset(x: width * 0.24, y: -height * 0.62)
+            hill(color: style.swatches[1].opacity(0.76), width: width, height: height, lift: 0.20)
+            hill(color: style.swatches[2].opacity(0.72), width: width, height: height, lift: 0.06)
+            Rectangle()
+                .fill(style.paper.opacity(0.18))
+                .frame(height: height * 0.11)
+        }
+    }
+
+    private func softPortraitScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            ForEach(0..<4, id: \.self) { index in
+                Circle()
+                    .fill(style.paper.opacity(0.20))
+                    .frame(width: width * CGFloat(0.16 + Double(index) * 0.04))
+                    .offset(
+                        x: width * CGFloat([-0.31, 0.28, -0.10, 0.16][index]),
+                        y: -height * CGFloat([0.62, 0.50, 0.28, 0.75][index])
+                    )
+            }
+            Capsule()
+                .fill(style.wash[2].opacity(0.48))
+                .frame(width: width * 0.58, height: height * 0.28)
+                .offset(y: -height * 0.03)
+            Circle()
+                .fill(style.wash[0].opacity(0.92))
+                .frame(width: width * 0.36)
+                .offset(y: -height * 0.42)
+            Capsule()
+                .fill(style.ink.opacity(0.38))
+                .frame(width: width * 0.40, height: height * 0.24)
+                .offset(y: -height * 0.50)
+        }
+    }
+
+    private func monoStreetScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(style.paper.opacity(0.26))
+            HStack(alignment: .bottom, spacing: width * 0.05) {
+                building(width: width * 0.24, height: height * 0.68, windows: 3)
+                building(width: width * 0.18, height: height * 0.54, windows: 2)
+                building(width: width * 0.24, height: height * 0.78, windows: 4)
+            }
+            .opacity(0.82)
+            .padding(.bottom, height * 0.22)
+            ForEach(0..<4, id: \.self) { index in
+                Rectangle()
+                    .fill(index.isMultiple(of: 2) ? style.paper.opacity(0.88) : style.ink.opacity(0.22))
+                    .frame(width: width * 0.18, height: height * 0.08)
+                    .rotationEffect(.degrees(-12))
+                    .offset(x: width * CGFloat(Double(index) * 0.18 - 0.28), y: -height * 0.08)
+            }
+            person(width: width, height: height, color: style.ink.opacity(0.84))
+                .offset(x: -width * 0.18, y: -height * 0.21)
+        }
+    }
+
+    private func greenCityScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            HStack(alignment: .bottom, spacing: width * 0.05) {
+                building(width: width * 0.22, height: height * 0.72, windows: 3)
+                building(width: width * 0.28, height: height * 0.56, windows: 2)
+                building(width: width * 0.20, height: height * 0.80, windows: 4)
+            }
+            .padding(.bottom, height * 0.18)
+            HStack(spacing: width * 0.09) {
+                ForEach(0..<3, id: \.self) { _ in
+                    tree(width: width, height: height)
+                }
+            }
+            .padding(.bottom, height * 0.08)
+        }
+    }
+
+    private func tungstenNightScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(style.ink.opacity(0.48))
+            HStack(alignment: .bottom, spacing: width * 0.08) {
+                building(width: width * 0.26, height: height * 0.78, windows: 4)
+                building(width: width * 0.22, height: height * 0.58, windows: 3)
+                building(width: width * 0.22, height: height * 0.86, windows: 4)
+            }
+            .padding(.bottom, height * 0.08)
+            Circle()
+                .fill(style.accent.opacity(0.74))
+                .frame(width: width * 0.17)
+                .blur(radius: 2)
+                .offset(x: width * 0.22, y: -height * 0.52)
+            Capsule()
+                .fill(style.swatches[1].opacity(0.86))
+                .frame(width: width * 0.08, height: height * 0.70)
+                .offset(x: -width * 0.24, y: -height * 0.19)
+        }
+    }
+
+    private func flashPartyScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Circle()
+                .fill(.white.opacity(0.82))
+                .frame(width: width * 0.34)
+                .blur(radius: 1.2)
+                .offset(x: -width * 0.22, y: -height * 0.54)
+            ForEach(0..<3, id: \.self) { index in
+                person(
+                    width: width,
+                    height: height,
+                    color: style.swatches[index].opacity(0.86)
+                )
+                .offset(
+                    x: width * CGFloat([-0.24, 0.02, 0.25][index]),
+                    y: -height * CGFloat([0.14, 0.20, 0.12][index])
+                )
+            }
+            Rectangle()
+                .fill(style.paper.opacity(0.15))
+                .frame(height: height * 0.15)
+        }
+    }
+
+    private func ccdCampusScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(style.paper.opacity(0.30))
+            RoundedRectangle(cornerRadius: width * 0.03, style: .continuous)
+                .fill(style.swatches[1].opacity(0.74))
+                .frame(width: width * 0.70, height: height * 0.42)
+                .overlay(alignment: .top) {
+                    HStack(spacing: width * 0.07) {
+                        ForEach(0..<4, id: \.self) { _ in
+                            Rectangle().fill(.white.opacity(0.58)).frame(width: width * 0.055, height: height * 0.12)
+                        }
+                    }
+                    .padding(.top, height * 0.08)
+                }
+                .offset(y: -height * 0.17)
+            ForEach(0..<5, id: \.self) { index in
+                Rectangle()
+                    .fill((index.isMultiple(of: 2) ? style.accent : .white).opacity(0.72))
+                    .frame(width: width * 0.06, height: width * 0.06)
+                    .offset(
+                        x: width * CGFloat(Double(index) * 0.16 - 0.32),
+                        y: -height * CGFloat(0.68 - Double(index % 2) * 0.10)
+                    )
+            }
+        }
+    }
+
+    private func instantHomeScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: width * 0.04, style: .continuous)
+                .fill(style.paper.opacity(0.34))
+                .frame(width: width * 0.60, height: height * 0.44)
+                .offset(y: -height * 0.32)
+            Rectangle()
+                .fill(style.ink.opacity(0.24))
+                .frame(height: height * 0.25)
+            plant(width: width, height: height)
+                .offset(x: -width * 0.22, y: -height * 0.18)
+            cafeCup(width: width, height: height)
+                .offset(x: width * 0.22, y: -height * 0.18)
+        }
+    }
+
+    private func naturalLandscapeScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            hill(color: style.paper.opacity(0.52), width: width, height: height, lift: 0.26)
+            hill(color: style.swatches[1].opacity(0.72), width: width, height: height, lift: 0.11)
+            tree(width: width, height: height)
+                .scaleEffect(1.18)
+                .offset(x: width * 0.26, y: -height * 0.12)
+        }
+    }
+
+    private func rangefinderRedScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(style.swatches[0].opacity(0.70))
+            Rectangle()
+                .fill(style.ink.opacity(0.26))
+                .frame(height: height * 0.28)
+            person(width: width, height: height, color: style.paper.opacity(0.78))
+                .offset(x: -width * 0.18, y: -height * 0.16)
+            RoundedRectangle(cornerRadius: width * 0.03, style: .continuous)
+                .fill(style.paper.opacity(0.24))
+                .frame(width: width * 0.36, height: height * 0.28)
+                .offset(x: width * 0.20, y: -height * 0.48)
+        }
+    }
+
+    private func compactTravelScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Circle()
+                .fill(style.accent.opacity(0.76))
+                .frame(width: width * 0.22)
+                .offset(x: width * 0.25, y: -height * 0.62)
+            building(width: width * 0.34, height: height * 0.52, windows: 2)
+                .offset(x: -width * 0.22, y: -height * 0.12)
+            RoundedRectangle(cornerRadius: width * 0.04, style: .continuous)
+                .fill(style.ink.opacity(0.42))
+                .frame(width: width * 0.30, height: height * 0.26)
+                .offset(x: width * 0.18, y: -height * 0.10)
+        }
+    }
+
+    private func grStreetScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(style.ink.opacity(0.42))
+            ForEach(0..<5, id: \.self) { index in
+                Rectangle()
+                    .fill(style.paper.opacity(0.72))
+                    .frame(width: width * 0.15, height: height * 0.07)
+                    .rotationEffect(.degrees(-18))
+                    .offset(x: width * CGFloat(Double(index) * 0.16 - 0.32), y: -height * 0.11)
+            }
+            person(width: width, height: height, color: style.paper.opacity(0.76))
+                .offset(x: width * 0.10, y: -height * 0.23)
+            building(width: width * 0.22, height: height * 0.74, windows: 4)
+                .offset(x: -width * 0.28, y: -height * 0.18)
+        }
+    }
+
+    private func chromeCityScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            HStack(alignment: .bottom, spacing: width * 0.04) {
+                building(width: width * 0.22, height: height * 0.58, windows: 2)
+                building(width: width * 0.28, height: height * 0.72, windows: 3)
+                building(width: width * 0.18, height: height * 0.48, windows: 2)
+            }
+            .padding(.bottom, height * 0.16)
+            Rectangle()
+                .fill(style.paper.opacity(0.18))
+                .frame(height: height * 0.18)
+        }
+    }
+
+    private func mediumStudioScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: width * 0.05, style: .continuous)
+                .fill(style.paper.opacity(0.26))
+                .frame(width: width * 0.70, height: height * 0.66)
+                .offset(y: -height * 0.18)
+            Rectangle()
+                .fill(style.ink.opacity(0.20))
+                .frame(height: height * 0.22)
+            Capsule()
+                .fill(style.swatches[1].opacity(0.76))
+                .frame(width: width * 0.20, height: height * 0.34)
+                .offset(x: width * 0.16, y: -height * 0.20)
+            Circle()
+                .fill(style.accent.opacity(0.70))
+                .frame(width: width * 0.18)
+                .offset(x: -width * 0.18, y: -height * 0.25)
+        }
+    }
+
+    private func holgaDreamScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Circle()
+                .fill(style.accent.opacity(0.52))
+                .frame(width: width * 0.46)
+                .blur(radius: 4)
+                .offset(x: width * 0.24, y: -height * 0.55)
+            hill(color: style.swatches[1].opacity(0.62), width: width, height: height, lift: 0.18)
+            hill(color: style.swatches[2].opacity(0.58), width: width, height: height, lift: 0.03)
+            RadialGradient(
+                colors: [.clear, style.ink.opacity(0.62)],
+                center: .center,
+                startRadius: min(width, height) * 0.20,
+                endRadius: max(width, height) * 0.66
+            )
+        }
+    }
+
+    private func lcaSunsetScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(style.swatches[0].opacity(0.80))
+            Circle()
+                .fill(style.accent.opacity(0.88))
+                .frame(width: width * 0.28)
+                .offset(x: -width * 0.20, y: -height * 0.52)
+            hill(color: style.swatches[1].opacity(0.86), width: width, height: height, lift: 0.10)
+            tree(width: width, height: height)
+                .offset(x: width * 0.27, y: -height * 0.13)
+        }
+    }
+
+    private func instantTableScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: width * 0.04, style: .continuous)
+                .fill(style.paper.opacity(0.25))
+                .frame(width: width * 0.72, height: height * 0.34)
+                .offset(y: -height * 0.35)
+            Rectangle()
+                .fill(style.ink.opacity(0.22))
+                .frame(height: height * 0.27)
+            cafeCup(width: width, height: height)
+                .offset(x: -width * 0.18, y: -height * 0.19)
+            cafeCup(width: width, height: height)
+                .scaleEffect(0.78)
+                .offset(x: width * 0.19, y: -height * 0.18)
+        }
+    }
+
+    private func sxFlowersScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle()
+                .fill(style.paper.opacity(0.22))
+                .frame(height: height * 0.22)
+            ForEach(0..<3, id: \.self) { index in
+                flower(width: width, height: height, index: index)
+                    .offset(x: width * CGFloat([-0.22, 0.02, 0.24][index]), y: -height * 0.10)
+            }
+        }
+    }
+
+    private func halfFrameDiaryScene(width: CGFloat, height: CGFloat) -> some View {
+        HStack(spacing: width * 0.04) {
+            goldenLandscapeScene(width: width * 0.48, height: height)
+                .frame(width: width * 0.48, height: height)
+                .clipped()
+            humanCafeScene(width: width * 0.48, height: height)
+                .frame(width: width * 0.48, height: height)
+                .clipped()
+        }
+    }
+
+    private func vividLandscapeScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(style.swatches[1].opacity(0.78))
+            hill(color: style.swatches[2].opacity(0.60), width: width, height: height, lift: 0.08)
+            RoundedRectangle(cornerRadius: width * 0.035, style: .continuous)
+                .fill(style.swatches[0].opacity(0.92))
+                .frame(width: width * 0.36, height: height * 0.16)
+                .offset(x: width * 0.12, y: -height * 0.12)
+            Circle()
+                .fill(style.paper.opacity(0.72))
+                .frame(width: width * 0.07)
+                .offset(x: width * 0.00, y: -height * 0.08)
+            Circle()
+                .fill(style.paper.opacity(0.72))
+                .frame(width: width * 0.07)
+                .offset(x: width * 0.24, y: -height * 0.08)
+        }
+    }
+
+    private func superiaBeachScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(style.swatches[1].opacity(0.70))
+            Rectangle()
+                .fill(style.paper.opacity(0.36))
+                .frame(height: height * 0.32)
+            Rectangle()
+                .fill(style.swatches[0].opacity(0.38))
+                .frame(height: height * 0.12)
+                .offset(y: -height * 0.22)
+            Capsule()
+                .fill(style.accent.opacity(0.82))
+                .frame(width: width * 0.30, height: height * 0.06)
+                .rotationEffect(.degrees(-12))
+                .offset(x: width * 0.20, y: -height * 0.32)
+        }
+    }
+
+    private func noirWindowScene(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Rectangle().fill(style.ink.opacity(0.66))
+            RoundedRectangle(cornerRadius: width * 0.02, style: .continuous)
+                .fill(style.paper.opacity(0.58))
+                .frame(width: width * 0.28, height: height * 0.62)
+                .offset(x: -width * 0.22, y: -height * 0.22)
+                .blur(radius: 0.8)
+            person(width: width, height: height, color: .black.opacity(0.72))
+                .offset(x: width * 0.10, y: -height * 0.18)
+        }
+    }
+
+    private func sceneTone(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [.white.opacity(0.16), .clear, style.ink.opacity(0.18)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            RadialGradient(
+                colors: [.clear, style.ink.opacity(scene == .shadowStreet || scene == .holgaDream ? 0.54 : 0.24)],
+                center: .center,
+                startRadius: min(width, height) * 0.34,
+                endRadius: max(width, height) * 0.72
+            )
+        }
+    }
+
+    private func sceneGrain(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            ForEach(0..<18, id: \.self) { index in
+                Circle()
+                    .fill(style.paper.opacity(index.isMultiple(of: 3) ? 0.15 : 0.08))
+                    .frame(width: CGFloat(1 + sceneSeed(index, salt: 23) % 3))
+                    .offset(
+                        x: sceneOffset(index, salt: 41, length: width * 0.92),
+                        y: sceneOffset(index, salt: 59, length: height * 0.92)
+                    )
+            }
+        }
+    }
+
+    private func cafeCup(width: CGFloat, height: CGFloat) -> some View {
+        VStack(spacing: height * 0.015) {
+            RoundedRectangle(cornerRadius: width * 0.035, style: .continuous)
+                .fill(style.paper.opacity(0.82))
+                .frame(width: width * 0.20, height: height * 0.12)
+                .overlay(alignment: .trailing) {
+                    Circle()
+                        .stroke(style.paper.opacity(0.72), lineWidth: 1)
+                        .frame(width: width * 0.07)
+                        .offset(x: width * 0.045)
+                }
+            Capsule()
+                .fill(style.ink.opacity(0.22))
+                .frame(width: width * 0.25, height: height * 0.025)
+        }
+    }
+
+    private func person(width: CGFloat, height: CGFloat, color: Color) -> some View {
+        VStack(spacing: 0) {
+            Circle()
+                .fill(color)
+                .frame(width: width * 0.12, height: width * 0.12)
+            Capsule()
+                .fill(color.opacity(0.92))
+                .frame(width: width * 0.16, height: height * 0.28)
+        }
+    }
+
+    private func seatedPerson(width: CGFloat, height: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            Circle()
+                .fill(style.wash[0].opacity(0.88))
+                .frame(width: width * 0.15, height: width * 0.15)
+            Capsule()
+                .fill(style.swatches[1].opacity(0.82))
+                .frame(width: width * 0.22, height: height * 0.24)
+        }
+    }
+
+    private func plant(width: CGFloat, height: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: -width * 0.015) {
+                ForEach(0..<3, id: \.self) { index in
+                    Capsule()
+                        .fill(style.swatches[1].opacity(0.86))
+                        .frame(width: width * 0.065, height: height * 0.18)
+                        .rotationEffect(.degrees(Double(index - 1) * 22))
+                }
+            }
+            RoundedRectangle(cornerRadius: width * 0.018, style: .continuous)
+                .fill(style.ink.opacity(0.38))
+                .frame(width: width * 0.16, height: height * 0.08)
+        }
+    }
+
+    private func tree(width: CGFloat, height: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            Circle()
+                .fill(style.swatches[1].opacity(0.82))
+                .frame(width: width * 0.16)
+            Rectangle()
+                .fill(style.ink.opacity(0.34))
+                .frame(width: width * 0.025, height: height * 0.16)
+        }
+    }
+
+    private func building(width: CGFloat, height: CGFloat, windows: Int) -> some View {
+        RoundedRectangle(cornerRadius: width * 0.06, style: .continuous)
+            .fill(style.ink.opacity(0.42))
+            .frame(width: width, height: height)
+            .overlay {
+                VStack(spacing: height * 0.08) {
+                    ForEach(0..<windows, id: \.self) { index in
+                        HStack(spacing: width * 0.16) {
+                            Rectangle()
+                                .fill((index.isMultiple(of: 2) ? style.accent : style.paper).opacity(0.42))
+                                .frame(width: width * 0.18, height: height * 0.055)
+                            Rectangle()
+                                .fill(style.paper.opacity(0.28))
+                                .frame(width: width * 0.18, height: height * 0.055)
+                        }
+                    }
+                }
+                .padding(.vertical, height * 0.14)
+            }
+    }
+
+    private func hill(color: Color, width: CGFloat, height: CGFloat, lift: CGFloat) -> some View {
+        Path { path in
+            path.move(to: CGPoint(x: 0, y: height * (0.74 - lift)))
+            path.addCurve(
+                to: CGPoint(x: width, y: height * (0.68 - lift * 0.50)),
+                control1: CGPoint(x: width * 0.22, y: height * (0.48 - lift)),
+                control2: CGPoint(x: width * 0.64, y: height * (0.86 - lift))
+            )
+            path.addLine(to: CGPoint(x: width, y: height))
+            path.addLine(to: CGPoint(x: 0, y: height))
+            path.closeSubpath()
+        }
+        .fill(color)
+    }
+
+    private func flower(width: CGFloat, height: CGFloat, index: Int) -> some View {
+        VStack(spacing: 0) {
+            ZStack {
+                ForEach(0..<4, id: \.self) { petal in
+                    Circle()
+                        .fill(style.wash[petal % style.wash.count].opacity(0.78))
+                        .frame(width: width * 0.08)
+                        .offset(
+                            x: width * CGFloat([0.04, -0.04, 0.0, 0.0][petal]),
+                            y: height * CGFloat([0.0, 0.0, 0.04, -0.04][petal])
+                        )
+                }
+                Circle()
+                    .fill(style.accent.opacity(0.90))
+                    .frame(width: width * 0.055)
+            }
+            Rectangle()
+                .fill(style.swatches[1].opacity(0.70))
+                .frame(width: width * 0.018, height: height * CGFloat(0.20 + Double(index) * 0.03))
+        }
+    }
+
+    private func sceneSeed(_ index: Int, salt: UInt64) -> Int {
+        var value: UInt64 = 14_695_981_039_346_656_037 &+ salt
+        for scalar in film.id.unicodeScalars {
+            value ^= UInt64(scalar.value)
+            value = value &* 1_099_511_628_211
+        }
+        value ^= UInt64(index + 1) &* 16_777_619
+        return Int(value % 10_000)
+    }
+
+    private func sceneOffset(_ index: Int, salt: UInt64, length: CGFloat) -> CGFloat {
+        let normalized = CGFloat(sceneSeed(index, salt: salt)) / 10_000.0
+        return normalized * length - length / 2
+    }
+}
+
+private enum FilmSampleSceneKind: Equatable {
+    case humanCafe
+    case shadowStreet
+    case musePortrait
+    case goldenLandscape
+    case softPortrait
+    case monoStreet
+    case greenCity
+    case tungstenNight
+    case flashParty
+    case ccdCampus
+    case instantHome
+    case naturalLandscape
+    case rangefinderRed
+    case compactTravel
+    case grStreet
+    case chromeCity
+    case mediumStudio
+    case holgaDream
+    case lcaSunset
+    case instantTable
+    case sxFlowers
+    case halfFrameDiary
+    case vividLandscape
+    case superiaBeach
+    case noirWindow
+
+    static func kind(for film: FilmPreset) -> FilmSampleSceneKind {
+        switch film.id {
+        case "human-warm-400":
+            return .humanCafe
+        case "human-vignette-800":
+            return .shadowStreet
+        case "muse-portrait-400":
+            return .musePortrait
+        case "sunlit-gold-200":
+            return .goldenLandscape
+        case "soft-portrait-400":
+            return .softPortrait
+        case "silver-hp5", "tri-x-street":
+            return .monoStreet
+        case "green-street-400":
+            return .greenCity
+        case "tungsten-800":
+            return .tungstenNight
+        case "pocket-flash":
+            return .flashParty
+        case "ccd-2003", "cyber-ccd-blue":
+            return .ccdCampus
+        case "instant-square":
+            return .instantHome
+        case "hncs-natural":
+            return .naturalLandscape
+        case "m-rangefinder":
+            return .rangefinderRed
+        case "t-compact-gold":
+            return .compactTravel
+        case "gr-street-snap":
+            return .grStreet
+        case "classic-chrome-x":
+            return .chromeCity
+        case "medium-500c":
+            return .mediumStudio
+        case "holga-120-dream":
+            return .holgaDream
+        case "lca-vivid":
+            return .lcaSunset
+        case "instant-wide":
+            return .instantTable
+        case "sx-fade":
+            return .sxFlowers
+        case "half-frame-diary":
+            return .halfFrameDiary
+        case "ektar-vivid-100":
+            return .vividLandscape
+        case "superia-green":
+            return .superiaBeach
+        case "noir-soft":
+            return .noirWindow
+        default:
+            switch film.category {
+            case .blackWhite:
+                return .monoStreet
+            case .portrait:
+                return .softPortrait
+            case .instant:
+                return .instantHome
+            case .digital:
+                return .ccdCampus
+            case .camera:
+                return .compactTravel
+            case .experimental:
+                return .holgaDream
+            case .negative:
+                return .goldenLandscape
+            case .featured:
+                return .humanCafe
+            case .favorites:
+                return .goldenLandscape
             }
         }
     }

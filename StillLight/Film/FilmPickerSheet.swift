@@ -826,6 +826,7 @@ private struct FilmPhysicalPackageView: View {
             boxFoldLines
             productionTicks
             paperTexture
+            packageWear
             packageGloss(cornerRadius: 8)
         }
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -968,6 +969,7 @@ private struct FilmPhysicalPackageView: View {
             .padding(.bottom, size.height * 0.09)
 
             paperTexture.opacity(0.36)
+            packageWear.opacity(0.42)
             packageGloss(cornerRadius: 9).opacity(0.72)
         }
         .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
@@ -1040,6 +1042,7 @@ private struct FilmPhysicalPackageView: View {
             .padding(.top, size.height * 0.24)
 
             paperTexture.opacity(0.28)
+            packageWear.opacity(0.42)
             sleeveCrinkles
         }
         .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
@@ -1130,6 +1133,7 @@ private struct FilmPhysicalPackageView: View {
             .padding(size.width * 0.11)
 
             paperTexture.opacity(0.26)
+            packageWear.opacity(0.32)
             packageGloss(cornerRadius: 10).opacity(0.55)
         }
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -1195,6 +1199,7 @@ private struct FilmPhysicalPackageView: View {
             .padding(size.width * 0.10)
 
             paperTexture.opacity(0.30)
+            packageWear.opacity(0.36)
             ticketTornEdges
             packageGloss(cornerRadius: 5).opacity(0.52)
         }
@@ -1532,16 +1537,56 @@ private struct FilmPhysicalPackageView: View {
         ZStack {
             ForEach(0..<16, id: \.self) { index in
                 Rectangle()
-                    .fill(style.ink.opacity(index.isMultiple(of: 4) ? 0.075 : 0.038))
-                    .frame(width: CGFloat(9 + (index % 4) * 7), height: 1)
+                    .fill(style.ink.opacity(index.isMultiple(of: 4) ? 0.065 : 0.032))
+                    .frame(width: CGFloat(6 + (textureSeed(index, salt: 11) % 18)), height: 1)
                     .rotationEffect(.degrees(index.isMultiple(of: 2) ? -7 : 9))
                     .offset(
-                        x: CGFloat((index * 17) % Int(size.width)) - size.width / 2,
-                        y: CGFloat((index * 23) % Int(size.height)) - size.height / 2
+                        x: textureOffset(index, salt: 17, length: size.width),
+                        y: textureOffset(index, salt: 29, length: size.height)
                     )
             }
         }
         .opacity(0.50)
+    }
+
+    private var packageWear: some View {
+        ZStack {
+            ForEach(0..<22, id: \.self) { index in
+                Circle()
+                    .fill(style.ink.opacity(index.isMultiple(of: 5) ? 0.070 : 0.038))
+                    .frame(width: CGFloat(1 + textureSeed(index, salt: 43) % 3))
+                    .offset(
+                        x: textureOffset(index, salt: 37, length: size.width * 0.86),
+                        y: textureOffset(index, salt: 53, length: size.height * 0.86)
+                    )
+            }
+
+            ForEach(0..<6, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(style.paper.opacity(0.16))
+                    .frame(width: CGFloat(10 + textureSeed(index, salt: 71) % 16), height: 1)
+                    .rotationEffect(.degrees(Double(textureSeed(index, salt: 83) % 28) - 14))
+                    .offset(
+                        x: textureOffset(index, salt: 89, length: size.width * 0.78),
+                        y: textureOffset(index, salt: 97, length: size.height * 0.78)
+                    )
+            }
+        }
+    }
+
+    private func textureSeed(_ index: Int, salt: UInt64) -> Int {
+        var value: UInt64 = 14_695_981_039_346_656_037 &+ salt
+        for scalar in film.id.unicodeScalars {
+            value ^= UInt64(scalar.value)
+            value = value &* 1_099_511_628_211
+        }
+        value ^= UInt64(index + 1) &* 16_777_619
+        return Int(value % 10_000)
+    }
+
+    private func textureOffset(_ index: Int, salt: UInt64, length: CGFloat) -> CGFloat {
+        let normalized = CGFloat(textureSeed(index, salt: salt)) / 10_000.0
+        return normalized * length - length / 2
     }
 
     private func packageStroke(cornerRadius: CGFloat) -> some View {
@@ -1642,7 +1687,18 @@ private struct CameraModelPlate: View {
 
     private func lens(width: CGFloat, height: CGFloat, diameter: CGFloat) -> some View {
         Circle()
-            .fill(style.ink.opacity(0.96))
+            .fill(
+                RadialGradient(
+                    colors: [
+                        style.swatches[2].opacity(0.92),
+                        style.ink.opacity(0.98),
+                        .black.opacity(0.96)
+                    ],
+                    center: .center,
+                    startRadius: diameter * 0.05,
+                    endRadius: diameter * 0.50
+                )
+            )
             .frame(width: diameter, height: diameter)
             .overlay {
                 Circle()
@@ -1651,8 +1707,18 @@ private struct CameraModelPlate: View {
             }
             .overlay {
                 Circle()
+                    .stroke(.black.opacity(0.55), lineWidth: Swift.max(1, diameter * 0.045))
+                    .padding(diameter * 0.17)
+            }
+            .overlay {
+                Circle()
                     .stroke(style.accent.opacity(0.46), lineWidth: Swift.max(1, diameter * 0.025))
                     .padding(diameter * 0.22)
+            }
+            .overlay {
+                Circle()
+                    .stroke(style.paper.opacity(0.24), lineWidth: Swift.max(1, diameter * 0.018))
+                    .padding(diameter * 0.32)
             }
             .overlay(alignment: .topLeading) {
                 Circle()
@@ -1661,6 +1727,14 @@ private struct CameraModelPlate: View {
                     .blur(radius: 1.2)
                     .offset(x: diameter * 0.27, y: diameter * 0.25)
             }
+            .overlay(alignment: .bottomTrailing) {
+                Circle()
+                    .fill(style.accent.opacity(0.20))
+                    .frame(width: diameter * 0.22, height: diameter * 0.22)
+                    .blur(radius: 2)
+                    .offset(x: -diameter * 0.18, y: -diameter * 0.18)
+            }
+            .shadow(color: .black.opacity(0.22), radius: diameter * 0.08, x: 0, y: diameter * 0.035)
     }
 
     private func viewfinder(width: CGFloat, height: CGFloat, isRound: Bool = false) -> some View {

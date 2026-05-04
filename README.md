@@ -73,6 +73,7 @@ Choose a film roll
 - Local JSON photo records
 - Roll gallery and photo detail with long-press original comparison
 - Import Lab with multi-photo PhotosPicker selection, current/all developing, cancellable batch progress, failed-frame retry, current/all save and shared pipeline processing
+- Import Lab processing timing summary with total milliseconds, input/output pixels and pipeline stage timings
 - Explainable local smart film recommendation with Top 3 candidates based on brightness, color, warmth and contrast
 - Share sheet
 

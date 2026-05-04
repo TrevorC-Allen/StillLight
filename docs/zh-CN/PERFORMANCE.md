@@ -42,7 +42,9 @@ let timing = result.timing
 - `grain`
 - `decorate`
 
-时间测量使用 Swift 标准库 `ContinuousClock`，没有引入第三方依赖，也没有默认写日志。这样调用侧可以在 Debug 面板、控制台、单次测试脚本或作品集截图里按需展示。
+时间测量使用 Swift 标准库 `ContinuousClock`，没有引入第三方依赖，也没有默认写日志。
+
+暗房当前已经接入这个 timing 入口：用户冲洗当前照片或批量冲洗后，选中已有成片的照片时，会看到一个克制的“处理耗时”摘要，包括总耗时、输入 / 输出像素，以及 `normalize`、`crop`、`coreImageRender`、`grain`、`decorate` 等阶段耗时。相机拍照路径仍保持普通直出体验，不显示性能信息。
 
 ## 如何测试
 
@@ -50,7 +52,7 @@ let timing = result.timing
 
 1. 选择 5-10 张代表性照片：日光、夜景、高 ISO、人物、复杂纹理各至少一张。
 2. 固定胶卷预设、画幅比例、时间戳开关和强度，避免把参数变化混入性能波动。
-3. 首张作为预热样本，后续样本记录 `totalMilliseconds` 和各 `stage.milliseconds`。
+3. 首张作为预热样本，后续样本可直接在暗房“处理耗时”摘要里记录 `totalMilliseconds` 和各 `stage.milliseconds`。
 4. 分别记录相机 `photoData` 输入和相册 `UIImage` 输入，因为前者有 `downsample`，后者有 `normalize`。
 5. 对比 `coreImageRender`、`grain`、`decorate` 占比，判断优化优先级。
 

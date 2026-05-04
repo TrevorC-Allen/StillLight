@@ -59,20 +59,27 @@ Captured JPEG / Imported Image
 -> JPEG export with StillLight film metadata
 ```
 
+Video exports reuse the preview-safe Core Image portion of the same film stack:
+exposure, white balance, tone curve, local rendering, color response, halation,
+vignette and light leak are applied through `AVVideoComposition` before the movie
+is saved locally and exported to Photos.
+
 The key portfolio talking points are:
 
 - `Film Rendering Profile`: local micro-contrast, midtone softness, highlight
   recovery and skin-aware finishing make each roll feel rendered, not just tinted.
 - `Tone Separation`: shadows, midtones and highlights are treated with different
   color and contrast behavior before grain, borders and labels are applied.
-- Shared processing path: camera capture and Import Lab use the same film
-  pipeline, so batch-developed photos match direct captures.
+- Shared processing path: camera capture, Import Lab and video export use the
+  same film response stages, so direct captures, imported photos and movies stay
+  visually coherent.
 - Observable performance: Import Lab reports total processing time, input/output
   pixels and stage timings for pipeline-level QA.
 
 ## MVP Scope
 
-- AVFoundation photo capture and native video recording with audio and timer.
+- AVFoundation photo capture and native video recording with audio, timer and
+  film-rendered export.
 - Front/back camera switch, flash off/on/auto, exposure compensation, tap
   focus/metering and animated reticle.
 - Pinch zoom plus available lens buttons such as 0.5x / 1x / 3x on multi-camera
@@ -81,7 +88,8 @@ The key portfolio talking points are:
 - Non-blocking capture flow: the lower-left recent-frame thumbnail updates after
   processing instead of forcing a result sheet.
 - Persistent film roll counter and local JSON photo records.
-- Gallery detail browsing with page swipe and long-press original comparison.
+- Gallery detail browsing with page swipe and a constrained long-press original
+  comparison gesture that does not block horizontal paging.
 - Import Lab with multi-photo selection, current/all develop, cancellable batch
   progress, failed-frame retry, current/all save and shared pipeline processing.
 - Explainable local Top 3 film recommendation based on brightness, color, warmth
@@ -125,6 +133,8 @@ MVP acceptance:
 - The selected roll changes both visual rendering and frame labeling.
 - `Human Warm 400`, `Shadow Walk 800` and `Soft Muse 400` are validated on real
   cafe/interior, street/museum and portrait sample sets.
+- A short video recorded with a selected roll exports with the same film color
+  response and then clears its saved-to-Photos status message automatically.
 - Import Lab can process multiple imported photos, cancel a batch, retry failures
   and save the selected or full set.
 - Processed photos are saved locally first, then exported to Photos when
@@ -138,7 +148,8 @@ Next-step acceptance:
   them against the current procedural profiles.
 - Move preview-safe tone, grain and vignette stages toward Metal for real-time
   camera preview.
-- Apply film rendering to video export after the still pipeline remains stable.
+- Add frame-safe grain and optional timestamp overlays to video after export
+  performance is measured on a real iPhone.
 - Replace the heuristic recommender with Vision/CoreML scene tags when there is a
   larger real sample set.
 - Support user-generated custom rolls from 5-10 reference photos.

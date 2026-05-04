@@ -7,6 +7,7 @@
 - [MVP 范围](MVP.md)
 - [iOS 技术架构](IOS_ARCHITECTURE.md)
 - [胶卷预设系统](PRESETS.md)
+- [图像处理性能记录](PERFORMANCE.md)
 - [iPhone 真机运行手册](DEVICE_RUNBOOK.md)
 - [AI 胶卷推荐说明](AI_RECOMMENDER.md)
 - [中文演示脚本](DEMO_SCRIPT.md)

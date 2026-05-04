@@ -4,6 +4,44 @@ import ImageIO
 import UIKit
 
 enum FilmImagePipeline {
+    struct ProcessingResult {
+        let image: UIImage
+        let timing: ProcessingTiming
+    }
+
+    struct ProcessingTiming {
+        struct Stage {
+            let name: String
+            let milliseconds: Double
+        }
+
+        let maxInputPixelSize: CGFloat
+        private(set) var inputPixelSize: CGSize = .zero
+        private(set) var croppedPixelSize: CGSize = .zero
+        private(set) var outputPixelSize: CGSize = .zero
+        private(set) var stages: [Stage] = []
+
+        var totalMilliseconds: Double {
+            stages.reduce(0) { $0 + $1.milliseconds }
+        }
+
+        mutating func record(_ name: String, milliseconds: Double) {
+            stages.append(Stage(name: name, milliseconds: milliseconds))
+        }
+
+        mutating func setInputPixelSize(_ size: CGSize) {
+            inputPixelSize = size
+        }
+
+        mutating func setCroppedPixelSize(_ size: CGSize) {
+            croppedPixelSize = size
+        }
+
+        mutating func setOutputPixelSize(_ size: CGSize) {
+            outputPixelSize = size
+        }
+    }
+
     private static let context = CIContext(options: [
         .workingColorSpace: CGColorSpace(name: CGColorSpace.sRGB) as Any,
         .outputColorSpace: CGColorSpace(name: CGColorSpace.sRGB) as Any
@@ -17,14 +55,37 @@ enum FilmImagePipeline {
         addTimestamp: Bool,
         intensity: Double = 1.0
     ) throws -> UIImage {
-        let baseImage = try downsample(photoData: photoData, maxPixelSize: 2400)
-        return try process(
-            baseImage: baseImage,
+        try processWithTiming(
+            photoData: photoData,
             film: film,
             aspectRatio: aspectRatio,
             date: date,
             addTimestamp: addTimestamp,
             intensity: intensity
+        ).image
+    }
+
+    static func processWithTiming(
+        photoData: Data,
+        film: FilmPreset,
+        aspectRatio: CaptureAspectRatio,
+        date: Date,
+        addTimestamp: Bool,
+        intensity: Double = 1.0
+    ) throws -> ProcessingResult {
+        var timing = ProcessingTiming(maxInputPixelSize: 2400)
+        let baseImage = try measureStage("downsample") {
+            try downsample(photoData: photoData, maxPixelSize: timing.maxInputPixelSize)
+        } record: { timing.record($0, milliseconds: $1) }
+
+        return try processWithTiming(
+            baseImage: baseImage,
+            film: film,
+            aspectRatio: aspectRatio,
+            date: date,
+            addTimestamp: addTimestamp,
+            intensity: intensity,
+            timing: timing
         )
     }
 
@@ -36,51 +97,106 @@ enum FilmImagePipeline {
         addTimestamp: Bool,
         intensity: Double = 1.0
     ) throws -> UIImage {
-        try process(
-            baseImage: image.normalizedForProcessing(maxPixelSize: 2400),
+        try processWithTiming(
+            image: image,
             film: film,
             aspectRatio: aspectRatio,
             date: date,
             addTimestamp: addTimestamp,
             intensity: intensity
+        ).image
+    }
+
+    static func processWithTiming(
+        image: UIImage,
+        film: FilmPreset,
+        aspectRatio: CaptureAspectRatio,
+        date: Date,
+        addTimestamp: Bool,
+        intensity: Double = 1.0
+    ) throws -> ProcessingResult {
+        var timing = ProcessingTiming(maxInputPixelSize: 2400)
+        let baseImage = measureStage("normalize") {
+            image.normalizedForProcessing(maxPixelSize: timing.maxInputPixelSize)
+        } record: { timing.record($0, milliseconds: $1) }
+
+        return try processWithTiming(
+            baseImage: baseImage,
+            film: film,
+            aspectRatio: aspectRatio,
+            date: date,
+            addTimestamp: addTimestamp,
+            intensity: intensity,
+            timing: timing
         )
     }
 
-    private static func process(
+    private static func processWithTiming(
         baseImage: UIImage,
         film: FilmPreset,
         aspectRatio: CaptureAspectRatio,
         date: Date,
         addTimestamp: Bool,
-        intensity: Double
-    ) throws -> UIImage {
+        intensity: Double,
+        timing: ProcessingTiming
+    ) throws -> ProcessingResult {
+        var timing = timing
+        timing.setInputPixelSize(baseImage.pixelSize)
+
         guard var ciImage = CIImage(image: baseImage) else {
             throw ImagePipelineError.cannotCreateImage
         }
 
-        ciImage = centerCrop(ciImage, aspectRatio: aspectRatio.value)
-        let original = ciImage
-        var styledImage = applyExposure(ciImage, ev: film.exposureBias)
-        styledImage = applyTemperature(styledImage, film: film)
-        styledImage = applyColorControls(styledImage, film: film)
-        styledImage = applyToneCurve(styledImage, curve: film.toneCurve)
-        styledImage = applyHalation(styledImage, amount: film.halationAmount)
-        styledImage = applyVignette(styledImage, amount: film.vignetteAmount)
-        styledImage = applyLightLeak(styledImage, film: film)
-        ciImage = blend(original: original, styled: styledImage, intensity: intensity)
+        ciImage = measureStage("crop") {
+            centerCrop(ciImage, aspectRatio: aspectRatio.value)
+        } record: { timing.record($0, milliseconds: $1) }
+        timing.setCroppedPixelSize(ciImage.extent.size)
 
-        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
-            throw ImagePipelineError.cannotRenderImage
-        }
+        let rendered = try measureStage("coreImageRender") {
+            let original = ciImage
+            var styledImage = applyExposure(ciImage, ev: film.exposureBias)
+            styledImage = applyTemperature(styledImage, film: film)
+            styledImage = applyColorControls(styledImage, film: film)
+            styledImage = applyToneCurve(styledImage, curve: film.toneCurve)
+            styledImage = applyHalation(styledImage, amount: film.halationAmount)
+            styledImage = applyVignette(styledImage, amount: film.vignetteAmount)
+            styledImage = applyLightLeak(styledImage, film: film)
+            let blendedImage = blend(original: original, styled: styledImage, intensity: intensity)
 
-        let grained = applyGrain(to: cgImage, film: film)
-        let decorated = decorate(
-            image: UIImage(cgImage: grained),
-            film: film,
-            date: date,
-            addTimestamp: addTimestamp
-        )
-        return decorated
+            guard let cgImage = context.createCGImage(blendedImage, from: blendedImage.extent) else {
+                throw ImagePipelineError.cannotRenderImage
+            }
+            return cgImage
+        } record: { timing.record($0, milliseconds: $1) }
+
+        let grained = measureStage("grain") {
+            applyGrain(to: rendered, film: film)
+        } record: { timing.record($0, milliseconds: $1) }
+
+        let decorated = measureStage("decorate") {
+            decorate(
+                image: UIImage(cgImage: grained),
+                film: film,
+                date: date,
+                addTimestamp: addTimestamp
+            )
+        } record: { timing.record($0, milliseconds: $1) }
+        timing.setOutputPixelSize(decorated.pixelSize)
+
+        return ProcessingResult(image: decorated, timing: timing)
+    }
+
+    private static func measureStage<Result>(
+        _ name: String,
+        operation: () throws -> Result,
+        record: (String, Double) -> Void
+    ) rethrows -> Result {
+        let clock = ContinuousClock()
+        let start = clock.now
+        let result = try operation()
+        let duration = start.duration(to: clock.now)
+        record(name, duration.milliseconds)
+        return result
     }
 
     private static func downsample(photoData: Data, maxPixelSize: CGFloat) throws -> UIImage {
@@ -464,6 +580,13 @@ private extension Comparable {
     }
 }
 
+private extension Duration {
+    var milliseconds: Double {
+        let durationComponents = components
+        return Double(durationComponents.seconds) * 1_000 + Double(durationComponents.attoseconds) / 1_000_000_000_000_000
+    }
+}
+
 private extension UIColor {
     convenience init?(hex: String) {
         var cleaned = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -483,6 +606,13 @@ private extension UIColor {
 }
 
 private extension UIImage {
+    var pixelSize: CGSize {
+        if let cgImage {
+            return CGSize(width: cgImage.width, height: cgImage.height)
+        }
+        return CGSize(width: size.width * scale, height: size.height * scale)
+    }
+
     func normalizedForProcessing(maxPixelSize: CGFloat) -> UIImage {
         let longestSide = max(size.width, size.height)
         let scaleRatio = min(1.0, maxPixelSize / longestSide)

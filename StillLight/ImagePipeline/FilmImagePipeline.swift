@@ -158,6 +158,8 @@ enum FilmImagePipeline {
             styledImage = applyTemperature(styledImage, film: film)
             styledImage = applyColorControls(styledImage, film: film)
             styledImage = applyToneCurve(styledImage, curve: film.toneCurve)
+            styledImage = applyHighlightShadow(styledImage, film: film)
+            styledImage = applyFilmColorResponse(styledImage, film: film)
             styledImage = applyHalation(styledImage, amount: film.halationAmount)
             styledImage = applyVignette(styledImage, amount: film.vignetteAmount)
             styledImage = applyLightLeak(styledImage, film: film)
@@ -288,13 +290,52 @@ enum FilmImagePipeline {
         return filter.outputImage ?? image
     }
 
+    private static func applyHighlightShadow(_ image: CIImage, film: FilmPreset) -> CIImage {
+        guard let filter = CIFilter(name: "CIHighlightShadowAdjust") else {
+            return image
+        }
+
+        let highlightProtection = (1.0 - film.halationAmount * 0.44 - max(0, film.brightness) * 1.8).clamped(to: 0.68...0.98)
+        let shadowLift = (0.04 + max(0, film.toneCurve.p0.y) * 1.8 + max(0, 1.0 - film.contrast) * 0.18).clamped(to: 0.02...0.28)
+
+        filter.setValue(image, forKey: kCIInputImageKey)
+        filter.setValue(highlightProtection, forKey: "inputHighlightAmount")
+        filter.setValue(shadowLift, forKey: "inputShadowAmount")
+        return filter.outputImage?.cropped(to: image.extent) ?? image
+    }
+
+    private static func applyFilmColorResponse(_ image: CIImage, film: FilmPreset) -> CIImage {
+        let response = FilmColorResponse.response(for: film)
+        guard !response.isIdentity else { return image }
+
+        let filter = CIFilter.colorMatrix()
+        filter.inputImage = image
+        filter.rVector = CIVector(x: response.rr, y: response.rg, z: response.rb, w: 0)
+        filter.gVector = CIVector(x: response.gr, y: response.gg, z: response.gb, w: 0)
+        filter.bVector = CIVector(x: response.br, y: response.bg, z: response.bb, w: 0)
+        filter.aVector = CIVector(x: 0, y: 0, z: 0, w: 1)
+        filter.biasVector = CIVector(x: response.biasR, y: response.biasG, z: response.biasB, w: 0)
+        return filter.outputImage?.cropped(to: image.extent) ?? image
+    }
+
     private static func applyVignette(_ image: CIImage, amount: Double) -> CIImage {
         guard amount > 0 else { return image }
-        let filter = CIFilter.vignette()
-        filter.inputImage = image
-        filter.intensity = Float(amount)
-        filter.radius = Float(max(image.extent.width, image.extent.height) * 0.72)
-        return filter.outputImage ?? image
+
+        let extent = image.extent
+        guard let filter = CIFilter(name: "CIVignetteEffect") else {
+            return image
+        }
+
+        let maxDimension = max(extent.width, extent.height)
+        let softenedAmount = min(0.62, amount)
+        let radius = maxDimension * (0.72 - CGFloat(softenedAmount) * 0.12)
+        let intensity = softenedAmount * 0.95
+
+        filter.setValue(image, forKey: kCIInputImageKey)
+        filter.setValue(CIVector(x: extent.midX, y: extent.midY), forKey: kCIInputCenterKey)
+        filter.setValue(radius, forKey: kCIInputRadiusKey)
+        filter.setValue(intensity, forKey: kCIInputIntensityKey)
+        return filter.outputImage?.cropped(to: extent) ?? image
     }
 
     private static func applyHalation(_ image: CIImage, amount: Double) -> CIImage {
@@ -345,10 +386,16 @@ enum FilmImagePipeline {
             return image
         }
 
-        let composite = CIFilter.sourceOverCompositing()
-        composite.inputImage = leak
-        composite.backgroundImage = image
-        return composite.outputImage?.cropped(to: extent) ?? image
+        guard let blend = CIFilter(name: "CIScreenBlendMode") else {
+            let composite = CIFilter.sourceOverCompositing()
+            composite.inputImage = leak
+            composite.backgroundImage = image
+            return composite.outputImage?.cropped(to: extent) ?? image
+        }
+
+        blend.setValue(leak, forKey: kCIInputImageKey)
+        blend.setValue(image, forKey: kCIInputBackgroundImageKey)
+        return blend.outputImage?.cropped(to: extent) ?? image
     }
 
     private static func applyGrain(to image: CGImage, film: FilmPreset) -> CGImage {
@@ -380,30 +427,29 @@ enum FilmImagePipeline {
             context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
 
             let pixelBuffer = baseAddress.bindMemory(to: UInt8.self, capacity: pixelCount)
-            var generator = LCG(seed: UInt64(width * 31 + height * 17 + film.iso))
-            let amplitude = max(0.0, min(1.0, film.grainAmount)) * 34.0
+            var generator = LCG(seed: grainSeed(width: width, height: height, film: film))
+            let amount = max(0.0, min(1.0, film.grainAmount))
+            let isoScale = sqrt(Double(max(50, film.iso)) / 400.0).clamped(to: 0.72...1.48)
+            let lumaAmplitude = amount * 21.0 * isoScale * film.grainSize.clamped(to: 0.7...1.45)
+            let chromaAmplitude = film.category == .blackWhite ? 0.0 : lumaAmplitude * 0.28
 
-            for y in stride(from: 0, to: height, by: max(1, Int(film.grainSize.rounded()))) {
-                for x in stride(from: 0, to: width, by: max(1, Int(film.grainSize.rounded()))) {
+            for y in 0..<height {
+                for x in 0..<width {
                     let index = y * bytesPerRow + x * bytesPerPixel
                     let r = Double(pixelBuffer[index])
                     let g = Double(pixelBuffer[index + 1])
                     let b = Double(pixelBuffer[index + 2])
                     let luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
-                    let midtoneWeight = 0.35 + (1.0 - abs(luminance - 0.45) * 1.6).clamped(to: 0...1) * 0.65
-                    let noise = (generator.nextDouble() - 0.5) * amplitude * midtoneWeight
+                    let midtoneWeight = (1.0 - abs(luminance - 0.48) * 1.65).clamped(to: 0...1)
+                    let shadowWeight = (1.0 - luminance).clamped(to: 0...1)
+                    let weight = 0.22 + midtoneWeight * 0.52 + shadowWeight * 0.26
+                    let lumaNoise = triangularNoise(&generator) * lumaAmplitude * weight
+                    let redChroma = triangularNoise(&generator) * chromaAmplitude * weight
+                    let blueChroma = triangularNoise(&generator) * chromaAmplitude * weight
 
-                    let xEnd = min(width, x + max(1, Int(film.grainSize.rounded())))
-                    let yEnd = min(height, y + max(1, Int(film.grainSize.rounded())))
-
-                    for yy in y..<yEnd {
-                        for xx in x..<xEnd {
-                            let pixelIndex = yy * bytesPerRow + xx * bytesPerPixel
-                            pixelBuffer[pixelIndex] = UInt8((Double(pixelBuffer[pixelIndex]) + noise).clamped(to: 0...255))
-                            pixelBuffer[pixelIndex + 1] = UInt8((Double(pixelBuffer[pixelIndex + 1]) + noise).clamped(to: 0...255))
-                            pixelBuffer[pixelIndex + 2] = UInt8((Double(pixelBuffer[pixelIndex + 2]) + noise).clamped(to: 0...255))
-                        }
-                    }
+                    pixelBuffer[index] = UInt8((r + lumaNoise + redChroma * 0.82).clamped(to: 0...255))
+                    pixelBuffer[index + 1] = UInt8((g + lumaNoise - redChroma * 0.18 - blueChroma * 0.16).clamped(to: 0...255))
+                    pixelBuffer[index + 2] = UInt8((b + lumaNoise + blueChroma * 0.86).clamped(to: 0...255))
                 }
             }
 
@@ -411,6 +457,18 @@ enum FilmImagePipeline {
         }
 
         return output ?? image
+    }
+
+    private static func triangularNoise(_ generator: inout LCG) -> Double {
+        generator.nextDouble() - generator.nextDouble()
+    }
+
+    private static func grainSeed(width: Int, height: Int, film: FilmPreset) -> UInt64 {
+        var seed = UInt64(width * 31 + height * 17 + film.iso * 13)
+        for scalar in film.id.unicodeScalars {
+            seed = seed &* 1_099_511_628_211 &+ UInt64(scalar.value)
+        }
+        return seed
     }
 
     private static func decorate(
@@ -557,6 +615,68 @@ enum ImagePipelineError: LocalizedError {
             return "Could not read the captured photo."
         case .cannotRenderImage:
             return "Could not render the film simulation."
+        }
+    }
+}
+
+private struct FilmColorResponse {
+    let rr: CGFloat
+    let rg: CGFloat
+    let rb: CGFloat
+    let gr: CGFloat
+    let gg: CGFloat
+    let gb: CGFloat
+    let br: CGFloat
+    let bg: CGFloat
+    let bb: CGFloat
+    let biasR: CGFloat
+    let biasG: CGFloat
+    let biasB: CGFloat
+
+    var isIdentity: Bool {
+        rr == 1 && rg == 0 && rb == 0
+            && gr == 0 && gg == 1 && gb == 0
+            && br == 0 && bg == 0 && bb == 1
+            && biasR == 0 && biasG == 0 && biasB == 0
+    }
+
+    static let identity = FilmColorResponse(
+        rr: 1, rg: 0, rb: 0,
+        gr: 0, gg: 1, gb: 0,
+        br: 0, bg: 0, bb: 1,
+        biasR: 0, biasG: 0, biasB: 0
+    )
+
+    static func response(for film: FilmPreset) -> FilmColorResponse {
+        switch film.id {
+        case "human-warm-400":
+            return .init(rr: 1.025, rg: 0.014, rb: -0.010, gr: 0.006, gg: 1.006, gb: 0.000, br: -0.010, bg: 0.006, bb: 0.970, biasR: 0.010, biasG: 0.004, biasB: -0.006)
+        case "human-vignette-800":
+            return .init(rr: 1.012, rg: 0.010, rb: -0.012, gr: 0.004, gg: 1.000, gb: 0.004, br: -0.015, bg: 0.010, bb: 0.955, biasR: -0.003, biasG: -0.001, biasB: -0.010)
+        case "muse-portrait-400", "soft-portrait-400":
+            return .init(rr: 1.026, rg: 0.010, rb: -0.006, gr: 0.006, gg: 1.000, gb: 0.000, br: -0.006, bg: 0.006, bb: 0.974, biasR: 0.012, biasG: 0.006, biasB: -0.004)
+        case "sunlit-gold-200", "t-compact-gold":
+            return .init(rr: 1.032, rg: 0.014, rb: -0.018, gr: 0.012, gg: 1.006, gb: -0.006, br: -0.016, bg: 0.004, bb: 0.952, biasR: 0.014, biasG: 0.008, biasB: -0.010)
+        case "green-street-400", "superia-green":
+            return .init(rr: 0.990, rg: 0.008, rb: -0.006, gr: 0.004, gg: 1.030, gb: -0.004, br: -0.012, bg: 0.018, bb: 0.970, biasR: -0.004, biasG: 0.010, biasB: -0.006)
+        case "tungsten-800":
+            return .init(rr: 1.020, rg: 0.006, rb: 0.006, gr: -0.004, gg: 0.985, gb: 0.008, br: -0.006, bg: 0.014, bb: 1.038, biasR: 0.010, biasG: -0.004, biasB: 0.012)
+        case "hncs-natural", "medium-500c":
+            return .init(rr: 1.006, rg: 0.004, rb: -0.004, gr: 0.002, gg: 1.004, gb: 0.000, br: -0.004, bg: 0.004, bb: 0.994, biasR: 0.002, biasG: 0.002, biasB: -0.002)
+        case "m-rangefinder":
+            return .init(rr: 1.035, rg: 0.006, rb: -0.010, gr: 0.004, gg: 0.996, gb: 0.000, br: -0.014, bg: 0.006, bb: 0.960, biasR: 0.006, biasG: 0.001, biasB: -0.008)
+        case "gr-street-snap", "classic-chrome-x":
+            return .init(rr: 0.976, rg: 0.010, rb: 0.000, gr: 0.000, gg: 1.000, gb: 0.010, br: -0.004, bg: 0.014, bb: 1.012, biasR: -0.006, biasG: -0.002, biasB: 0.004)
+        case "ccd-2003", "cyber-ccd-blue":
+            return .init(rr: 0.984, rg: 0.000, rb: 0.016, gr: -0.004, gg: 0.998, gb: 0.012, br: -0.006, bg: 0.010, bb: 1.045, biasR: -0.006, biasG: 0.000, biasB: 0.014)
+        case "instant-square", "instant-wide", "sx-fade":
+            return .init(rr: 1.020, rg: 0.010, rb: -0.006, gr: 0.006, gg: 1.000, gb: 0.000, br: -0.010, bg: 0.004, bb: 0.978, biasR: 0.012, biasG: 0.006, biasB: -0.004)
+        case "holga-120-dream", "lca-vivid":
+            return .init(rr: 1.032, rg: 0.008, rb: -0.008, gr: 0.002, gg: 1.020, gb: -0.004, br: -0.012, bg: 0.004, bb: 0.972, biasR: 0.012, biasG: 0.004, biasB: -0.006)
+        case "silver-hp5", "tri-x-street", "noir-soft":
+            return .identity
+        default:
+            return .init(rr: 1.012, rg: 0.006, rb: -0.006, gr: 0.004, gg: 1.002, gb: 0.000, br: -0.008, bg: 0.004, bb: 0.982, biasR: 0.004, biasG: 0.002, biasB: -0.004)
         }
     }
 }

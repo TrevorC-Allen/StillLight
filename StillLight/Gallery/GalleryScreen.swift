@@ -212,7 +212,7 @@ private struct PhotoDetailPage: View {
     @EnvironmentObject private var appState: AppState
     let record: PhotoRecord
     @ObservedObject var photoStore: PhotoStore
-    @GestureState private var showsOriginal = false
+    @State private var showsOriginal = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -236,7 +236,17 @@ private struct PhotoDetailPage: View {
                 }
                 .padding(.horizontal, 14)
                 .animation(.easeOut(duration: 0.12), value: showsOriginal)
-                .simultaneousGesture(originalCompareGesture)
+                .onLongPressGesture(
+                    minimumDuration: 0.18,
+                    maximumDistance: 80,
+                    pressing: { pressing in
+                        guard originalImage != nil else { return }
+                        withAnimation(.easeOut(duration: 0.12)) {
+                            showsOriginal = pressing
+                        }
+                    },
+                    perform: {}
+                )
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -289,17 +299,4 @@ private struct PhotoDetailPage: View {
             .displayName(language: appState.language) ?? currentRecord.filmName
     }
 
-    private var originalCompareGesture: some Gesture {
-        LongPressGesture(minimumDuration: 0.28, maximumDistance: 10)
-            .sequenced(before: DragGesture(minimumDistance: 0))
-            .updating($showsOriginal) { value, state, _ in
-                guard originalImage != nil else { return }
-                switch value {
-                case .second(true, _):
-                    state = true
-                default:
-                    state = false
-                }
-            }
-    }
 }

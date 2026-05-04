@@ -136,6 +136,7 @@ struct ImportLabScreen: View {
                 .stillLightPanel()
             }
         }
+        .simultaneousGesture(frameNavigationGesture)
     }
 
     private var controls: some View {
@@ -285,6 +286,19 @@ struct ImportLabScreen: View {
 
     private func recommendationScoreText(_ score: Double) -> String {
         "\(Int((min(max(score, 0), 1) * 100).rounded()))%"
+    }
+
+    private var frameNavigationGesture: some Gesture {
+        DragGesture(minimumDistance: 36)
+            .onEnded { value in
+                guard viewModel.frames.count > 1 else { return }
+                let horizontal = value.translation.width
+                let vertical = value.translation.height
+                guard abs(horizontal) > 54, abs(horizontal) > abs(vertical) * 1.35 else { return }
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                    viewModel.selectAdjacentFrame(delta: horizontal < 0 ? 1 : -1)
+                }
+            }
     }
 
     @ViewBuilder
@@ -633,6 +647,14 @@ private final class ImportLabViewModel: ObservableObject {
         selectedFrameID = id
         statusMessage = nil
         errorMessage = nil
+    }
+
+    func selectAdjacentFrame(delta: Int) {
+        guard !frames.isEmpty else { return }
+        let currentIndex = selectedIndex ?? 0
+        let targetIndex = min(max(currentIndex + delta, 0), frames.count - 1)
+        guard targetIndex != currentIndex else { return }
+        selectFrame(frames[targetIndex].id)
     }
 
     func load(

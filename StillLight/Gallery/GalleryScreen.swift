@@ -43,7 +43,11 @@ private struct GalleryContent: View {
                             LazyVGrid(columns: columns, spacing: 2) {
                                 ForEach(filteredRecords) { record in
                                     NavigationLink {
-                                        PhotoDetailView(record: record, photoStore: photoStore)
+                                        PhotoDetailView(
+                                            records: filteredRecords,
+                                            initialRecordID: record.id,
+                                            photoStore: photoStore
+                                        )
                                     } label: {
                                         GalleryThumbnail(record: record)
                                     }
@@ -142,60 +146,31 @@ private struct GalleryThumbnail: View {
 
 private struct PhotoDetailView: View {
     @EnvironmentObject private var appState: AppState
-    let record: PhotoRecord
+    let records: [PhotoRecord]
     @ObservedObject var photoStore: PhotoStore
     @State private var showsShareSheet = false
-    @GestureState private var showsOriginal = false
+    @State private var selectedRecordID: UUID
+
+    init(records: [PhotoRecord], initialRecordID: UUID, photoStore: PhotoStore) {
+        self.records = records
+        self.photoStore = photoStore
+        _selectedRecordID = State(initialValue: initialRecordID)
+    }
 
     var body: some View {
         ZStack {
             StillLightTheme.background.ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                if let image = displayedImage {
-                    ZStack(alignment: .topTrailing) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-                        if showsOriginal, originalImage != nil {
-                            Text(appState.t(.original))
-                                .font(.caption.monospaced())
-                                .foregroundStyle(StillLightTheme.text)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(StillLightTheme.panel.opacity(0.82))
-                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                .padding(10)
-                        }
+            if records.isEmpty {
+                EmptyView()
+            } else {
+                TabView(selection: $selectedRecordID) {
+                    ForEach(records) { record in
+                        PhotoDetailPage(record: record, photoStore: photoStore)
+                            .tag(record.id)
                     }
-                    .padding(.horizontal, 14)
-                    .animation(.easeOut(duration: 0.12), value: showsOriginal)
-                    .simultaneousGesture(originalCompareGesture)
                 }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(displayFilmName)
-                            .font(.headline)
-                            .foregroundStyle(StillLightTheme.text)
-                        Spacer()
-                        Text(currentRecord.aspectRatio)
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(StillLightTheme.secondaryText)
-                    }
-                    Text(currentRecord.capturedAt, style: .date)
-                        .font(.caption)
-                        .foregroundStyle(StillLightTheme.secondaryText)
-                    Text("\(currentRecord.width) x \(currentRecord.height)")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(StillLightTheme.secondaryText)
-                }
-                .stillLightPanel()
-                .padding(.horizontal, 14)
-
-                Spacer()
+                .tabViewStyle(.page(indexDisplayMode: .never))
             }
         }
         .navigationTitle(appState.t(.frame))
@@ -203,23 +178,88 @@ private struct PhotoDetailView: View {
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.16)) {
-                        photoStore.toggleFavorite(currentRecord)
+                    if let selectedRecord {
+                        withAnimation(.easeInOut(duration: 0.16)) {
+                            photoStore.toggleFavorite(selectedRecord)
+                        }
                     }
                 } label: {
-                    Image(systemName: currentRecord.isFavorite ? "heart.fill" : "heart")
+                    Image(systemName: selectedRecord?.isFavorite == true ? "heart.fill" : "heart")
                 }
-                .accessibilityLabel(appState.t(currentRecord.isFavorite ? .removeFavorite : .addFavorite))
+                .disabled(selectedRecord == nil)
+                .accessibilityLabel(appState.t(selectedRecord?.isFavorite == true ? .removeFavorite : .addFavorite))
 
                 Button {
                     showsShareSheet = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
+                .disabled(selectedRecord == nil)
             }
         }
         .sheet(isPresented: $showsShareSheet) {
-            ShareSheet(activityItems: [currentRecord.processedURL])
+            ShareSheet(activityItems: selectedRecord.map { [$0.processedURL] } ?? [])
+        }
+    }
+
+    private var selectedRecord: PhotoRecord? {
+        guard let fallback = records.first(where: { $0.id == selectedRecordID }) else { return nil }
+        return photoStore.record(id: selectedRecordID) ?? fallback
+    }
+}
+
+private struct PhotoDetailPage: View {
+    @EnvironmentObject private var appState: AppState
+    let record: PhotoRecord
+    @ObservedObject var photoStore: PhotoStore
+    @GestureState private var showsOriginal = false
+
+    var body: some View {
+        VStack(spacing: 16) {
+            if let image = displayedImage {
+                ZStack(alignment: .topTrailing) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                    if showsOriginal, originalImage != nil {
+                        Text(appState.t(.original))
+                            .font(.caption.monospaced())
+                            .foregroundStyle(StillLightTheme.text)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(StillLightTheme.panel.opacity(0.82))
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .padding(10)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .animation(.easeOut(duration: 0.12), value: showsOriginal)
+                .simultaneousGesture(originalCompareGesture)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(displayFilmName)
+                        .font(.headline)
+                        .foregroundStyle(StillLightTheme.text)
+                    Spacer()
+                    Text(currentRecord.aspectRatio)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(StillLightTheme.secondaryText)
+                }
+                Text(currentRecord.capturedAt, style: .date)
+                    .font(.caption)
+                    .foregroundStyle(StillLightTheme.secondaryText)
+                Text("\(currentRecord.width) x \(currentRecord.height)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(StillLightTheme.secondaryText)
+            }
+            .stillLightPanel()
+            .padding(.horizontal, 14)
+
+            Spacer()
         }
     }
 

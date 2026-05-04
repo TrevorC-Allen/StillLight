@@ -315,19 +315,6 @@ struct CameraScreen: View {
                         }
                     }
                 }
-
-                Rectangle()
-                    .fill(StillLightTheme.secondaryText.opacity(0.24))
-                    .frame(width: 1, height: 20)
-
-                Text("\(viewModel.zoomState.displayFactorText)x")
-                    .font(.caption.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(isDraggingZoomControl ? StillLightTheme.accent : StillLightTheme.text)
-                    .frame(minWidth: 44)
-                    .frame(height: 30)
-                    .padding(.horizontal, 4)
-                    .background(StillLightTheme.panelElevated.opacity(isDraggingZoomControl ? 0.95 : 0.72))
-                    .clipShape(Capsule())
             } else {
                 Text("\(viewModel.zoomState.displayFactorText)x")
                     .font(.caption.monospacedDigit().weight(.semibold))
@@ -340,9 +327,17 @@ struct CameraScreen: View {
         .background(StillLightTheme.panel.opacity(0.70))
         .clipShape(Capsule())
         .contentShape(Capsule())
+        .overlay(alignment: .top) {
+            if isDraggingZoomControl {
+                ZoomValueBubble(value: viewModel.zoomState.displayFactorText)
+                    .offset(y: -44)
+                    .transition(.scale(scale: 0.88).combined(with: .opacity))
+            }
+        }
         .simultaneousGesture(zoomControlDragGesture)
         .padding(.bottom, 12)
         .opacity(viewModel.isRecording ? 0.72 : 1)
+        .animation(.easeOut(duration: 0.14), value: isDraggingZoomControl)
     }
 
     private var recentStoredImage: UIImage? {
@@ -566,6 +561,22 @@ private struct ZoomLensButton: View {
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct ZoomValueBubble: View {
+    let value: String
+
+    var body: some View {
+        Text("\(value)x")
+            .font(.system(size: 13, weight: .bold, design: .rounded).monospacedDigit())
+            .foregroundStyle(StillLightTheme.background)
+            .padding(.horizontal, 12)
+            .frame(height: 30)
+            .background(StillLightTheme.accent)
+            .clipShape(Capsule())
+            .shadow(color: .black.opacity(0.28), radius: 12, y: 7)
+            .allowsHitTesting(false)
     }
 }
 

@@ -71,6 +71,9 @@ enum AppText {
         case saveAll
         case savingFrame
         case savedFrames
+        case processingTiming
+        case inputPixels
+        case outputPixels
         case strength
         case ratio
         case suggestedRoll
@@ -152,6 +155,9 @@ enum AppText {
         .saveAll: "Save All",
         .savingFrame: "Saving %d/%d",
         .savedFrames: "Saved %d frames",
+        .processingTiming: "Processing Timing",
+        .inputPixels: "Input",
+        .outputPixels: "Output",
         .strength: "Strength",
         .ratio: "Ratio",
         .suggestedRoll: "Suggested Roll",
@@ -233,6 +239,9 @@ enum AppText {
         .saveAll: "保存全部",
         .savingFrame: "保存中 %d/%d",
         .savedFrames: "已保存 %d 张",
+        .processingTiming: "处理耗时",
+        .inputPixels: "输入",
+        .outputPixels: "输出",
         .strength: "强度",
         .ratio: "比例",
         .suggestedRoll: "推荐胶卷",

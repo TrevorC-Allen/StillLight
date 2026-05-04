@@ -162,6 +162,7 @@ struct ImportLabScreen: View {
             }
 
             thumbnailStrip
+            processingTimingSummary
 
             HStack {
                 Text(appState.t(.strength))
@@ -345,6 +346,77 @@ struct ImportLabScreen: View {
         }
     }
 
+    @ViewBuilder
+    private var processingTimingSummary: some View {
+        if viewModel.hasSelectedProcessedImage,
+           let timing = viewModel.selectedProcessingTiming {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "speedometer")
+                        .font(.caption)
+                        .foregroundStyle(StillLightTheme.accent)
+                    Text(appState.t(.processingTiming))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(StillLightTheme.secondaryText)
+                    Spacer()
+                    Text(millisecondsText(timing.totalMilliseconds))
+                        .font(.caption.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(StillLightTheme.text)
+                }
+
+                HStack(spacing: 14) {
+                    pixelMetric(label: appState.t(.inputPixels), value: pixelSizeText(timing.inputPixelSize))
+                    pixelMetric(label: appState.t(.outputPixels), value: pixelSizeText(timing.outputPixelSize))
+                    Spacer(minLength: 0)
+                }
+
+                VStack(spacing: 6) {
+                    ForEach(Array(timing.stages.enumerated()), id: \.offset) { _, stage in
+                        HStack(spacing: 10) {
+                            Text(stage.name)
+                                .font(.caption2.monospaced())
+                                .foregroundStyle(StillLightTheme.secondaryText)
+                                .lineLimit(1)
+                            Spacer(minLength: 8)
+                            Text(millisecondsText(stage.milliseconds))
+                                .font(.caption2.monospacedDigit())
+                                .foregroundStyle(StillLightTheme.text.opacity(0.86))
+                        }
+                    }
+                }
+            }
+            .padding(14)
+            .background(StillLightTheme.panel.opacity(0.72))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+    }
+
+    private func pixelMetric(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(StillLightTheme.secondaryText)
+            Text(value)
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(StillLightTheme.text)
+        }
+    }
+
+    private func millisecondsText(_ milliseconds: Double) -> String {
+        if milliseconds < 10 {
+            return String(format: "%.1f ms", milliseconds)
+        }
+        return "\(Int(milliseconds.rounded())) ms"
+    }
+
+    private func pixelSizeText(_ size: CGSize) -> String {
+        "\(Int(size.width.rounded()))x\(Int(size.height.rounded()))"
+    }
+
     private var actionArea: some View {
         VStack(spacing: 12) {
             HStack(spacing: 12) {
@@ -486,6 +558,7 @@ private struct ImportLabFrame: Identifiable {
     let originalData: Data
     let originalImage: UIImage
     var processedImage: UIImage?
+    var processingTiming: FilmImagePipeline.ProcessingTiming?
     var savedRecord: PhotoRecord?
     var recommendation: FilmRecommendation?
     var recommendationOptions: [FilmRecommendationOption] = []
@@ -523,6 +596,10 @@ private final class ImportLabViewModel: ObservableObject {
 
     var selectedRecommendationOptions: [FilmRecommendationOption] {
         selectedFrame?.recommendationOptions ?? []
+    }
+
+    var selectedProcessingTiming: FilmImagePipeline.ProcessingTiming? {
+        selectedFrame?.processingTiming
     }
 
     var savedRecord: PhotoRecord? {
@@ -639,11 +716,12 @@ private final class ImportLabViewModel: ObservableObject {
         let sourceFrameID = sourceFrame.id
         updateFrame(at: selectedIndex) { frame in
             frame.processingError = nil
+            frame.processingTiming = nil
         }
 
         Task {
             do {
-                let output = try await render(
+                let result = try await render(
                     frame: sourceFrame,
                     film: film,
                     aspectRatio: aspectRatio,
@@ -652,7 +730,8 @@ private final class ImportLabViewModel: ObservableObject {
                 )
                 if let index = frames.firstIndex(where: { $0.id == sourceFrameID }) {
                     updateFrame(at: index) { frame in
-                        frame.processedImage = output
+                        frame.processedImage = result.image
+                        frame.processingTiming = result.timing
                         frame.savedRecord = nil
                         frame.processingError = nil
                     }
@@ -662,6 +741,7 @@ private final class ImportLabViewModel: ObservableObject {
                 if let index = frames.firstIndex(where: { $0.id == sourceFrameID }) {
                     updateFrame(at: index) { frame in
                         frame.processingError = error.localizedDescription
+                        frame.processingTiming = nil
                     }
                 }
                 errorMessage = error.localizedDescription
@@ -711,6 +791,7 @@ private final class ImportLabViewModel: ObservableObject {
                 if let index = frames.firstIndex(where: { $0.id == frame.id }) {
                     updateFrame(at: index) { editableFrame in
                         editableFrame.processingError = nil
+                        editableFrame.processingTiming = nil
                     }
                 }
 
@@ -723,7 +804,7 @@ private final class ImportLabViewModel: ObservableObject {
                 )
 
                 do {
-                    let output = try await render(
+                    let result = try await render(
                         frame: frame,
                         film: film,
                         aspectRatio: aspectRatio,
@@ -738,7 +819,8 @@ private final class ImportLabViewModel: ObservableObject {
 
                     if let index = frames.firstIndex(where: { $0.id == frame.id }) {
                         updateFrame(at: index) { editableFrame in
-                            editableFrame.processedImage = output
+                            editableFrame.processedImage = result.image
+                            editableFrame.processingTiming = result.timing
                             editableFrame.savedRecord = nil
                             editableFrame.processingError = nil
                         }
@@ -751,6 +833,7 @@ private final class ImportLabViewModel: ObservableObject {
                     if let index = frames.firstIndex(where: { $0.id == frame.id }) {
                         updateFrame(at: index) { editableFrame in
                             editableFrame.processingError = error.localizedDescription
+                            editableFrame.processingTiming = nil
                         }
                     }
                     failedCount += 1
@@ -870,9 +953,9 @@ private final class ImportLabViewModel: ObservableObject {
         aspectRatio: CaptureAspectRatio,
         addTimestamp: Bool,
         strength: Double
-    ) async throws -> UIImage {
+    ) async throws -> FilmImagePipeline.ProcessingResult {
         try await Task.detached(priority: .userInitiated) {
-            try FilmImagePipeline.process(
+            try FilmImagePipeline.processWithTiming(
                 image: frame.originalImage,
                 film: film,
                 aspectRatio: aspectRatio,

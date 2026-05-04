@@ -1897,19 +1897,69 @@ private struct ExposureCounter: View {
     let language: AppLanguage
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            Text(formatText)
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .tracking(0.6)
-                .foregroundStyle(StillLightTheme.secondaryText.opacity(0.86))
-            Text(countText)
-                .font(.system(size: 20, weight: .semibold, design: .rounded))
-                .foregroundStyle(StillLightTheme.text)
+        HStack(spacing: 8) {
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(formatText)
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .tracking(0.6)
+                    .foregroundStyle(StillLightTheme.secondaryText.opacity(0.78))
+                Text(language == .chinese ? "余量" : "COUNT")
+                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                    .tracking(0.7)
+                    .foregroundStyle(StillLightTheme.secondaryText.opacity(0.52))
+            }
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.86),
+                                StillLightTheme.panelElevated.opacity(0.92),
+                                Color.black.opacity(0.72)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                Text(countText)
+                    .font(.system(size: 18, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(StillLightTheme.text.opacity(0.94))
+                    .contentTransition(.numericText())
+                    .id(countText)
+
+                LinearGradient(
+                    colors: [.white.opacity(0.24), .clear, .black.opacity(0.18)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+            }
+            .frame(width: 42, height: 31)
+            .overlay {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .stroke(StillLightTheme.text.opacity(0.16), lineWidth: 1)
+            }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
-        .background(StillLightTheme.panelElevated.opacity(0.72))
+        .padding(.leading, 11)
+        .padding(.trailing, 8)
+        .padding(.vertical, 8)
+        .background(
+            LinearGradient(
+                colors: [
+                    StillLightTheme.panelElevated.opacity(0.84),
+                    StillLightTheme.panel.opacity(0.68)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(StillLightTheme.text.opacity(0.08), lineWidth: 1)
+        }
+        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: countText)
     }
 
     private var formatText: String {

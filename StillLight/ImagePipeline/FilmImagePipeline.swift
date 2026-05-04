@@ -75,7 +75,7 @@ enum FilmImagePipeline {
     ) throws -> ProcessingResult {
         var timing = ProcessingTiming(maxInputPixelSize: 2400)
         let baseImage = try measureStage("downsample") {
-            try downsample(photoData: photoData, maxPixelSize: timing.maxInputPixelSize)
+            try downsample(photoData: photoData, maxPixelSize: 3200)
         } record: { timing.record($0, milliseconds: $1) }
 
         return try processWithTiming(
@@ -117,7 +117,7 @@ enum FilmImagePipeline {
     ) throws -> ProcessingResult {
         var timing = ProcessingTiming(maxInputPixelSize: 2400)
         let baseImage = measureStage("normalize") {
-            image.normalizedForProcessing(maxPixelSize: timing.maxInputPixelSize)
+            image.normalizedForProcessing(maxPixelSize: 3200)
         } record: { timing.record($0, milliseconds: $1) }
 
         return try processWithTiming(
@@ -350,12 +350,26 @@ enum FilmImagePipeline {
     private static func applyHalation(_ image: CIImage, amount: Double) -> CIImage {
         guard amount > 0 else { return image }
 
-        let bloom = CIFilter.bloom()
-        bloom.inputImage = image
-        bloom.intensity = Float(amount * 1.35)
-        bloom.radius = Float(max(image.extent.width, image.extent.height) * 0.018)
+        let extent = image.extent
+        let maxDimension = max(extent.width, extent.height)
+        guard let highPass = CIFilter(name: "CIColorControls") else {
+            return image
+        }
+        highPass.setValue(image, forKey: kCIInputImageKey)
+        highPass.setValue(0.0, forKey: kCIInputSaturationKey)
+        highPass.setValue(2.2 + amount * 1.4, forKey: kCIInputContrastKey)
+        highPass.setValue(-0.58, forKey: kCIInputBrightnessKey)
 
-        guard let bloomed = bloom.outputImage?.cropped(to: image.extent) else {
+        guard let highMask = highPass.outputImage?.cropped(to: extent) else {
+            return image
+        }
+
+        let bloom = CIFilter.bloom()
+        bloom.inputImage = highMask
+        bloom.intensity = Float(amount * 1.9)
+        bloom.radius = Float(maxDimension * (0.014 + amount * 0.010))
+
+        guard let bloomed = bloom.outputImage?.cropped(to: extent) else {
             return image
         }
 
@@ -364,45 +378,64 @@ enum FilmImagePipeline {
         warm.rVector = CIVector(x: 1.0, y: 0.0, z: 0.0, w: 0.0)
         warm.gVector = CIVector(x: 0.0, y: 0.42, z: 0.0, w: 0.0)
         warm.bVector = CIVector(x: 0.0, y: 0.0, z: 0.18, w: 0.0)
-        warm.aVector = CIVector(x: 0.0, y: 0.0, z: 0.0, w: CGFloat(0.26 * amount))
+        warm.aVector = CIVector(x: 0.0, y: 0.0, z: 0.0, w: CGFloat(0.32 * amount))
 
-        let composite = CIFilter.sourceOverCompositing()
-        composite.inputImage = warm.outputImage?.cropped(to: image.extent)
-        composite.backgroundImage = image
-        return composite.outputImage?.cropped(to: image.extent) ?? image
+        guard let blend = CIFilter(name: "CIScreenBlendMode") else {
+            let composite = CIFilter.sourceOverCompositing()
+            composite.inputImage = warm.outputImage?.cropped(to: extent)
+            composite.backgroundImage = image
+            return composite.outputImage?.cropped(to: extent) ?? image
+        }
+
+        blend.setValue(warm.outputImage?.cropped(to: extent), forKey: kCIInputImageKey)
+        blend.setValue(image, forKey: kCIInputBackgroundImageKey)
+        return blend.outputImage?.cropped(to: extent) ?? image
     }
 
     private static func applyLightLeak(_ image: CIImage, film: FilmPreset) -> CIImage {
         guard film.lightLeakAmount > 0 else { return image }
 
         let extent = image.extent
-        let seed = abs(film.id.hashValue)
+        let seed = stableSeed(for: film.id)
         let isLeft = seed.isMultiple(of: 2)
         let isTop = (seed / 3).isMultiple(of: 2)
         let center = CGPoint(
-            x: extent.minX + extent.width * (isLeft ? 0.06 : 0.94),
-            y: extent.minY + extent.height * (isTop ? 0.88 : 0.12)
+            x: extent.minX + extent.width * (isLeft ? 0.04 : 0.96),
+            y: extent.minY + extent.height * (isTop ? 0.86 : 0.14)
         )
+        let maxDimension = max(extent.width, extent.height)
 
         let gradient = CIFilter.radialGradient()
         gradient.center = center
-        gradient.radius0 = Float(max(extent.width, extent.height) * 0.03)
-        gradient.radius1 = Float(max(extent.width, extent.height) * 0.56)
-        gradient.color0 = CIColor(red: 1.0, green: 0.42, blue: 0.12, alpha: film.lightLeakAmount)
+        gradient.radius0 = Float(maxDimension * 0.02)
+        gradient.radius1 = Float(maxDimension * (0.40 + CGFloat(seed % 18) / 100.0))
+        gradient.color0 = CIColor(red: 1.0, green: 0.35, blue: 0.12, alpha: film.lightLeakAmount * 0.88)
         gradient.color1 = CIColor(red: 1.0, green: 0.76, blue: 0.18, alpha: 0.0)
 
-        guard let leak = gradient.outputImage?.cropped(to: extent) else {
+        let stripe = CIFilter.linearGradient()
+        let stripeX = extent.minX + extent.width * (isLeft ? 0.0 : 1.0)
+        stripe.point0 = CGPoint(x: stripeX, y: extent.midY)
+        stripe.point1 = CGPoint(x: stripeX + extent.width * (isLeft ? 0.28 : -0.28), y: extent.midY)
+        stripe.color0 = CIColor(red: 1.0, green: 0.20, blue: 0.10, alpha: film.lightLeakAmount * 0.42)
+        stripe.color1 = CIColor(red: 1.0, green: 0.74, blue: 0.22, alpha: 0.0)
+
+        guard let leak = gradient.outputImage?.cropped(to: extent),
+              let leakStripe = stripe.outputImage?.cropped(to: extent) else {
             return image
         }
 
+        let combined = CIFilter.sourceOverCompositing()
+        combined.inputImage = leakStripe
+        combined.backgroundImage = leak
+
         guard let blend = CIFilter(name: "CIScreenBlendMode") else {
             let composite = CIFilter.sourceOverCompositing()
-            composite.inputImage = leak
+            composite.inputImage = combined.outputImage?.cropped(to: extent)
             composite.backgroundImage = image
             return composite.outputImage?.cropped(to: extent) ?? image
         }
 
-        blend.setValue(leak, forKey: kCIInputImageKey)
+        blend.setValue(combined.outputImage?.cropped(to: extent), forKey: kCIInputImageKey)
         blend.setValue(image, forKey: kCIInputBackgroundImageKey)
         return blend.outputImage?.cropped(to: extent) ?? image
     }
@@ -535,6 +568,15 @@ enum FilmImagePipeline {
         return seed
     }
 
+    private static func stableSeed(for value: String) -> UInt64 {
+        var seed: UInt64 = 14_695_981_039_346_656_037
+        for scalar in value.unicodeScalars {
+            seed ^= UInt64(scalar.value)
+            seed = seed &* 1_099_511_628_211
+        }
+        return seed
+    }
+
     private static func decorate(
         image: UIImage,
         film: FilmPreset,
@@ -570,8 +612,19 @@ enum FilmImagePipeline {
             if film.borderStyle == .none {
                 image.draw(in: CGRect(origin: .zero, size: imageSize))
             } else {
+                let frameRect = CGRect(origin: .zero, size: canvasSize)
                 paperColor(for: film.borderStyle).setFill()
-                context.fill(CGRect(origin: .zero, size: canvasSize))
+                context.fill(frameRect)
+                drawPaperTexture(
+                    film: film,
+                    borderStyle: film.borderStyle,
+                    in: frameRect,
+                    context: context.cgContext
+                )
+                drawInnerPhotoShadow(
+                    imageRect: CGRect(x: borderPadding, y: borderPadding, width: imageSize.width, height: imageSize.height),
+                    context: context.cgContext
+                )
                 image.draw(in: CGRect(x: borderPadding, y: borderPadding, width: imageSize.width, height: imageSize.height))
                 drawFrameLabel(
                     film: film,
@@ -598,8 +651,63 @@ enum FilmImagePipeline {
                 width: textSize.width,
                 height: textSize.height
             )
-            stamp.draw(in: rect, withAttributes: attributes)
+            drawImperfectTimestamp(stamp, in: rect, attributes: attributes, film: film)
         }
+    }
+
+    private static func drawPaperTexture(
+        film: FilmPreset,
+        borderStyle: BorderStyle,
+        in rect: CGRect,
+        context: CGContext
+    ) {
+        let seed = stableSeed(for: film.id + borderStyle.rawValue)
+        context.saveGState()
+        context.setBlendMode(.multiply)
+
+        UIColor.black.withAlphaComponent(0.025).setStroke()
+        for index in 0..<44 {
+            let x = rect.minX + rect.width * CGFloat((seed &+ UInt64(index * 37)) % 1000) / 1000.0
+            let y = rect.minY + rect.height * CGFloat((seed &+ UInt64(index * 61)) % 1000) / 1000.0
+            let length = rect.width * CGFloat(0.015 + Double((index % 5)) * 0.006)
+            context.move(to: CGPoint(x: x, y: y))
+            context.addLine(to: CGPoint(x: x + length, y: y + CGFloat((index % 3) - 1) * 0.8))
+            context.strokePath()
+        }
+
+        for index in 0..<70 {
+            let x = rect.minX + rect.width * CGFloat((seed &+ UInt64(index * 53)) % 1000) / 1000.0
+            let y = rect.minY + rect.height * CGFloat((seed &+ UInt64(index * 97)) % 1000) / 1000.0
+            let alpha = CGFloat(0.010 + Double(index % 4) * 0.004)
+            UIColor.black.withAlphaComponent(alpha).setFill()
+            context.fillEllipse(in: CGRect(x: x, y: y, width: 1.0, height: 1.0))
+        }
+
+        context.restoreGState()
+    }
+
+    private static func drawInnerPhotoShadow(imageRect: CGRect, context: CGContext) {
+        context.saveGState()
+        context.setShadow(offset: CGSize(width: 0, height: 2), blur: 8, color: UIColor.black.withAlphaComponent(0.22).cgColor)
+        UIColor.white.setFill()
+        context.fill(imageRect)
+        context.restoreGState()
+    }
+
+    private static func drawImperfectTimestamp(
+        _ stamp: String,
+        in rect: CGRect,
+        attributes: [NSAttributedString.Key: Any],
+        film: FilmPreset
+    ) {
+        let seed = stableSeed(for: film.id + stamp)
+        let ghostOffset = CGFloat(seed % 3) * 0.38 + 0.28
+        var ghostAttributes = attributes
+        if let color = attributes[.foregroundColor] as? UIColor {
+            ghostAttributes[.foregroundColor] = color.withAlphaComponent(0.20)
+        }
+        stamp.draw(in: rect.offsetBy(dx: ghostOffset, dy: 0.45), withAttributes: ghostAttributes)
+        stamp.draw(in: rect, withAttributes: attributes)
     }
 
     private static func paperColor(for borderStyle: BorderStyle) -> UIColor {

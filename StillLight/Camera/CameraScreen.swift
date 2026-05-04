@@ -12,6 +12,8 @@ struct CameraScreen: View {
     @State private var shutterFlash = false
     @State private var focusIndicator: FocusIndicator?
     @State private var pinchStartZoomFactor: CGFloat?
+    @State private var zoomControlDragStartFactor: CGFloat?
+    @State private var isDraggingZoomControl = false
 
     var body: some View {
         ZStack {
@@ -313,6 +315,19 @@ struct CameraScreen: View {
                         }
                     }
                 }
+
+                Rectangle()
+                    .fill(StillLightTheme.secondaryText.opacity(0.24))
+                    .frame(width: 1, height: 20)
+
+                Text("\(viewModel.zoomState.displayFactorText)x")
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(isDraggingZoomControl ? StillLightTheme.accent : StillLightTheme.text)
+                    .frame(minWidth: 44)
+                    .frame(height: 30)
+                    .padding(.horizontal, 4)
+                    .background(StillLightTheme.panelElevated.opacity(isDraggingZoomControl ? 0.95 : 0.72))
+                    .clipShape(Capsule())
             } else {
                 Text("\(viewModel.zoomState.displayFactorText)x")
                     .font(.caption.monospacedDigit().weight(.semibold))
@@ -324,6 +339,8 @@ struct CameraScreen: View {
         .padding(5)
         .background(StillLightTheme.panel.opacity(0.70))
         .clipShape(Capsule())
+        .contentShape(Capsule())
+        .simultaneousGesture(zoomControlDragGesture)
         .padding(.bottom, 12)
         .opacity(viewModel.isRecording ? 0.72 : 1)
     }
@@ -427,6 +444,33 @@ struct CameraScreen: View {
             }
             .onEnded { _ in
                 pinchStartZoomFactor = nil
+            }
+    }
+
+    private var zoomControlDragGesture: some Gesture {
+        DragGesture(minimumDistance: 6, coordinateSpace: .local)
+            .onChanged { value in
+                let startFactor = zoomControlDragStartFactor ?? viewModel.zoomState.displayFactor
+                if zoomControlDragStartFactor == nil {
+                    zoomControlDragStartFactor = startFactor
+                    withAnimation(.easeOut(duration: 0.12)) {
+                        isDraggingZoomControl = true
+                    }
+                }
+
+                let minFactor = max(viewModel.zoomState.minDisplayFactor, 0.1)
+                let maxFactor = max(viewModel.zoomState.maxDisplayFactor, minFactor)
+                let range = max(maxFactor / minFactor, 1.01)
+                let normalizedTravel = min(max(value.translation.width / 180, -1.15), 1.15)
+                let multiplier = CGFloat(pow(Double(range), Double(normalizedTravel)))
+                let nextFactor = min(max(startFactor * multiplier, minFactor), maxFactor)
+                viewModel.setZoomFactor(nextFactor)
+            }
+            .onEnded { _ in
+                zoomControlDragStartFactor = nil
+                withAnimation(.easeOut(duration: 0.16)) {
+                    isDraggingZoomControl = false
+                }
             }
     }
 

@@ -5,7 +5,7 @@ struct ResultView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
     @State private var showsShareSheet = false
-    @State private var showsOriginal = false
+    @GestureState private var showsOriginal = false
 
     var body: some View {
         ZStack {
@@ -53,16 +53,8 @@ struct ResultView: View {
                     }
                 }
                 .padding(.horizontal, 14)
-                .onLongPressGesture(
-                    minimumDuration: 0.16,
-                    pressing: { isPressing in
-                        guard originalImage != nil else { return }
-                        withAnimation(.easeOut(duration: 0.12)) {
-                            showsOriginal = isPressing
-                        }
-                    },
-                    perform: {}
-                )
+                .animation(.easeOut(duration: 0.12), value: showsOriginal)
+                .simultaneousGesture(originalCompareGesture)
 
                 HStack(spacing: 12) {
                     Button {
@@ -120,6 +112,20 @@ struct ResultView: View {
         appState.filmLibrary.presets
             .first { $0.id == result.record.filmPresetId }?
             .displayName(language: appState.language) ?? result.record.filmName
+    }
+
+    private var originalCompareGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.28, maximumDistance: 10)
+            .sequenced(before: DragGesture(minimumDistance: 0))
+            .updating($showsOriginal) { value, state, _ in
+                guard originalImage != nil else { return }
+                switch value {
+                case .second(true, _):
+                    state = true
+                default:
+                    state = false
+                }
+            }
     }
 }
 

@@ -22,6 +22,12 @@ final class CameraViewModel: ObservableObject {
     let cameraService = CameraService()
     private var recordingStartedAt: Date?
     private var recordingTimer: Timer?
+    private var statusClearTask: Task<Void, Never>?
+
+    deinit {
+        recordingTimer?.invalidate()
+        statusClearTask?.cancel()
+    }
 
     func start() {
         cameraService.configure { [weak self] state in
@@ -89,8 +95,7 @@ final class CameraViewModel: ObservableObject {
     func setCaptureMode(_ mode: CameraCaptureMode) {
         guard !isRecording else { return }
         captureMode = mode
-        statusMessage = nil
-        errorMessage = nil
+        clearStatus()
     }
 
     func primaryAction(appState: AppState) {
@@ -105,8 +110,7 @@ final class CameraViewModel: ObservableObject {
     func capture(appState: AppState) {
         guard !isProcessing, !isRecording else { return }
         isProcessing = true
-        errorMessage = nil
-        statusMessage = nil
+        clearStatus()
 
         if appState.enableHaptics {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -171,7 +175,9 @@ final class CameraViewModel: ObservableObject {
                 record: exportResult.record,
                 warningMessage: exportResult.warningMessage
             )
-            statusMessage = exportResult.warningMessage
+            if let warningMessage = exportResult.warningMessage {
+                showTransientStatus(warningMessage, durationNanoseconds: 4_000_000_000)
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -190,8 +196,7 @@ final class CameraViewModel: ObservableObject {
 
         guard !isProcessing else { return }
         isRecording = true
-        errorMessage = nil
-        statusMessage = nil
+        clearStatus()
         recordingDuration = 0
         recordingStartedAt = Date()
         startRecordingTimer()
@@ -229,7 +234,11 @@ final class CameraViewModel: ObservableObject {
                 temporaryURL: temporaryURL,
                 photosSaveFailedPrefix: saveFailedPrefix
             )
-            statusMessage = exportResult.warningMessage ?? successMessage
+            if let warningMessage = exportResult.warningMessage {
+                showTransientStatus(warningMessage, durationNanoseconds: 4_000_000_000)
+            } else {
+                showTransientStatus(successMessage)
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -251,6 +260,35 @@ final class CameraViewModel: ObservableObject {
         recordingTimer?.invalidate()
         recordingTimer = nil
         recordingStartedAt = nil
+    }
+
+    private func clearStatus() {
+        statusClearTask?.cancel()
+        statusClearTask = nil
+        statusMessage = nil
+        errorMessage = nil
+    }
+
+    private func showTransientStatus(
+        _ message: String,
+        durationNanoseconds: UInt64 = 2_200_000_000
+    ) {
+        statusMessage = message
+        statusClearTask?.cancel()
+        statusClearTask = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: durationNanoseconds)
+            } catch {
+                return
+            }
+
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard self?.statusMessage == message else { return }
+                self?.statusMessage = nil
+                self?.statusClearTask = nil
+            }
+        }
     }
 
     private func refreshZoomState() {

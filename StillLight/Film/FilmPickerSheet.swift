@@ -164,9 +164,20 @@ private struct FilmPickerHero: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(StillLightTheme.panel.opacity(0.74))
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            StillLightTheme.panelElevated.opacity(0.88),
+                            StillLightTheme.panel.opacity(0.72),
+                            StillLightTheme.background.opacity(0.74)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
 
             shelfGlow
+            heroStage
 
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top) {
@@ -190,10 +201,13 @@ private struct FilmPickerHero: View {
                 ZStack(alignment: .bottomTrailing) {
                     CameraModelPlate(film: film)
                         .frame(height: 142)
-                        .padding(.trailing, 16)
+                        .padding(.trailing, 22)
+                        .offset(y: 2)
 
                     FilmPhysicalPackageView(film: film, scale: .hero)
-                        .offset(x: 4, y: 10)
+                        .shadow(color: style.accent.opacity(0.18), radius: 18, x: -8, y: 8)
+                        .shadow(color: .black.opacity(0.36), radius: 20, x: 0, y: 18)
+                        .offset(x: 2, y: 8)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -216,6 +230,12 @@ private struct FilmPickerHero: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(StillLightTheme.text.opacity(0.06), lineWidth: 1)
         }
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(.white.opacity(0.055))
+                .frame(height: 1)
+                .padding(.horizontal, 1)
+        }
     }
 
     private var shelfGlow: some View {
@@ -234,6 +254,34 @@ private struct FilmPickerHero: View {
                 )
                 .frame(height: 92)
         }
+    }
+
+    private var heroStage: some View {
+        VStack {
+            Spacer()
+            ZStack(alignment: .bottomTrailing) {
+                Capsule()
+                    .fill(.black.opacity(0.26))
+                    .frame(width: 218, height: 28)
+                    .blur(radius: 13)
+                    .offset(x: 10, y: 5)
+
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                style.paper.opacity(0.12),
+                                style.accent.opacity(0.07),
+                                .clear
+                            ],
+                            startPoint: .trailing,
+                            endPoint: .leading
+                        )
+                    )
+                    .frame(height: 54)
+            }
+        }
+        .allowsHitTesting(false)
     }
 
     private var loadedText: String {
@@ -255,13 +303,20 @@ private struct FilmObjectShelf: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(language == .chinese ? "选择一卷" : "Choose a roll")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .tracking(0.8)
-                .foregroundStyle(StillLightTheme.secondaryText.opacity(0.72))
+            HStack(spacing: 8) {
+                Text(language == .chinese ? "选择一卷" : "Choose a roll")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(StillLightTheme.secondaryText.opacity(0.72))
+
+                Rectangle()
+                    .fill(StillLightTheme.secondaryText.opacity(0.14))
+                    .frame(height: 1)
+            }
 
             ZStack(alignment: .bottom) {
                 shelfSurface
+                shelfBackRail
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .bottom, spacing: 16) {
@@ -277,12 +332,13 @@ private struct FilmObjectShelf: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.top, 18)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 24)
+                    .padding(.bottom, 14)
                 }
             }
-            .frame(height: 194)
+            .frame(height: 206)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
     }
 
@@ -290,22 +346,61 @@ private struct FilmObjectShelf: View {
         VStack(spacing: 0) {
             Spacer()
             Rectangle()
-                .fill(StillLightTheme.panelElevated.opacity(0.55))
+                .fill(StillLightTheme.text.opacity(0.08))
                 .frame(height: 1)
             Rectangle()
                 .fill(
                     LinearGradient(
                         colors: [
-                            StillLightTheme.panelElevated.opacity(0.86),
-                            StillLightTheme.panel.opacity(0.28),
+                            StillLightTheme.panelElevated.opacity(0.92),
+                            StillLightTheme.panel.opacity(0.48),
                             StillLightTheme.background.opacity(0.0)
                         ],
                         startPoint: .bottom,
                         endPoint: .top
                     )
                 )
-                .frame(height: 58)
+                .frame(height: 72)
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(.white.opacity(0.045))
+                        .frame(height: 1)
+                }
         }
+    }
+
+    private var shelfBackRail: some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            StillLightTheme.panel.opacity(0.20),
+                            StillLightTheme.panelElevated.opacity(0.30),
+                            StillLightTheme.panel.opacity(0.08)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: 82)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(StillLightTheme.text.opacity(0.055))
+                        .frame(height: 1)
+                }
+                .overlay {
+                    HStack(spacing: 22) {
+                        ForEach(0..<8, id: \.self) { _ in
+                            Rectangle()
+                                .fill(StillLightTheme.text.opacity(0.025))
+                                .frame(width: 1)
+                        }
+                    }
+                }
+            Spacer()
+        }
+        .allowsHitTesting(false)
     }
 }
 
@@ -319,21 +414,29 @@ private struct FilmObjectCard: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 9) {
-                ZStack(alignment: .topTrailing) {
-                    FilmPhysicalPackageView(film: film, scale: .shelf)
-                        .shadow(color: .black.opacity(isFocused ? 0.36 : 0.22), radius: isFocused ? 18 : 10, x: 0, y: isFocused ? 14 : 8)
+            VStack(spacing: 8) {
+                ZStack(alignment: .bottom) {
+                    cardPlinth
+                        .offset(y: isFocused ? 5 : 8)
 
-                    if isLoaded {
-                        LoadedTab(language: language)
-                            .offset(x: 5, y: 7)
-                    } else if isFavorite {
-                        FavoritePin()
-                            .offset(x: 2, y: 4)
+                    ZStack(alignment: .topTrailing) {
+                        FilmPhysicalPackageView(film: film, scale: .shelf)
+                            .shadow(color: FilmCoverStyle.style(for: film).accent.opacity(isFocused ? 0.18 : 0.08), radius: isFocused ? 12 : 7, x: -5, y: 5)
+                            .shadow(color: .black.opacity(isFocused ? 0.38 : 0.24), radius: isFocused ? 18 : 11, x: 0, y: isFocused ? 13 : 8)
+
+                        if isLoaded {
+                            LoadedTab(language: language)
+                                .offset(x: 5, y: 7)
+                        } else if isFavorite {
+                            FavoritePin()
+                                .offset(x: 2, y: 4)
+                        }
                     }
+                    .scaleEffect(isFocused ? 1.08 : 0.94)
+                    .rotationEffect(.degrees(isFocused ? -1 : 0.8))
+                    .offset(y: isFocused ? -12 : 0)
                 }
-                .scaleEffect(isFocused ? 1.06 : 0.94)
-                .offset(y: isFocused ? -10 : 2)
+                .frame(width: 124, height: 132)
 
                 Text(film.displayShortName(language: language))
                     .font(.system(size: 12, weight: isFocused ? .semibold : .medium, design: .rounded))
@@ -351,6 +454,30 @@ private struct FilmObjectCard: View {
         .buttonStyle(.plain)
         .animation(.spring(response: 0.34, dampingFraction: 0.82), value: isFocused)
         .accessibilityLabel(film.displayName(language: language))
+    }
+
+    private var cardPlinth: some View {
+        ZStack {
+            Capsule()
+                .fill(.black.opacity(isFocused ? 0.24 : 0.15))
+                .frame(width: isFocused ? 98 : 82, height: isFocused ? 18 : 13)
+                .blur(radius: isFocused ? 8 : 6)
+
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            StillLightTheme.panelElevated.opacity(isFocused ? 0.58 : 0.30),
+                            StillLightTheme.panel.opacity(isFocused ? 0.16 : 0.08)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: isFocused ? 106 : 86, height: isFocused ? 8 : 5)
+                .offset(y: -1)
+        }
+        .allowsHitTesting(false)
     }
 }
 
@@ -587,22 +714,26 @@ private struct FilmPhysicalPackageView: View {
     }
 
     var body: some View {
-        Group {
-            switch FilmPackageKind.kind(for: film) {
-            case .paperBox:
-                paperBox
-            case .canister:
-                canister
-            case .instantPack:
-                instantPack
-            case .cameraBody:
-                cameraBody
-            case .paperSleeve:
-                paperSleeve
-            case .disposable:
-                disposable
-            case .halfFrameTicket:
-                halfFrameTicket
+        ZStack {
+            objectAmbientShadow
+
+            Group {
+                switch FilmPackageKind.kind(for: film) {
+                case .paperBox:
+                    paperBox
+                case .canister:
+                    canister
+                case .instantPack:
+                    instantPack
+                case .cameraBody:
+                    cameraBody
+                case .paperSleeve:
+                    paperSleeve
+                case .disposable:
+                    disposable
+                case .halfFrameTicket:
+                    halfFrameTicket
+                }
             }
         }
         .frame(width: size.width, height: size.height)
@@ -611,7 +742,17 @@ private struct FilmPhysicalPackageView: View {
     private var paperBox: some View {
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(style.paper)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            style.paper.opacity(1.0),
+                            style.paper.opacity(0.92),
+                            style.ink.opacity(0.16)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
 
             VStack(spacing: 0) {
                 Rectangle()
@@ -628,6 +769,9 @@ private struct FilmPhysicalPackageView: View {
             }
             .padding(size.width * 0.055)
             .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+
+            boxSidePanel
+            boxTopLip
 
             Rectangle()
                 .fill(
@@ -680,10 +824,13 @@ private struct FilmPhysicalPackageView: View {
             .padding(size.width * 0.12)
 
             boxFoldLines
+            productionTicks
             paperTexture
+            packageGloss(cornerRadius: 8)
         }
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(packageStroke(cornerRadius: 8))
+        .overlay(packageInsetStroke(cornerRadius: 6).padding(size.width * 0.055))
         .shadow(color: style.ink.opacity(0.18), radius: isHeroScale ? 11 : 7, x: 0, y: isHeroScale ? 8 : 5)
     }
 
@@ -717,6 +864,7 @@ private struct FilmPhysicalPackageView: View {
             RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .fill(style.paper.opacity(0.94))
                 .frame(width: size.width * 0.60, height: size.height * 0.35)
+                .shadow(color: .black.opacity(0.12), radius: 3, x: 0, y: 2)
                 .overlay(alignment: .leading) {
                     Rectangle()
                         .fill(style.accent.opacity(0.88))
@@ -752,6 +900,11 @@ private struct FilmPhysicalPackageView: View {
                 canisterRidges
             }
             .opacity(0.7)
+
+            Capsule()
+                .stroke(.white.opacity(0.10), lineWidth: 1)
+                .frame(width: size.width * 0.82, height: size.height * 0.34)
+                .offset(y: -size.height * 0.025)
         }
         .rotationEffect(.degrees(-5))
     }
@@ -763,10 +916,16 @@ private struct FilmPhysicalPackageView: View {
                     .fill(style.paper.opacity(0.42 - Double(index) * 0.09))
                     .frame(width: size.width * (0.82 + CGFloat(index) * 0.04), height: size.height * 0.82)
                     .offset(y: size.height * (0.10 + CGFloat(index) * 0.035))
+                    .shadow(color: .black.opacity(0.08), radius: 2, x: 0, y: 1)
             }
 
             RoundedRectangle(cornerRadius: 9, style: .continuous)
                 .fill(style.paper.opacity(0.98))
+                .overlay(alignment: .leading) {
+                    Rectangle()
+                        .fill(style.ink.opacity(0.08))
+                        .frame(width: size.width * 0.055)
+                }
                 .overlay(alignment: .top) {
                     Capsule()
                         .fill(style.ink.opacity(0.80))
@@ -809,6 +968,7 @@ private struct FilmPhysicalPackageView: View {
             .padding(.bottom, size.height * 0.09)
 
             paperTexture.opacity(0.36)
+            packageGloss(cornerRadius: 9).opacity(0.72)
         }
         .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .overlay(packageStroke(cornerRadius: 9))
@@ -818,6 +978,13 @@ private struct FilmPhysicalPackageView: View {
         VStack(spacing: size.height * 0.045) {
             CameraModelPlate(film: film)
                 .frame(width: size.width, height: size.height * 0.72)
+                .overlay(alignment: .topLeading) {
+                    Circle()
+                        .fill(style.paper.opacity(0.20))
+                        .frame(width: size.width * 0.18)
+                        .blur(radius: 5)
+                        .offset(x: size.width * 0.10, y: size.height * 0.05)
+                }
 
             Text(style.label)
                 .font(.system(size: size.width * 0.066, weight: .bold, design: .monospaced))
@@ -841,6 +1008,13 @@ private struct FilmPhysicalPackageView: View {
             RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .fill(style.paper.opacity(0.66))
                 .background(.ultraThinMaterial.opacity(0.42))
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(.white.opacity(0.20))
+                        .frame(height: 1)
+                        .padding(.horizontal, size.width * 0.08)
+                        .padding(.top, size.height * 0.08)
+                }
                 .overlay {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
                         .stroke(style.ink.opacity(0.17), lineWidth: 1)
@@ -866,6 +1040,7 @@ private struct FilmPhysicalPackageView: View {
             .padding(.top, size.height * 0.24)
 
             paperTexture.opacity(0.28)
+            sleeveCrinkles
         }
         .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
         .overlay(packageStroke(cornerRadius: 5))
@@ -881,6 +1056,13 @@ private struct FilmPhysicalPackageView: View {
                         endPoint: .bottomTrailing
                     )
                 )
+                .overlay(alignment: .topLeading) {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(.white.opacity(0.08))
+                        .frame(width: size.width * 0.60, height: size.height * 0.18)
+                        .blur(radius: 5)
+                        .offset(x: size.width * 0.06, y: size.height * 0.04)
+                }
 
             Rectangle()
                 .fill(style.paper.opacity(0.80))
@@ -948,6 +1130,7 @@ private struct FilmPhysicalPackageView: View {
             .padding(size.width * 0.11)
 
             paperTexture.opacity(0.26)
+            packageGloss(cornerRadius: 10).opacity(0.55)
         }
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(packageStroke(cornerRadius: 10))
@@ -1012,9 +1195,152 @@ private struct FilmPhysicalPackageView: View {
             .padding(size.width * 0.10)
 
             paperTexture.opacity(0.30)
+            ticketTornEdges
+            packageGloss(cornerRadius: 5).opacity(0.52)
         }
         .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
         .overlay(packageStroke(cornerRadius: 5))
+    }
+
+    private var objectAmbientShadow: some View {
+        VStack {
+            Spacer()
+            Capsule()
+                .fill(.black.opacity(isHeroScale ? 0.22 : 0.16))
+                .frame(width: size.width * 0.88, height: size.height * 0.11)
+                .blur(radius: isHeroScale ? 8 : 5)
+                .offset(y: size.height * 0.05)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private var boxSidePanel: some View {
+        HStack {
+            Spacer()
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            style.paper.opacity(0.22),
+                            style.ink.opacity(0.18),
+                            style.ink.opacity(0.28)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: size.width * 0.16)
+                .overlay(alignment: .leading) {
+                    Rectangle()
+                        .fill(.white.opacity(0.07))
+                        .frame(width: 1)
+                }
+        }
+    }
+
+    private var boxTopLip: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            .white.opacity(0.18),
+                            style.paper.opacity(0.18),
+                            style.ink.opacity(0.06)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: size.height * 0.075)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(style.ink.opacity(0.10))
+                        .frame(height: 1)
+                }
+            Spacer()
+        }
+    }
+
+    private var productionTicks: some View {
+        VStack {
+            Spacer()
+            HStack(spacing: size.width * 0.024) {
+                ForEach(0..<7, id: \.self) { index in
+                    Rectangle()
+                        .fill(style.ink.opacity(index.isMultiple(of: 2) ? 0.18 : 0.10))
+                        .frame(width: 1, height: size.height * CGFloat(index.isMultiple(of: 3) ? 0.050 : 0.032))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.trailing, size.width * 0.14)
+            .padding(.bottom, size.height * 0.08)
+        }
+    }
+
+    private var sleeveCrinkles: some View {
+        ZStack {
+            Rectangle()
+                .fill(.white.opacity(0.13))
+                .frame(width: 1, height: size.height * 0.74)
+                .rotationEffect(.degrees(-12))
+                .offset(x: -size.width * 0.18, y: size.height * 0.02)
+            Rectangle()
+                .fill(style.ink.opacity(0.08))
+                .frame(width: 1, height: size.height * 0.56)
+                .rotationEffect(.degrees(9))
+                .offset(x: size.width * 0.20, y: -size.height * 0.04)
+            Rectangle()
+                .fill(.white.opacity(0.10))
+                .frame(width: size.width * 0.54, height: 1)
+                .rotationEffect(.degrees(-4))
+                .offset(y: size.height * 0.30)
+        }
+    }
+
+    private var ticketTornEdges: some View {
+        VStack {
+            HStack(spacing: size.width * 0.075) {
+                ForEach(0..<6, id: \.self) { _ in
+                    Circle()
+                        .fill(StillLightTheme.background.opacity(0.55))
+                        .frame(width: size.width * 0.045)
+                }
+            }
+            .offset(y: -size.height * 0.02)
+            Spacer()
+            HStack(spacing: size.width * 0.075) {
+                ForEach(0..<6, id: \.self) { _ in
+                    Circle()
+                        .fill(StillLightTheme.background.opacity(0.48))
+                        .frame(width: size.width * 0.045)
+                }
+            }
+            .offset(y: size.height * 0.02)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func packageGloss(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        .white.opacity(0.20),
+                        .white.opacity(0.055),
+                        .clear,
+                        style.ink.opacity(0.08)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .blendMode(.plusLighter)
+    }
+
+    private func packageInsetStroke(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .stroke(.white.opacity(0.11), lineWidth: 1)
     }
 
     @ViewBuilder

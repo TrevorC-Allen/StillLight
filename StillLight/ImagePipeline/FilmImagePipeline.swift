@@ -172,7 +172,7 @@ enum FilmImagePipeline {
         } record: { timing.record($0, milliseconds: $1) }
 
         let grained = measureStage("grain") {
-            applyGrain(to: rendered, film: film)
+            applyFinishingTexture(to: rendered, film: film)
         } record: { timing.record($0, milliseconds: $1) }
 
         let decorated = measureStage("decorate") {
@@ -322,20 +322,29 @@ enum FilmImagePipeline {
         guard amount > 0 else { return image }
 
         let extent = image.extent
-        guard let filter = CIFilter(name: "CIVignetteEffect") else {
+        let maxDimension = max(extent.width, extent.height)
+        let softenedAmount = amount.clamped(to: 0...0.62)
+
+        let gradient = CIFilter.radialGradient()
+        gradient.center = CGPoint(x: extent.midX, y: extent.midY)
+        gradient.radius0 = Float(maxDimension * (0.50 + CGFloat(softenedAmount) * 0.08))
+        gradient.radius1 = Float(maxDimension * (0.92 + CGFloat(softenedAmount) * 0.08))
+        gradient.color0 = CIColor(red: 0.08, green: 0.065, blue: 0.048, alpha: 0.0)
+        gradient.color1 = CIColor(
+            red: 0.08,
+            green: 0.062,
+            blue: 0.045,
+            alpha: (softenedAmount * 0.46).clamped(to: 0...0.30)
+        )
+
+        guard let edgeFalloff = gradient.outputImage?.cropped(to: extent) else {
             return image
         }
 
-        let maxDimension = max(extent.width, extent.height)
-        let softenedAmount = min(0.62, amount)
-        let radius = maxDimension * (0.72 - CGFloat(softenedAmount) * 0.12)
-        let intensity = softenedAmount * 0.95
-
-        filter.setValue(image, forKey: kCIInputImageKey)
-        filter.setValue(CIVector(x: extent.midX, y: extent.midY), forKey: kCIInputCenterKey)
-        filter.setValue(radius, forKey: kCIInputRadiusKey)
-        filter.setValue(intensity, forKey: kCIInputIntensityKey)
-        return filter.outputImage?.cropped(to: extent) ?? image
+        let composite = CIFilter.sourceOverCompositing()
+        composite.inputImage = edgeFalloff
+        composite.backgroundImage = image
+        return composite.outputImage?.cropped(to: extent) ?? image
     }
 
     private static func applyHalation(_ image: CIImage, amount: Double) -> CIImage {
@@ -398,9 +407,7 @@ enum FilmImagePipeline {
         return blend.outputImage?.cropped(to: extent) ?? image
     }
 
-    private static func applyGrain(to image: CGImage, film: FilmPreset) -> CGImage {
-        guard film.grainAmount > 0 else { return image }
-
+    private static func applyFinishingTexture(to image: CGImage, film: FilmPreset) -> CGImage {
         let width = image.width
         let height = image.height
         let bytesPerPixel = 4
@@ -430,33 +437,90 @@ enum FilmImagePipeline {
             var generator = LCG(seed: grainSeed(width: width, height: height, film: film))
             let amount = max(0.0, min(1.0, film.grainAmount))
             let isoScale = sqrt(Double(max(50, film.iso)) / 400.0).clamped(to: 0.72...1.48)
-            let lumaAmplitude = amount * 21.0 * isoScale * film.grainSize.clamped(to: 0.7...1.45)
-            let chromaAmplitude = film.category == .blackWhite ? 0.0 : lumaAmplitude * 0.28
+            let lumaAmplitude = amount * 17.5 * isoScale * film.grainSize.clamped(to: 0.7...1.45)
+            let chromaAmplitude = film.category == .blackWhite ? 0.0 : lumaAmplitude * 0.18
+            let colorWarmth = finishingWarmth(for: film)
+            let appliesColorFinish = film.category != .blackWhite
+            var previousRowNoise = [Double](repeating: 0, count: width)
+            var currentRowNoise = [Double](repeating: 0, count: width)
 
             for y in 0..<height {
+                currentRowNoise.withUnsafeMutableBufferPointer { rowNoise in
+                    for index in rowNoise.indices {
+                        rowNoise[index] = 0
+                    }
+                }
+
                 for x in 0..<width {
                     let index = y * bytesPerRow + x * bytesPerPixel
-                    let r = Double(pixelBuffer[index])
-                    let g = Double(pixelBuffer[index + 1])
-                    let b = Double(pixelBuffer[index + 2])
+                    var r = Double(pixelBuffer[index])
+                    var g = Double(pixelBuffer[index + 1])
+                    var b = Double(pixelBuffer[index + 2])
                     let luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
+                    let skinWeight = appliesColorFinish ? skinToneWeight(red: r, green: g, blue: b, luminance: luminance) : 0.0
+
+                    if appliesColorFinish {
+                        let shadowWarmth = (1.0 - luminance).clamped(to: 0...1) * colorWarmth
+                        let skinWarmth = skinWeight * colorWarmth
+                        let skinLuma = luminance * 255.0
+
+                        r = skinLuma + (r - skinLuma) * (1.0 - skinWeight * 0.035)
+                        g = skinLuma + (g - skinLuma) * (1.0 - skinWeight * 0.020)
+                        b = skinLuma + (b - skinLuma) * (1.0 - skinWeight * 0.050)
+                        r += skinWarmth * 4.2 + shadowWarmth * 1.4
+                        g += skinWarmth * 1.0 + shadowWarmth * 0.45
+                        b -= skinWarmth * 3.2 + shadowWarmth * 1.1
+                    }
+
                     let midtoneWeight = (1.0 - abs(luminance - 0.48) * 1.65).clamped(to: 0...1)
                     let shadowWeight = (1.0 - luminance).clamped(to: 0...1)
-                    let weight = 0.22 + midtoneWeight * 0.52 + shadowWeight * 0.26
-                    let lumaNoise = triangularNoise(&generator) * lumaAmplitude * weight
-                    let redChroma = triangularNoise(&generator) * chromaAmplitude * weight
-                    let blueChroma = triangularNoise(&generator) * chromaAmplitude * weight
+                    let textureWeight = (0.20 + midtoneWeight * 0.48 + shadowWeight * 0.32) * (1.0 - skinWeight * 0.22)
+                    let rawNoise = triangularNoise(&generator)
+                    let leftNoise = x > 0 ? currentRowNoise[x - 1] : rawNoise
+                    let topNoise = y > 0 ? previousRowNoise[x] : rawNoise
+                    let wovenNoise = rawNoise * 0.58 + leftNoise * 0.20 + topNoise * 0.22
+                    currentRowNoise[x] = wovenNoise
+
+                    let lumaNoise = wovenNoise * lumaAmplitude * textureWeight
+                    let redChroma = triangularNoise(&generator) * chromaAmplitude * textureWeight
+                    let blueChroma = triangularNoise(&generator) * chromaAmplitude * textureWeight
 
                     pixelBuffer[index] = UInt8((r + lumaNoise + redChroma * 0.82).clamped(to: 0...255))
                     pixelBuffer[index + 1] = UInt8((g + lumaNoise - redChroma * 0.18 - blueChroma * 0.16).clamped(to: 0...255))
                     pixelBuffer[index + 2] = UInt8((b + lumaNoise + blueChroma * 0.86).clamped(to: 0...255))
                 }
+
+                swap(&previousRowNoise, &currentRowNoise)
             }
 
             return context.makeImage()
         }
 
         return output ?? image
+    }
+
+    private static func skinToneWeight(red: Double, green: Double, blue: Double, luminance: Double) -> Double {
+        let normalizedRed = red / 255.0
+        let normalizedGreen = green / 255.0
+        let normalizedBlue = blue / 255.0
+        let warmth = ((normalizedRed - normalizedBlue) / 0.32).clamped(to: 0...1)
+        let redGreenBalance = (1.0 - abs((normalizedRed - normalizedGreen) - 0.075) / 0.17).clamped(to: 0...1)
+        let greenBlueSeparation = ((normalizedGreen - normalizedBlue) / 0.24).clamped(to: 0...1)
+        let exposureWindow = (1.0 - abs(luminance - 0.58) / 0.40).clamped(to: 0...1)
+        return warmth * redGreenBalance * greenBlueSeparation * exposureWindow
+    }
+
+    private static func finishingWarmth(for film: FilmPreset) -> Double {
+        switch film.id {
+        case "human-warm-400", "muse-portrait-400", "soft-portrait-400":
+            return 1.0
+        case "sunlit-gold-200", "t-compact-gold", "instant-square", "instant-wide", "sx-fade":
+            return 0.78
+        case "human-vignette-800", "m-rangefinder", "pocket-flash":
+            return 0.58
+        default:
+            return film.temperatureShift > 120 ? 0.48 : 0.32
+        }
     }
 
     private static func triangularNoise(_ generator: inout LCG) -> Double {

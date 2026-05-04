@@ -186,7 +186,7 @@ struct ImportLabScreen: View {
             }
             .pickerStyle(.segmented)
 
-            if let recommendation = viewModel.selectedRecommendation {
+            if !viewModel.selectedRecommendationOptions.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         Image(systemName: "sparkle.magnifyingglass")
@@ -195,38 +195,95 @@ struct ImportLabScreen: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(StillLightTheme.secondaryText)
                         Spacer()
-                        Text(recommendation.metrics.summary)
-                            .font(.caption2.monospacedDigit())
-                            .foregroundStyle(StillLightTheme.secondaryText)
                     }
 
-                    HStack(spacing: 10) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(recommendation.film.displayName(language: appState.language))
-                                .font(.headline)
-                                .foregroundStyle(StillLightTheme.text)
-                            Text(recommendation.displayReason(language: appState.language))
-                                .font(.caption)
-                                .foregroundStyle(StillLightTheme.secondaryText)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                    VStack(spacing: 0) {
+                        ForEach(Array(viewModel.selectedRecommendationOptions.enumerated()), id: \.element.preset.id) { index, recommendation in
+                            if index > 0 {
+                                Divider()
+                                    .overlay(Color.white.opacity(0.08))
+                            }
 
-                        Spacer()
-
-                        Button(appState.t(.use)) {
-                            appState.selectFilm(recommendation.film)
+                            recommendationRow(recommendation)
+                                .padding(.vertical, 9)
                         }
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(StillLightTheme.background)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(StillLightTheme.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                 }
                 .stillLightPanel()
             }
         }
+    }
+
+    private func recommendationRow(_ recommendation: FilmRecommendationOption) -> some View {
+        let isSelected = recommendation.preset.id == appState.selectedFilm.id
+
+        return VStack(alignment: .leading, spacing: 7) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(recommendation.preset.displayName(language: appState.language))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(StillLightTheme.text)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.88)
+
+                Text(recommendationScoreText(recommendation.score))
+                    .font(.caption2.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(isSelected ? StillLightTheme.background : StillLightTheme.accent)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(isSelected ? StillLightTheme.accent : StillLightTheme.accent.opacity(0.14))
+                    .clipShape(Capsule())
+
+                Spacer(minLength: 0)
+            }
+
+            Text(recommendation.displayReason(language: appState.language))
+                .font(.caption)
+                .foregroundStyle(StillLightTheme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    recommendationMetricsText(recommendation)
+                    Spacer(minLength: 8)
+                    recommendationActionButton(recommendation, isSelected: isSelected)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    recommendationMetricsText(recommendation)
+                    recommendationActionButton(recommendation, isSelected: isSelected)
+                }
+            }
+        }
+        .padding(.horizontal, 2)
+    }
+
+    private func recommendationMetricsText(_ recommendation: FilmRecommendationOption) -> some View {
+        Text(recommendation.metricSummary.compact)
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(StillLightTheme.secondaryText)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+    }
+
+    private func recommendationActionButton(_ recommendation: FilmRecommendationOption, isSelected: Bool) -> some View {
+        Button {
+            appState.selectFilm(recommendation.preset)
+        } label: {
+            Label(isSelected ? appState.t(.selectedFilm) : appState.t(.use), systemImage: isSelected ? "checkmark.circle.fill" : "film")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.86)
+        }
+        .foregroundStyle(isSelected ? StillLightTheme.accent : StillLightTheme.background)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 7)
+        .background(isSelected ? StillLightTheme.accent.opacity(0.14) : StillLightTheme.accent)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .disabled(isSelected)
+    }
+
+    private func recommendationScoreText(_ score: Double) -> String {
+        "\(Int((min(max(score, 0), 1) * 100).rounded()))%"
     }
 
     @ViewBuilder
@@ -431,6 +488,7 @@ private struct ImportLabFrame: Identifiable {
     var processedImage: UIImage?
     var savedRecord: PhotoRecord?
     var recommendation: FilmRecommendation?
+    var recommendationOptions: [FilmRecommendationOption] = []
     var processingError: String?
 }
 
@@ -461,6 +519,10 @@ private final class ImportLabViewModel: ObservableObject {
 
     var selectedRecommendation: FilmRecommendation? {
         selectedFrame?.recommendation
+    }
+
+    var selectedRecommendationOptions: [FilmRecommendationOption] {
+        selectedFrame?.recommendationOptions ?? []
     }
 
     var savedRecord: PhotoRecord? {
@@ -521,14 +583,23 @@ private final class ImportLabViewModel: ObservableObject {
                         continue
                     }
 
-                    let recommendation = await Task.detached(priority: .utility) {
-                        FilmRecommender.recommend(image: image, presets: presets)
+                    let recommendationOptions = await Task.detached(priority: .utility) {
+                        FilmRecommender.recommendations(image: image, presets: presets, limit: 3)
                     }.value
+                    let recommendation = recommendationOptions.first.map {
+                        FilmRecommendation(
+                            film: $0.preset,
+                            reason: $0.reason,
+                            localizedReason: $0.localizedReason,
+                            metrics: $0.metrics
+                        )
+                    }
                     loadedFrames.append(
                         ImportLabFrame(
                             originalData: data,
                             originalImage: image,
-                            recommendation: recommendation
+                            recommendation: recommendation,
+                            recommendationOptions: recommendationOptions
                         )
                     )
                 }

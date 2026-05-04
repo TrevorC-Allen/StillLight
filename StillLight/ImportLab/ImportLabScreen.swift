@@ -9,7 +9,7 @@ struct ImportLabScreen: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var showsFilmPicker = false
     @State private var showsShareSheet = false
-    @State private var showsOriginalPreview = false
+    @GestureState private var showsOriginalPreview = false
 
     var body: some View {
         NavigationStack {
@@ -45,9 +45,6 @@ struct ImportLabScreen: View {
                     framesLoadedFormat: appState.t(.framesLoaded)
                 )
             }
-            .onChange(of: viewModel.selectedFrame?.id) { _, _ in
-                showsOriginalPreview = false
-            }
         }
     }
 
@@ -72,17 +69,7 @@ struct ImportLabScreen: View {
                         }
                     }
                     .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .onLongPressGesture(
-                        minimumDuration: 0.18,
-                        maximumDistance: 80,
-                        pressing: { pressing in
-                            guard selectedFrame?.processedImage != nil else { return }
-                            withAnimation(.easeInOut(duration: 0.12)) {
-                                showsOriginalPreview = pressing
-                            }
-                        },
-                        perform: {}
-                    )
+                    .simultaneousGesture(originalCompareGesture)
             } else {
                 VStack(spacing: 12) {
                     Image(systemName: "photo.badge.plus")
@@ -297,6 +284,20 @@ struct ImportLabScreen: View {
                 guard abs(horizontal) > 54, abs(horizontal) > abs(vertical) * 1.35 else { return }
                 withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
                     viewModel.selectAdjacentFrame(delta: horizontal < 0 ? 1 : -1)
+                }
+            }
+    }
+
+    private var originalCompareGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.28, maximumDistance: 10)
+            .sequenced(before: DragGesture(minimumDistance: 0))
+            .updating($showsOriginalPreview) { value, state, _ in
+                guard viewModel.selectedFrame?.processedImage != nil else { return }
+                switch value {
+                case .second(true, _):
+                    state = true
+                default:
+                    state = false
                 }
             }
     }

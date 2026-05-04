@@ -46,4 +46,19 @@ if [[ ! -d "$APP_PATH" ]]; then
 fi
 
 xcrun devicectl device install app --device "$DEVICE_ID" "$APP_PATH"
-xcrun devicectl device process launch --device "$DEVICE_ID" "$BUNDLE_ID"
+
+LAUNCH_LOG="$(mktemp -t stilllight-launch.XXXXXX)"
+if ! xcrun devicectl device process launch --device "$DEVICE_ID" "$BUNDLE_ID" >"$LAUNCH_LOG" 2>&1; then
+  cat "$LAUNCH_LOG"
+  if grep -qi "Locked" "$LAUNCH_LOG"; then
+    echo
+    echo "StillLight was installed, but iOS refused to launch it because the device is locked."
+    echo "Unlock the iPhone and run again:"
+    echo "  scripts/run_on_iphone.sh $DEVICE_ID"
+  fi
+  rm -f "$LAUNCH_LOG"
+  exit 4
+fi
+
+cat "$LAUNCH_LOG"
+rm -f "$LAUNCH_LOG"

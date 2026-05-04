@@ -371,22 +371,34 @@ enum FilmImagePipeline {
         let extent = image.extent
         let maxDimension = max(extent.width, extent.height)
         let profile = FilmRenderingProfile.profile(for: film)
+        let vignetteProfile = FilmVignetteProfile.profile(for: film)
         let softenedAmount = film.vignetteAmount.clamped(to: 0...0.68)
-        let edgeAlpha = (softenedAmount * profile.vignetteDensity).clamped(to: 0...0.34)
+        let edgeAlpha = (softenedAmount * profile.vignetteDensity * vignetteProfile.edgeDensity).clamped(to: 0...0.34)
+        let center = CGPoint(
+            x: extent.midX + extent.width * vignetteProfile.centerOffsetX,
+            y: extent.midY + extent.height * vignetteProfile.centerOffsetY
+        )
 
         let edgeGradient = CIFilter.radialGradient()
-        edgeGradient.center = CGPoint(x: extent.midX, y: extent.midY)
-        edgeGradient.radius0 = Float(maxDimension * (0.48 + CGFloat(softenedAmount) * 0.10))
-        edgeGradient.radius1 = Float(maxDimension * (0.94 + CGFloat(softenedAmount) * 0.06))
+        edgeGradient.center = center
+        edgeGradient.radius0 = Float(maxDimension * (0.50 + CGFloat(softenedAmount) * 0.11))
+        edgeGradient.radius1 = Float(maxDimension * (0.98 + CGFloat(softenedAmount) * 0.08))
         edgeGradient.color0 = CIColor(red: 0.18, green: 0.145, blue: 0.105, alpha: 0.0)
         edgeGradient.color1 = CIColor(
-            red: 0.15,
-            green: 0.118,
-            blue: 0.085,
+            red: vignetteProfile.edgeRed,
+            green: vignetteProfile.edgeGreen,
+            blue: vignetteProfile.edgeBlue,
             alpha: edgeAlpha
         )
 
-        guard let edgeFalloff = edgeGradient.outputImage?.cropped(to: extent) else {
+        let rawFalloff = edgeGradient.outputImage?.cropped(to: extent)
+        let ovalFalloff = rawFalloff?
+            .transformed(by: CGAffineTransform(translationX: -center.x, y: -center.y))
+            .transformed(by: CGAffineTransform(scaleX: vignetteProfile.horizontalScale, y: vignetteProfile.verticalScale))
+            .transformed(by: CGAffineTransform(translationX: center.x, y: center.y))
+            .cropped(to: extent)
+
+        guard let edgeFalloff = ovalFalloff ?? rawFalloff else {
             return image
         }
 
@@ -398,11 +410,21 @@ enum FilmImagePipeline {
         let centerGlowAmount = (softenedAmount * profile.centerLift).clamped(to: 0...0.12)
         if centerGlowAmount > 0.001 {
             let centerGradient = CIFilter.radialGradient()
-            centerGradient.center = CGPoint(x: extent.midX, y: extent.midY)
-            centerGradient.radius0 = Float(maxDimension * 0.08)
-            centerGradient.radius1 = Float(maxDimension * 0.54)
-            centerGradient.color0 = CIColor(red: 1.0, green: 0.90, blue: 0.74, alpha: centerGlowAmount)
-            centerGradient.color1 = CIColor(red: 1.0, green: 0.88, blue: 0.70, alpha: 0.0)
+            centerGradient.center = center
+            centerGradient.radius0 = Float(maxDimension * 0.10)
+            centerGradient.radius1 = Float(maxDimension * vignetteProfile.centerRadius)
+            centerGradient.color0 = CIColor(
+                red: vignetteProfile.glowRed,
+                green: vignetteProfile.glowGreen,
+                blue: vignetteProfile.glowBlue,
+                alpha: centerGlowAmount * vignetteProfile.centerGlow
+            )
+            centerGradient.color1 = CIColor(
+                red: vignetteProfile.glowRed,
+                green: vignetteProfile.glowGreen,
+                blue: vignetteProfile.glowBlue,
+                alpha: 0.0
+            )
 
             if let glow = centerGradient.outputImage?.cropped(to: extent),
                let screen = CIFilter(name: "CIScreenBlendMode") {
@@ -538,6 +560,7 @@ enum FilmImagePipeline {
             var generator = LCG(seed: grainSeed(width: width, height: height, film: film))
             let renderingProfile = FilmRenderingProfile.profile(for: film)
             let toneSeparation = FilmToneSeparation.profile(for: film)
+            let colorPolish = FilmColorPolish.profile(for: film)
             let amount = max(0.0, min(1.0, film.grainAmount))
             let isoScale = sqrt(Double(max(50, film.iso)) / 400.0).clamped(to: 0.72...1.48)
             let lumaAmplitude = amount * 17.5 * isoScale * film.grainSize.clamped(to: 0.7...1.45)
@@ -598,6 +621,41 @@ enum FilmImagePipeline {
                             + highlightToneWeight * toneSeparation.highlightB
                             + midtoneToneWeight * toneSeparation.midtoneB
 
+                        if colorPolish.intensity > 0 {
+                            let polishIntensity = colorPolish.intensity
+                            let midtonePresence = (1.0 - abs(luminance - 0.52) * 2.0).clamped(to: 0...1)
+                            let deepShadow = (1.0 - smoothstep(edge0: 0.14, edge1: 0.58, x: luminance)) * (1.0 - skinWeight * 0.45)
+                            let warmHighlight = highlightWeight * (1.0 - skinWeight * 0.28)
+                            let skinCream = skinWeight * colorPolish.skinCream * polishIntensity * (1.0 - highlightWeight * 0.38)
+                            let backgroundWarmth = midtonePresence * colorPolish.midtoneWarmth * polishIntensity * (1.0 - skinWeight * 0.72)
+
+                            r += skinCream * 5.6 + warmHighlight * colorPolish.highlightCream * polishIntensity * 4.4 + backgroundWarmth * 2.2
+                            g += skinCream * 1.4 + warmHighlight * colorPolish.highlightCream * polishIntensity * 2.1 + backgroundWarmth * 0.9
+                            b -= skinCream * 4.6 + warmHighlight * colorPolish.highlightCream * polishIntensity * 3.0
+
+                            r -= deepShadow * colorPolish.shadowCoolness * polishIntensity * 2.6
+                            g += deepShadow * colorPolish.shadowCoolness * polishIntensity * 0.9
+                            b += deepShadow * colorPolish.shadowCoolness * polishIntensity * 4.2
+
+                            let greenWeight = greenSubjectWeight(red: r, green: g, blue: b, luminance: luminance)
+                                * colorPolish.greenPurity
+                                * polishIntensity
+                                * (1.0 - skinWeight * 0.85)
+                            if greenWeight > 0 {
+                                let greenLuma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+                                r = r * (1.0 - greenWeight * 0.050) + greenLuma * (greenWeight * 0.012)
+                                g += greenWeight * 2.7
+                                b += greenWeight * 1.3
+                            }
+
+                            if skinWeight > 0 {
+                                let skinNeutral = (r + g * 1.18 + b * 0.72) / 2.90
+                                let redRestraint = skinWeight * colorPolish.skinRedRestraint * polishIntensity
+                                r = r * (1.0 - redRestraint * 0.11) + skinNeutral * (redRestraint * 0.11)
+                                g = g * (1.0 - redRestraint * 0.035) + skinNeutral * (redRestraint * 0.035)
+                            }
+                        }
+
                         let redDominance = ((r - max(g, b)) / 96.0).clamped(to: 0...1)
                         if redDominance > 0 {
                             let compressedRed = r * 0.72 + g * 0.20 + b * 0.08
@@ -644,6 +702,16 @@ enum FilmImagePipeline {
         let greenBlueSeparation = ((normalizedGreen - normalizedBlue) / 0.24).clamped(to: 0...1)
         let exposureWindow = (1.0 - abs(luminance - 0.58) / 0.40).clamped(to: 0...1)
         return warmth * redGreenBalance * greenBlueSeparation * exposureWindow
+    }
+
+    private static func greenSubjectWeight(red: Double, green: Double, blue: Double, luminance: Double) -> Double {
+        let normalizedRed = red / 255.0
+        let normalizedGreen = green / 255.0
+        let normalizedBlue = blue / 255.0
+        let greenLead = ((normalizedGreen - max(normalizedRed, normalizedBlue)) / 0.16).clamped(to: 0...1)
+        let notNeon = (1.0 - smoothstep(edge0: 0.72, edge1: 0.98, x: normalizedGreen)).clamped(to: 0...1)
+        let exposureWindow = (1.0 - abs(luminance - 0.48) / 0.48).clamped(to: 0...1)
+        return greenLead * notNeon * exposureWindow
     }
 
     private static func smoothstep(edge0: Double, edge1: Double, x: Double) -> Double {
@@ -986,6 +1054,152 @@ private struct FilmRenderingProfile {
             )
         }
     }
+}
+
+private struct FilmVignetteProfile {
+    let edgeDensity: Double
+    let horizontalScale: CGFloat
+    let verticalScale: CGFloat
+    let centerOffsetX: CGFloat
+    let centerOffsetY: CGFloat
+    let centerRadius: CGFloat
+    let centerGlow: Double
+    let edgeRed: CGFloat
+    let edgeGreen: CGFloat
+    let edgeBlue: CGFloat
+    let glowRed: CGFloat
+    let glowGreen: CGFloat
+    let glowBlue: CGFloat
+
+    static func profile(for film: FilmPreset) -> FilmVignetteProfile {
+        switch film.id {
+        case "human-warm-400":
+            return .init(
+                edgeDensity: 0.82,
+                horizontalScale: 0.92,
+                verticalScale: 1.12,
+                centerOffsetX: -0.015,
+                centerOffsetY: 0.018,
+                centerRadius: 0.60,
+                centerGlow: 1.08,
+                edgeRed: 0.16, edgeGreen: 0.13, edgeBlue: 0.095,
+                glowRed: 1.0, glowGreen: 0.91, glowBlue: 0.76
+            )
+        case "human-vignette-800":
+            return .init(
+                edgeDensity: 0.92,
+                horizontalScale: 0.84,
+                verticalScale: 1.18,
+                centerOffsetX: 0.0,
+                centerOffsetY: 0.025,
+                centerRadius: 0.50,
+                centerGlow: 1.16,
+                edgeRed: 0.105, edgeGreen: 0.100, edgeBlue: 0.090,
+                glowRed: 0.92, glowGreen: 0.88, glowBlue: 0.78
+            )
+        case "muse-portrait-400", "soft-portrait-400":
+            return .init(
+                edgeDensity: 0.68,
+                horizontalScale: 0.94,
+                verticalScale: 1.10,
+                centerOffsetX: 0.0,
+                centerOffsetY: 0.035,
+                centerRadius: 0.66,
+                centerGlow: 0.92,
+                edgeRed: 0.18, edgeGreen: 0.145, edgeBlue: 0.115,
+                glowRed: 1.0, glowGreen: 0.92, glowBlue: 0.82
+            )
+        default:
+            return .init(
+                edgeDensity: 1.0,
+                horizontalScale: 0.90,
+                verticalScale: 1.10,
+                centerOffsetX: 0.0,
+                centerOffsetY: 0.0,
+                centerRadius: 0.54,
+                centerGlow: 1.0,
+                edgeRed: 0.15, edgeGreen: 0.118, edgeBlue: 0.085,
+                glowRed: 1.0, glowGreen: 0.88, glowBlue: 0.70
+            )
+        }
+    }
+}
+
+private struct FilmColorPolish {
+    let intensity: Double
+    let skinCream: Double
+    let skinRedRestraint: Double
+    let greenPurity: Double
+    let shadowCoolness: Double
+    let highlightCream: Double
+    let midtoneWarmth: Double
+
+    static func profile(for film: FilmPreset) -> FilmColorPolish {
+        guard film.category != .blackWhite else { return .neutral }
+
+        switch film.id {
+        case "human-warm-400":
+            return .init(
+                intensity: 1.0,
+                skinCream: 0.86,
+                skinRedRestraint: 0.58,
+                greenPurity: 0.52,
+                shadowCoolness: 0.12,
+                highlightCream: 0.72,
+                midtoneWarmth: 0.56
+            )
+        case "human-vignette-800":
+            return .init(
+                intensity: 1.0,
+                skinCream: 0.44,
+                skinRedRestraint: 0.42,
+                greenPurity: 0.28,
+                shadowCoolness: 0.76,
+                highlightCream: 0.34,
+                midtoneWarmth: 0.18
+            )
+        case "muse-portrait-400":
+            return .init(
+                intensity: 1.0,
+                skinCream: 1.0,
+                skinRedRestraint: 0.76,
+                greenPurity: 0.18,
+                shadowCoolness: 0.08,
+                highlightCream: 0.86,
+                midtoneWarmth: 0.42
+            )
+        case "soft-portrait-400":
+            return .init(
+                intensity: 1.0,
+                skinCream: 0.88,
+                skinRedRestraint: 0.68,
+                greenPurity: 0.20,
+                shadowCoolness: 0.10,
+                highlightCream: 0.70,
+                midtoneWarmth: 0.32
+            )
+        default:
+            return .init(
+                intensity: film.category == .portrait ? 0.55 : 0.28,
+                skinCream: film.category == .portrait ? 0.54 : 0.26,
+                skinRedRestraint: film.category == .portrait ? 0.46 : 0.22,
+                greenPurity: film.tintShift < 0 ? 0.34 : 0.16,
+                shadowCoolness: film.temperatureShift < 0 ? 0.34 : 0.08,
+                highlightCream: film.temperatureShift > 120 ? 0.36 : 0.16,
+                midtoneWarmth: film.temperatureShift > 120 ? 0.24 : 0.08
+            )
+        }
+    }
+
+    static let neutral = FilmColorPolish(
+        intensity: 0,
+        skinCream: 0,
+        skinRedRestraint: 0,
+        greenPurity: 0,
+        shadowCoolness: 0,
+        highlightCream: 0,
+        midtoneWarmth: 0
+    )
 }
 
 private struct FilmToneSeparation {

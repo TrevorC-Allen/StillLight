@@ -519,6 +519,7 @@ private struct FilmSelectionDetailPanel: View {
             }
 
             sceneTags
+            FilmDetailPreviewStrip(film: film, language: language)
 
             HStack(spacing: 10) {
                 FilmMiniStat(title: language == .chinese ? "颗粒" : "Grain", value: normalized(film.grainAmount, upperBound: 0.46), accent: style.accent)
@@ -612,6 +613,82 @@ private struct FilmSelectionDetailPanel: View {
 
     private func normalized(_ value: Double, upperBound: Double) -> Double {
         min(1.0, Swift.max(0.0, value / upperBound))
+    }
+}
+
+private struct FilmDetailPreviewStrip: View {
+    let film: FilmPreset
+    let language: AppLanguage
+
+    private var style: FilmCoverStyle {
+        FilmCoverStyle.style(for: film)
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            FilmSampleSceneView(film: film, style: style)
+                .frame(width: 76, height: 54)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .stroke(.white.opacity(0.12), lineWidth: 1)
+                }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(toneTitle)
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .tracking(0.5)
+                    .foregroundStyle(style.accent.opacity(0.90))
+                    .lineLimit(1)
+
+                Text(textureLine)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(StillLightTheme.secondaryText)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+
+            VStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(style.swatches[index].opacity(0.86))
+                        .frame(width: 22, height: 8)
+                }
+            }
+        }
+        .padding(10)
+        .background(
+            LinearGradient(
+                colors: [
+                    StillLightTheme.panelElevated.opacity(0.54),
+                    style.accent.opacity(0.08)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(StillLightTheme.text.opacity(0.055), lineWidth: 1)
+        }
+    }
+
+    private var toneTitle: String {
+        language == .chinese ? "样张预览" : "PROOF"
+    }
+
+    private var textureLine: String {
+        let scenes = language == .chinese && !film.localizedSuitableScenes.isEmpty
+            ? film.localizedSuitableScenes
+            : film.suitableScenes
+        let sceneText = scenes.prefix(2).joined(separator: " / ")
+        if sceneText.isEmpty {
+            return film.displayCameraName(language: language)
+        }
+        return sceneText
     }
 }
 
@@ -713,6 +790,17 @@ private struct FilmPhysicalPackageView: View {
         }
     }
 
+    private var exposureMicroLabel: String {
+        switch film.category {
+        case .instant:
+            return "pack"
+        case .digital:
+            return "ccd"
+        default:
+            return "\(film.defaultShotCount) exp"
+        }
+    }
+
     var body: some View {
         ZStack {
             objectAmbientShadow
@@ -754,19 +842,7 @@ private struct FilmPhysicalPackageView: View {
                     )
                 )
 
-            VStack(spacing: 0) {
-                Rectangle()
-                    .fill(style.wash[0].opacity(0.86))
-                    .frame(height: size.height * 0.25)
-                Rectangle()
-                    .fill(style.paper.opacity(0.92))
-                Rectangle()
-                    .fill(style.wash[1].opacity(0.68))
-                    .frame(height: size.height * 0.18)
-                Rectangle()
-                    .fill(style.wash[2].opacity(0.76))
-                    .frame(height: size.height * 0.17)
-            }
+            boxWrapperArtwork
             .padding(size.width * 0.055)
             .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
 
@@ -816,7 +892,7 @@ private struct FilmPhysicalPackageView: View {
                 HStack {
                     Text("ISO \(film.iso)")
                     Spacer()
-                    Text("\(film.defaultShotCount)")
+                    Text(exposureMicroLabel)
                 }
                 .font(.system(size: size.width * 0.071, weight: .bold, design: .monospaced))
                 .foregroundStyle(style.ink.opacity(0.76))
@@ -833,6 +909,92 @@ private struct FilmPhysicalPackageView: View {
         .overlay(packageStroke(cornerRadius: 8))
         .overlay(packageInsetStroke(cornerRadius: 6).padding(size.width * 0.055))
         .shadow(color: style.ink.opacity(0.18), radius: isHeroScale ? 11 : 7, x: 0, y: isHeroScale ? 8 : 5)
+    }
+
+    @ViewBuilder
+    private var boxWrapperArtwork: some View {
+        switch style.kind {
+        case .filmStrip:
+            VStack(spacing: 0) {
+                Rectangle().fill(style.wash[0].opacity(0.86)).frame(height: size.height * 0.21)
+                Rectangle().fill(style.paper.opacity(0.92))
+                negativeStrip
+                    .frame(height: size.height * 0.25)
+                    .padding(.horizontal, size.width * 0.10)
+                    .padding(.vertical, size.height * 0.035)
+                    .background(style.wash[1].opacity(0.48))
+                Rectangle().fill(style.wash[2].opacity(0.78)).frame(height: size.height * 0.15)
+            }
+        case .contactSheet:
+            ZStack {
+                style.paper.opacity(0.96)
+                VStack(spacing: size.height * 0.035) {
+                    Rectangle().fill(style.wash[0].opacity(0.82)).frame(height: size.height * 0.17)
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: size.width * 0.035), count: 2), spacing: size.width * 0.035) {
+                        ForEach(0..<4, id: \.self) { index in
+                            FilmSampleSceneView(film: film, style: style)
+                                .opacity(index == 3 ? 0.62 : 0.88)
+                        }
+                    }
+                    .padding(.horizontal, size.width * 0.12)
+                    .padding(.bottom, size.height * 0.12)
+                }
+            }
+        case .darkroomCard:
+            ZStack {
+                style.ink.opacity(0.92)
+                FilmSampleSceneView(film: film, style: style)
+                    .padding(.horizontal, size.width * 0.16)
+                    .padding(.vertical, size.height * 0.20)
+                    .opacity(0.86)
+                Rectangle()
+                    .fill(style.accent.opacity(0.72))
+                    .frame(width: size.width * 0.62, height: 2)
+                    .offset(y: size.height * 0.24)
+            }
+        case .colorRecipe:
+            VStack(spacing: 0) {
+                ForEach(0..<3, id: \.self) { index in
+                    Rectangle()
+                        .fill(style.swatches[index].opacity(index == 0 ? 0.82 : 0.72))
+                }
+                FilmSampleSceneView(film: film, style: style)
+                    .frame(height: size.height * 0.34)
+            }
+        case .instantFrame:
+            ZStack {
+                style.paper.opacity(0.94)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(.white.opacity(0.72))
+                    .padding(.horizontal, size.width * 0.12)
+                    .padding(.top, size.height * 0.12)
+                    .padding(.bottom, size.height * 0.24)
+                FilmSampleSceneView(film: film, style: style)
+                    .padding(.horizontal, size.width * 0.18)
+                    .padding(.top, size.height * 0.18)
+                    .padding(.bottom, size.height * 0.32)
+            }
+        case .halfFrame:
+            HStack(spacing: size.width * 0.035) {
+                FilmSampleSceneView(film: film, style: style)
+                FilmSampleSceneView(film: film, style: style)
+                    .opacity(0.76)
+            }
+            .padding(.horizontal, size.width * 0.12)
+            .padding(.vertical, size.height * 0.16)
+            .background(style.ink.opacity(0.82))
+        case .negativeSleeve:
+            ZStack {
+                style.paper.opacity(0.88)
+                negativeStrip
+                    .rotationEffect(.degrees(style.tilt * 0.25))
+                    .padding(.horizontal, size.width * 0.04)
+                Rectangle()
+                    .fill(.white.opacity(0.18))
+                    .frame(height: 1)
+                    .offset(y: -size.height * 0.24)
+            }
+        }
     }
 
     private var canister: some View {
@@ -974,7 +1136,7 @@ private struct FilmPhysicalPackageView: View {
                 Rectangle()
                     .fill(style.accent.opacity(0.80))
                     .frame(width: size.width * 0.48, height: 4)
-                Text("\(film.defaultShotCount) INSTANT")
+                Text("INSTANT PACK")
                     .font(.system(size: size.width * 0.052, weight: .bold, design: .monospaced))
                     .foregroundStyle(style.ink.opacity(0.42))
             }
@@ -1923,58 +2085,34 @@ private struct ExposureCounter: View {
     let language: AppLanguage
 
     var body: some View {
-        HStack(spacing: 8) {
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(formatText)
-                    .font(.system(size: 9, weight: .bold, design: .monospaced))
-                    .tracking(0.6)
-                    .foregroundStyle(StillLightTheme.secondaryText.opacity(0.78))
-                Text(language == .chinese ? "余量" : "COUNT")
-                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
-                    .tracking(0.7)
-                    .foregroundStyle(StillLightTheme.secondaryText.opacity(0.52))
-            }
+        VStack(alignment: .trailing, spacing: 4) {
+            Text(formatText)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .tracking(0.7)
+                .foregroundStyle(StillLightTheme.secondaryText.opacity(0.68))
 
-            ZStack {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.black.opacity(0.86),
-                                StillLightTheme.panelElevated.opacity(0.92),
-                                Color.black.opacity(0.72)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                Text(countText)
-                    .font(.system(size: 18, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(StillLightTheme.text.opacity(0.94))
-                    .contentTransition(.numericText())
-                    .id(countText)
-
-                LinearGradient(
-                    colors: [.white.opacity(0.24), .clear, .black.opacity(0.18)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+            Text(countText)
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .tracking(0.2)
+                .foregroundStyle(StillLightTheme.text.opacity(0.90))
+                .contentTransition(.numericText())
+                .id(countText)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(StillLightTheme.panelElevated.opacity(0.76))
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-            }
-            .frame(width: 42, height: 31)
-            .overlay {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .stroke(StillLightTheme.text.opacity(0.16), lineWidth: 1)
-            }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .stroke(StillLightTheme.text.opacity(0.08), lineWidth: 1)
+                }
         }
-        .padding(.leading, 11)
-        .padding(.trailing, 8)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
         .background(
             LinearGradient(
                 colors: [
-                    StillLightTheme.panelElevated.opacity(0.84),
-                    StillLightTheme.panel.opacity(0.68)
+                    StillLightTheme.panelElevated.opacity(0.68),
+                    StillLightTheme.panel.opacity(0.46)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -1991,19 +2129,26 @@ private struct ExposureCounter: View {
     private var formatText: String {
         switch film.category {
         case .instant:
-            return "INSTANT"
+            return language == .chinese ? "相纸盒" : "PACK"
         case .digital:
             return "CCD"
         default:
-            return "135"
+            return "135 FILM"
         }
     }
 
     private var countText: String {
         if let currentRoll {
-            return language == .chinese ? "\(currentRoll.remainingShots) 张" : "\(currentRoll.remainingShots) left"
+            return language == .chinese ? "剩 \(currentRoll.remainingShots) 张" : "\(currentRoll.remainingShots) left"
         }
-        return "\(film.defaultShotCount)"
+        switch film.category {
+        case .instant:
+            return language == .chinese ? "未开封" : "sealed"
+        case .digital:
+            return language == .chinese ? "文件" : "files"
+        default:
+            return "\(film.defaultShotCount) exp"
+        }
     }
 }
 
@@ -2308,6 +2453,69 @@ private struct FilmCoverView: View {
     }
 }
 
+private struct FilmContactSheetCrop: View {
+    let quadrant: FilmSamplePhotoQuadrant
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+
+            Image("film_sample_contact_sheet")
+                .resizable()
+                .interpolation(.high)
+                .scaledToFill()
+                .frame(width: width * 2.08, height: height * 2.08)
+                .offset(
+                    x: quadrant.offsetX * width,
+                    y: quadrant.offsetY * height
+                )
+                .frame(width: width, height: height)
+                .clipped()
+        }
+    }
+}
+
+private enum FilmSamplePhotoQuadrant {
+    case cafe
+    case shadow
+    case portrait
+    case night
+
+    var offsetX: CGFloat {
+        switch self {
+        case .cafe, .portrait:
+            return 0.52
+        case .shadow, .night:
+            return -0.52
+        }
+    }
+
+    var offsetY: CGFloat {
+        switch self {
+        case .cafe, .shadow:
+            return 0.52
+        case .portrait, .night:
+            return -0.52
+        }
+    }
+
+    static func quadrant(for film: FilmPreset) -> FilmSamplePhotoQuadrant? {
+        switch film.id {
+        case "human-warm-400", "classic-chrome-x", "sunlit-gold-200":
+            return .cafe
+        case "human-vignette-800", "gr-street-snap", "green-street-400":
+            return .shadow
+        case "muse-portrait-400", "soft-portrait-400", "medium-500c":
+            return .portrait
+        case "tungsten-800", "cyber-ccd-blue", "ccd-2003":
+            return .night
+        default:
+            return nil
+        }
+    }
+}
+
 private struct FilmSampleSceneView: View {
     let film: FilmPreset
     let style: FilmCoverStyle
@@ -2316,14 +2524,23 @@ private struct FilmSampleSceneView: View {
         FilmSampleSceneKind.kind(for: film)
     }
 
+    private var photoQuadrant: FilmSamplePhotoQuadrant? {
+        FilmSamplePhotoQuadrant.quadrant(for: film)
+    }
+
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
             let height = proxy.size.height
 
             ZStack {
-                sceneBackdrop(width: width, height: height)
-                sceneContent(scene, width: width, height: height)
+                if let photoQuadrant {
+                    FilmContactSheetCrop(quadrant: photoQuadrant)
+                    photoPrintFinish(width: width, height: height)
+                } else {
+                    sceneBackdrop(width: width, height: height)
+                    sceneContent(scene, width: width, height: height)
+                }
                 sceneTone(width: width, height: height)
                 sceneGrain(width: width, height: height)
             }
@@ -2344,6 +2561,31 @@ private struct FilmSampleSceneView: View {
                     endPoint: .bottomTrailing
                 )
             )
+    }
+
+    private func photoPrintFinish(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    style.swatches[0].opacity(0.24),
+                    .clear,
+                    style.swatches[2].opacity(0.18)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .blendMode(.softLight)
+
+            LinearGradient(
+                colors: [
+                    .white.opacity(0.08),
+                    .clear,
+                    style.ink.opacity(0.20)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
     }
 
     @ViewBuilder

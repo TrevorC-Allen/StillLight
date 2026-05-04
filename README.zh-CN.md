@@ -2,70 +2,123 @@
 
 中文文档 | [English](README.md)
 
-StillLight 是一个 iOS-only 的个人作品级胶片相机 MVP，使用 SwiftUI、AVFoundation、CoreImage 和 Photos 框架构建。
-
-它的目标不是做一个普通滤镜 App，而是做一个“数字时代的个人胶片暗房”：打开就能拍，拍完可直出，也可以把一组已有照片放进暗房批量冲洗。
-
-## 当前闭环
+StillLight 是一个 iOS-only 的胶片相机 MVP，使用 SwiftUI、AVFoundation、CoreImage
+和 Photos 构建。它面向作品集展示：不是普通滤镜 App，而是一个能真实拍摄、能批量冲洗、
+能讲清楚图像管线的个人胶片暗房。
 
 ```text
 选择胶卷
--> 打开自定义相机拍摄
--> 通过模块化胶片管线冲洗
--> 保存到系统照片
--> 保留本地胶卷记录
+-> 用自定义相机拍摄，或把已有照片放进暗房
+-> 通过胶片管线冲洗
+-> 保存到本地胶卷和系统照片
+-> 浏览、对比和分享成片
 ```
 
-## MVP 功能
+## 产品重点
 
-- AVFoundation 实时相机预览
-- 拍照、前后摄像头切换、闪光灯、曝光补偿、点按对焦
-- 类原生相机变焦：支持捏合缩放，并在多摄 iPhone 上显示 0.5x / 1x / 3x 等镜头按钮
-- 拍照后不自动弹出结果页，只更新左下角最近照片缩略图，用户点击后再查看
-- 原生录像，支持麦克风、录制计时、保存到系统照片
-- 网格线、水平仪、比例取景框
-- 支持 3:2、4:3、1:1、16:9、Half 比例
-- 机械计数窗式胶卷剩余张数和本地胶卷记录
-- 27 个可切换胶片 / 经典机型风格
-- 围绕当前主推方向调校的场景卷：Human Warm 400、Shadow Walk 800、Soft Muse 400
-- HNCS-inspired、旁轴街拍、GR 街拍、中画幅 500C、CCD、拍立得等风格
-- Dazz-like 胶卷抽屉：纸盒、胶卷暗盒、拍立得相纸包、纸套、一次性相机、半格票据和相机机身均为独立 SwiftUI 绘制
-- 胶卷物件包含独立微型样片场景、确定性纸纹、磨损点、接触阴影、抽屉层次和镜头玻璃反光
-- 主推胶卷在选择器中分别呈现人文咖啡、街影暗角、柔和人像等样片氛围，避免只用数字和图标表达风格
-- 白框、拍立得纸框、相纸边框，以及机型 / 胶卷标注
-- 中文 / 英文 UI 切换
-- 暗房支持一次导入多张照片
-- 暗房预览支持左右滑动切换已导入照片
-- 暗房支持冲洗当前 / 冲洗全部、取消批量冲洗、失败项重试、保存当前 / 保存全部
-- 暗房冲洗后显示单张处理耗时、输入 / 输出像素和阶段耗时，方便作品集性能讲解
-- 本地可解释胶卷推荐：根据亮度、饱和度、冷暖和反差生成 Top 3 候选
-- 分享、相册、照片详情左右滑动浏览、长按原图对比
+- 原生相机体验：实时预览、点按对焦 / 测光、曝光补偿、闪光灯、镜头变焦按钮、触感、
+  网格线、水平仪和比例取景框。
+- Dazz-like 胶卷库：27 个原创胶片 / 机型风格，以纸盒、胶卷暗盒、拍立得相纸包、纸套、
+  一次性相机、半格票据和相机机身的方式呈现。
+- 当前主推方向：
+  - `Human Warm 400`：人文、咖啡馆、室内和街头日常。
+  - `Shadow Walk 800`：街道、展馆、建筑和更强暗角氛围。
+  - `Soft Muse 400`：柔和人像、暖肤色、轻抬阴影和稳定高光。
+- 真实样张方向：作品集验收应使用真实 iPhone 样张，覆盖咖啡馆 / 室内、人像窗边光、
+  夜间街道、博物馆、建筑走廊、拍立得桌面和 CCD 校园 / 日光场景；胶卷缩略图要让用户
+  先看到成片氛围，而不是只看到数字和图标。
+- 中文文档模式：`README.zh-CN.md` 和 `docs/zh-CN/` 面向演示、面试讲解和后续维护，
+  以中文说明 MVP 范围、架构、胶卷、性能、真机运行、AI 推荐和演示脚本。
 
-## 图像处理管线
+## 技术亮点
+
+StillLight 的出片不是单纯套 LUT。每个胶卷都会驱动一套确定性的胶片渲染管线：
 
 ```text
-Captured JPEG / Imported Image
--> 方向修正和 3200px 高质量处理路径
+拍摄 JPEG / 导入图片
+-> 方向修正、降采样或归一化
+-> 3200px 高质量处理路径
 -> 按比例中心裁切
--> 曝光修正
--> 色温 / 色调偏移
--> 对比度 / 饱和度
+-> 曝光、色温、Tint、对比度、饱和度
 -> Tone Curve
 -> 高光 / 阴影调整
--> FilmRenderingProfile 局部微对比 / 中间调柔化
--> 胶卷专属色彩响应矩阵
--> 高光遮罩 Halation
+-> Film Rendering Profile
+-> Tone Separation 和胶卷色彩响应
+-> 高光遮罩暖色 Halation
 -> 柔和径向镜头落光
 -> 稳定 seed 漏光
 -> 带肤色保护的亮度相关颗粒和 finishing texture
--> 轻微重影日期戳
--> 带纸纹的白框 / 相纸 / 拍立得边框
--> 机型和胶卷标注
--> JPEG 导出
--> 写入胶片元数据
--> 本地记录
--> 尝试保存到系统照片
+-> 日期戳、纸框 / 拍立得 / 白框和机型标注
+-> JPEG 导出并写入 StillLight 胶片元数据
 ```
+
+作品集讲解重点：
+
+- `Film Rendering Profile`：用局部微对比、中间调柔化、高光恢复和肤色保护，让胶卷像
+  被“渲染”出来，而不是只改变色相。
+- `Tone Separation`：阴影、中间调和高光在颜色、反差和保护策略上分开处理，再进入颗粒、
+  边框和机型标注。
+- 相机拍摄和 Import Lab 共用同一套管线，保证直拍和批量冲洗的风格一致。
+- Import Lab 会显示总耗时、输入 / 输出像素和阶段耗时，便于 QA 和性能讲解。
+
+## MVP 范围
+
+- AVFoundation 拍照和原生录像，录像支持音频、计时和保存到系统照片。
+- 前后摄像头、闪光灯 off / on / auto、曝光补偿、点按对焦 / 测光和对焦动画。
+- 类原生变焦：捏合缩放，多摄 iPhone 上显示 0.5x / 1x / 3x 等镜头按钮。
+- 比例：3:2、4:3、1:1、16:9、Half。
+- 拍照后不强制弹结果页，只更新左下角最近照片缩略图。
+- 胶卷剩余张数、本地 JSON 照片记录、相册详情左右滑动和长按原图对比。
+- Import Lab 支持多图导入、冲洗当前 / 全部、取消批量、失败重试、保存当前 / 全部。
+- 本地可解释 Top 3 胶卷推荐：基于亮度、颜色、冷暖和反差。
+- 中文 / 英文 UI 切换、分享、可选保存原图。
+
+## 胶卷库
+
+当前胶卷库包含 27 个原创预设，覆盖 featured、portrait、color negative、classic
+camera、instant、black-and-white、digital 和 experimental。代表胶卷包括：
+
+- Human Warm 400
+- Shadow Walk 800
+- Soft Muse 400
+- Sunlit Gold 200
+- Soft Portrait 400
+- Silver HP5
+- Green Street 400
+- Tungsten 800
+- Pocket Flash
+- CCD 2003
+- Instant Square
+- HNCS Natural
+- M Rangefinder Color
+- GR Street Snap
+- Medium 500C
+- Instant Wide
+- Half Frame Diary
+
+完整预设表、胶卷物件映射和真实样张验收方向见 `docs/zh-CN/PRESETS.md`。
+
+## 验收清单
+
+MVP 验收：
+
+- `scripts/build_unsigned.sh` 编译通过。
+- 真机打开相机预览，点按对焦 / 测光、变焦、曝光和拍摄都能响应。
+- 拍照后生成经过胶片管线处理的成片，并更新最近照片缩略图。
+- 切换胶卷会改变图像渲染和边框 / 机型标注。
+- `Human Warm 400`、`Shadow Walk 800`、`Soft Muse 400` 用真实咖啡 / 室内、
+  街道 / 展馆、人像样张完成验收。
+- Import Lab 能处理多张导入照片，支持取消、失败重试、保存当前和保存全部。
+- 成片先保存到本地胶卷，Photos 权限允许时再导出到系统照片，并写入 JPEG 胶片元数据。
+- 中文文档模式可从 `README.zh-CN.md` 和 `docs/zh-CN/README.md` 顺畅进入。
+
+下一步验收：
+
+- 为三个主推胶卷加入真实 3D LUT / `CIColorCube` 素材，并和当前程序化 profile 对比。
+- 将预览安全的 tone、颗粒、暗角阶段迁移到 Metal，服务实时取景。
+- 在照片管线稳定后，把胶片渲染接入录像导出。
+- 有足够真实样张后，用 Vision / CoreML 场景标签替代当前启发式推荐。
+- 支持用户用 5-10 张参考图生成个人自定义胶卷。
 
 ## 项目结构
 
@@ -123,22 +176,3 @@ scripts/run_on_iphone.sh
 ```sh
 scripts/run_on_iphone.sh YOUR_DEVICE_ID
 ```
-
-## 中文文档
-
-- [中文文档索引](docs/zh-CN/README.md)
-- [MVP 范围](docs/zh-CN/MVP.md)
-- [iOS 技术架构](docs/zh-CN/IOS_ARCHITECTURE.md)
-- [胶卷预设系统](docs/zh-CN/PRESETS.md)
-- [iPhone 真机运行手册](docs/zh-CN/DEVICE_RUNBOOK.md)
-- [AI 胶卷推荐说明](docs/zh-CN/AI_RECOMMENDER.md)
-- [中文演示脚本](docs/zh-CN/DEMO_SCRIPT.md)
-- [4 周开发路线](docs/zh-CN/ROADMAP.md)
-
-## 下一步
-
-- 为主推胶卷补充真实 3D LUT / CIColorCube 素材
-- 将预览安全的 tone、颗粒、暗角阶段迁移到 Metal，支持实时预览
-- 录像接入胶片处理导出，并逐步支持实时录像效果
-- 用 Vision / CoreML 替代当前启发式推荐
-- 用 5-10 张参考图生成个人自定义胶卷

@@ -948,4 +948,21 @@ struct FilmLibrary {
             localizedSuitableScenes: ["夜晚", "人像", "窗边"]
         )
     ]
+
+    var presetIds: Set<String> {
+        Set(presets.map(\.id))
+    }
+
+    func presets(matching category: FilmCategory, favoriteIds: Set<String>) -> [FilmPreset] {
+        switch category {
+        case .favorites:
+            return favoritePresets(with: favoriteIds)
+        default:
+            return presets.filter { $0.category == category }
+        }
+    }
+
+    func favoritePresets(with favoriteIds: Set<String>) -> [FilmPreset] {
+        presets.filter { favoriteIds.contains($0.id) }
+    }
 }

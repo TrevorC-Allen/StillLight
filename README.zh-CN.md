@@ -124,6 +124,7 @@ scripts/run_on_iphone.sh YOUR_DEVICE_ID
 - [iOS 技术架构](docs/zh-CN/IOS_ARCHITECTURE.md)
 - [胶卷预设系统](docs/zh-CN/PRESETS.md)
 - [iPhone 真机运行手册](docs/zh-CN/DEVICE_RUNBOOK.md)
+- [4 周开发路线](docs/zh-CN/ROADMAP.md)
 
 ## 下一步
 

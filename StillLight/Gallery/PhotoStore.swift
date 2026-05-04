@@ -20,6 +20,14 @@ final class PhotoStore: ObservableObject {
         save()
     }
 
+    func record(id: UUID) -> PhotoRecord? {
+        records.first { $0.id == id }
+    }
+
+    func isFavorite(_ record: PhotoRecord) -> Bool {
+        self.record(id: record.id)?.isFavorite ?? record.isFavorite
+    }
+
     func toggleFavorite(_ record: PhotoRecord) {
         guard let index = records.firstIndex(where: { $0.id == record.id }) else { return }
         records[index].isFavorite.toggle()

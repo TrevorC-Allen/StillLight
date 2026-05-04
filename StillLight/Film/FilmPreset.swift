@@ -156,6 +156,7 @@ enum BorderStyle: String, Codable, Hashable {
 }
 
 enum FilmCategory: String, CaseIterable, Identifiable, Codable {
+    case favorites
     case featured
     case portrait
     case negative
@@ -169,6 +170,8 @@ enum FilmCategory: String, CaseIterable, Identifiable, Codable {
 
     func title(language: AppLanguage) -> String {
         switch (self, language) {
+        case (.favorites, .chinese):
+            return "收藏"
         case (.featured, .chinese):
             return "主推"
         case (.portrait, .chinese):
@@ -185,6 +188,8 @@ enum FilmCategory: String, CaseIterable, Identifiable, Codable {
             return "数码复古"
         case (.experimental, .chinese):
             return "实验"
+        case (.favorites, _):
+            return "Favorites"
         case (.featured, _):
             return "Featured"
         case (.portrait, _):

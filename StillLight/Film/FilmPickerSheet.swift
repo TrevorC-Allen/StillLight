@@ -14,19 +14,26 @@ struct FilmPickerSheet: View {
                     header
                     categoryPicker
 
-                    ForEach(filteredPresets) { film in
-                        Button {
-                            appState.selectFilm(film)
-                            dismiss()
-                        } label: {
+                    if filteredPresets.isEmpty, selectedCategory == .favorites {
+                        favoriteEmptyState
+                    } else {
+                        ForEach(filteredPresets) { film in
                             FilmPresetRow(
                                 film: film,
                                 isSelected: film.id == appState.selectedFilm.id,
+                                isFavorite: appState.isFavorite(film),
                                 currentRoll: film.id == appState.currentRoll.filmPresetId ? appState.currentRoll : nil,
-                                language: appState.language
+                                language: appState.language,
+                                favoriteTitle: appState.t(appState.isFavorite(film) ? .unfavoriteFilm : .favoriteFilm),
+                                selectAction: {
+                                    appState.selectFilm(film)
+                                    dismiss()
+                                },
+                                favoriteAction: {
+                                    appState.toggleFavorite(film)
+                                }
                             )
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(18)
@@ -73,46 +80,93 @@ struct FilmPickerSheet: View {
         guard let selectedCategory else {
             return appState.filmLibrary.presets
         }
-        return appState.filmLibrary.presets.filter { $0.category == selectedCategory }
+        return appState.filmLibrary.presets(matching: selectedCategory, favoriteIds: appState.favoriteFilmIds)
+    }
+
+    private var favoriteEmptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "star")
+                .font(.system(size: 30, weight: .light))
+                .foregroundStyle(StillLightTheme.accent)
+            Text(appState.t(.favoriteEmptyTitle))
+                .font(.headline)
+                .foregroundStyle(StillLightTheme.text)
+            Text(appState.t(.favoriteEmptySubtitle))
+                .font(.subheadline)
+                .foregroundStyle(StillLightTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 18)
+        }
+        .frame(maxWidth: .infinity)
+        .stillLightPanel()
     }
 }
 
 private struct FilmPresetRow: View {
     let film: FilmPreset
     let isSelected: Bool
+    let isFavorite: Bool
     let currentRoll: FilmRoll?
     let language: AppLanguage
+    let favoriteTitle: String
+    let selectAction: () -> Void
+    let favoriteAction: () -> Void
 
     var body: some View {
         HStack(spacing: 14) {
-            FilmCoverView(film: film)
+            Button(action: selectAction) {
+                HStack(spacing: 14) {
+                    FilmCoverView(film: film)
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(film.displayName(language: language))
-                        .font(.headline)
-                        .foregroundStyle(StillLightTheme.text)
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text(film.displayName(language: language))
+                                .font(.headline)
+                                .foregroundStyle(StillLightTheme.text)
+                            if isSelected {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(StillLightTheme.accent)
+                            }
+                        }
+                        Text(film.displayDescription(language: language))
+                            .font(.subheadline)
+                            .foregroundStyle(StillLightTheme.secondaryText)
+                            .lineLimit(2)
+                        Text(film.displayMetadataLine(language: language))
+                            .font(.caption.monospaced())
                             .foregroundStyle(StillLightTheme.accent)
+                        HStack(spacing: 8) {
+                            Text(film.displayCameraName(language: language))
+                            Text(rollLine)
+                        }
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(StillLightTheme.secondaryText)
                     }
-                }
-                Text(film.displayDescription(language: language))
-                    .font(.subheadline)
-                    .foregroundStyle(StillLightTheme.secondaryText)
-                    .lineLimit(2)
-                Text(film.displayMetadataLine(language: language))
-                    .font(.caption.monospaced())
-                    .foregroundStyle(StillLightTheme.accent)
-                HStack(spacing: 8) {
-                    Text(film.displayCameraName(language: language))
-                    Text(rollLine)
-                }
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(StillLightTheme.secondaryText)
-            }
 
-            Spacer()
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            VStack(spacing: 9) {
+                Button(action: favoriteAction) {
+                    Image(systemName: isFavorite ? "star.fill" : "star")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(isFavorite ? StillLightTheme.accent : StillLightTheme.secondaryText)
+                        .frame(width: 36, height: 36)
+                        .background(StillLightTheme.panelElevated.opacity(0.76))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(favoriteTitle)
+
+                if isSelected {
+                    Text(AppText.get(.selectedFilm, language: language))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(StillLightTheme.accent)
+                }
+            }
         }
         .padding(14)
         .background(isSelected ? StillLightTheme.panelElevated : StillLightTheme.panel)
@@ -121,6 +175,7 @@ private struct FilmPresetRow: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(isSelected ? StillLightTheme.accent.opacity(0.55) : .clear, lineWidth: 1)
         }
+        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var rollLine: String {

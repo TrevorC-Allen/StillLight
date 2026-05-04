@@ -2,6 +2,25 @@ import SwiftUI
 
 struct GalleryScreen: View {
     @EnvironmentObject private var appState: AppState
+
+    var body: some View {
+        GalleryContent(photoStore: appState.photoStore)
+            .environmentObject(appState)
+    }
+}
+
+private enum GalleryFilter: String, CaseIterable, Identifiable {
+    case all
+    case favorites
+
+    var id: String { rawValue }
+}
+
+private struct GalleryContent: View {
+    @EnvironmentObject private var appState: AppState
+    @ObservedObject var photoStore: PhotoStore
+    @State private var filter: GalleryFilter = .all
+
     private let columns = [
         GridItem(.flexible(), spacing: 2),
         GridItem(.flexible(), spacing: 2),
@@ -13,20 +32,25 @@ struct GalleryScreen: View {
             ZStack {
                 StillLightTheme.background.ignoresSafeArea()
 
-                if appState.photoStore.records.isEmpty {
-                    emptyState
-                } else {
-                    ScrollView {
-                        LazyVGrid(columns: columns, spacing: 2) {
-                            ForEach(appState.photoStore.records) { record in
-                                NavigationLink {
-                                    PhotoDetailView(record: record)
-                                } label: {
-                                    GalleryThumbnail(record: record)
+                VStack(spacing: 0) {
+                    filterPicker
+
+                    if filteredRecords.isEmpty {
+                        emptyState
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        ScrollView {
+                            LazyVGrid(columns: columns, spacing: 2) {
+                                ForEach(filteredRecords) { record in
+                                    NavigationLink {
+                                        PhotoDetailView(record: record, photoStore: photoStore)
+                                    } label: {
+                                        GalleryThumbnail(record: record)
+                                    }
                                 }
                             }
+                            .padding(.top, 2)
                         }
-                        .padding(.top, 2)
                     }
                 }
             }
@@ -35,18 +59,52 @@ struct GalleryScreen: View {
         }
     }
 
+    private var filteredRecords: [PhotoRecord] {
+        switch filter {
+        case .all:
+            return photoStore.records
+        case .favorites:
+            return photoStore.records.filter(\.isFavorite)
+        }
+    }
+
+    private var filterPicker: some View {
+        Picker("", selection: $filter) {
+            Text(appState.t(.all)).tag(GalleryFilter.all)
+            Text(appState.t(.favorites)).tag(GalleryFilter.favorites)
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 14)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
+    }
+
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "film.stack")
+            Image(systemName: emptyStateIconName)
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(StillLightTheme.accent)
-            Text(appState.t(.firstRollEmpty))
+            Text(appState.t(emptyTitleKey))
                 .font(.headline)
                 .foregroundStyle(StillLightTheme.text)
-            Text(appState.t(.firstRollEmptySubtitle))
+            Text(appState.t(emptySubtitleKey))
                 .font(.subheadline)
                 .foregroundStyle(StillLightTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 28)
         }
+    }
+
+    private var emptyStateIconName: String {
+        filter == .favorites ? "heart" : "film.stack"
+    }
+
+    private var emptyTitleKey: AppText.Key {
+        filter == .favorites ? .favoritesEmpty : .firstRollEmpty
+    }
+
+    private var emptySubtitleKey: AppText.Key {
+        filter == .favorites ? .favoritesEmptySubtitle : .firstRollEmptySubtitle
     }
 }
 
@@ -54,15 +112,27 @@ private struct GalleryThumbnail: View {
     let record: PhotoRecord
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
+        ZStack(alignment: .topTrailing) {
             if let image = UIImage(contentsOfFile: record.processedPath) {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
             } else {
-                StillLightTheme.panel
-                Image(systemName: "exclamationmark.triangle")
-                    .foregroundStyle(StillLightTheme.secondaryText)
+                ZStack {
+                    StillLightTheme.panel
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(StillLightTheme.secondaryText)
+                }
+            }
+
+            if record.isFavorite {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(StillLightTheme.accent)
+                    .padding(7)
+                    .background(StillLightTheme.panel.opacity(0.82))
+                    .clipShape(Circle())
+                    .padding(6)
             }
         }
         .frame(height: 132)
@@ -73,6 +143,7 @@ private struct GalleryThumbnail: View {
 private struct PhotoDetailView: View {
     @EnvironmentObject private var appState: AppState
     let record: PhotoRecord
+    @ObservedObject var photoStore: PhotoStore
     @State private var showsShareSheet = false
     @State private var showsOriginal = false
 
@@ -118,14 +189,14 @@ private struct PhotoDetailView: View {
                             .font(.headline)
                             .foregroundStyle(StillLightTheme.text)
                         Spacer()
-                        Text(record.aspectRatio)
+                        Text(currentRecord.aspectRatio)
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(StillLightTheme.secondaryText)
                     }
-                    Text(record.capturedAt, style: .date)
+                    Text(currentRecord.capturedAt, style: .date)
                         .font(.caption)
                         .foregroundStyle(StillLightTheme.secondaryText)
-                    Text("\(record.width) x \(record.height)")
+                    Text("\(currentRecord.width) x \(currentRecord.height)")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(StillLightTheme.secondaryText)
                 }
@@ -140,10 +211,13 @@ private struct PhotoDetailView: View {
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button {
-                    appState.photoStore.toggleFavorite(record)
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        photoStore.toggleFavorite(currentRecord)
+                    }
                 } label: {
-                    Image(systemName: record.isFavorite ? "heart.fill" : "heart")
+                    Image(systemName: currentRecord.isFavorite ? "heart.fill" : "heart")
                 }
+                .accessibilityLabel(appState.t(currentRecord.isFavorite ? .removeFavorite : .addFavorite))
 
                 Button {
                     showsShareSheet = true
@@ -153,16 +227,20 @@ private struct PhotoDetailView: View {
             }
         }
         .sheet(isPresented: $showsShareSheet) {
-            ShareSheet(activityItems: [record.processedURL])
+            ShareSheet(activityItems: [currentRecord.processedURL])
         }
     }
 
+    private var currentRecord: PhotoRecord {
+        photoStore.record(id: record.id) ?? record
+    }
+
     private var processedImage: UIImage? {
-        UIImage(contentsOfFile: record.processedPath)
+        UIImage(contentsOfFile: currentRecord.processedPath)
     }
 
     private var originalImage: UIImage? {
-        guard let originalURL = record.originalURL else { return nil }
+        guard let originalURL = currentRecord.originalURL else { return nil }
         return UIImage(contentsOfFile: originalURL.path)
     }
 
@@ -175,7 +253,7 @@ private struct PhotoDetailView: View {
 
     private var displayFilmName: String {
         appState.filmLibrary.presets
-            .first { $0.id == record.filmPresetId }?
-            .displayName(language: appState.language) ?? record.filmName
+            .first { $0.id == currentRecord.filmPresetId }?
+            .displayName(language: appState.language) ?? currentRecord.filmName
     }
 }

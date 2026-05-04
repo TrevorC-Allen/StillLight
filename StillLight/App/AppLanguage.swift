@@ -30,6 +30,16 @@ enum AppText {
         case filmRoll
         case filmRollSubtitle
         case all
+        case favorites
+        case favoriteFilm
+        case unfavoriteFilm
+        case favoriteEmptyTitle
+        case favoriteEmptySubtitle
+        case selectedFilm
+        case addFavorite
+        case removeFavorite
+        case favoritesEmpty
+        case favoritesEmptySubtitle
         case roll
         case newRoll
         case cameraAccessNeeded
@@ -97,6 +107,16 @@ enum AppText {
         .filmRoll: "Film Roll",
         .filmRollSubtitle: "Choose a camera or film before shooting. Each roll defines color, contrast, grain, border, and frame label.",
         .all: "All",
+        .favorites: "Favorites",
+        .favoriteFilm: "Add to Favorites",
+        .unfavoriteFilm: "Remove from Favorites",
+        .favoriteEmptyTitle: "No favorites yet",
+        .favoriteEmptySubtitle: "Tap the star on any roll to keep it close at hand.",
+        .selectedFilm: "Selected",
+        .addFavorite: "Add Favorite",
+        .removeFavorite: "Remove Favorite",
+        .favoritesEmpty: "No favorite frames",
+        .favoritesEmptySubtitle: "Mark frames with the heart button and they will appear here.",
         .roll: "ROLL",
         .newRoll: "NEW ROLL",
         .cameraAccessNeeded: "Camera Access Needed",
@@ -164,6 +184,16 @@ enum AppText {
         .filmRoll: "胶卷库",
         .filmRollSubtitle: "拍摄前选择胶卷或经典机型。每一卷都会定义色彩、反差、颗粒、边框和机型标注。",
         .all: "全部",
+        .favorites: "收藏",
+        .favoriteFilm: "加入收藏",
+        .unfavoriteFilm: "取消收藏",
+        .favoriteEmptyTitle: "还没有收藏",
+        .favoriteEmptySubtitle: "点亮任意胶卷上的星标，它会出现在这里。",
+        .selectedFilm: "已选",
+        .addFavorite: "加入收藏",
+        .removeFavorite: "取消收藏",
+        .favoritesEmpty: "还没有收藏相片",
+        .favoritesEmptySubtitle: "在相片详情里点亮爱心后，会出现在这里。",
         .roll: "当前卷",
         .newRoll: "新胶卷",
         .cameraAccessNeeded: "需要相机权限",

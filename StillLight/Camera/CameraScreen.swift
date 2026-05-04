@@ -281,6 +281,16 @@ struct CameraScreen: View {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .stroke(Color.white.opacity(0.34), lineWidth: 1)
                     }
+            } else if let recentImage = recentStoredImage {
+                Image(uiImage: recentImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 58, height: 58)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(Color.white.opacity(0.24), lineWidth: 1)
+                    }
             } else {
                 Image(systemName: "photo.on.rectangle")
                     .font(.system(size: 20, weight: .medium))
@@ -292,18 +302,18 @@ struct CameraScreen: View {
 
     private var zoomControl: some View {
         HStack(spacing: 7) {
-            ForEach(viewModel.zoomState.lensOptions) { option in
-                ZoomLensButton(
-                    option: option,
-                    isSelected: abs(viewModel.zoomState.displayFactor - option.displayFactor) < 0.08
-                ) {
-                    withAnimation(.easeOut(duration: 0.16)) {
-                        viewModel.setZoomFactor(option.displayFactor)
+            if viewModel.zoomState.lensOptions.count > 1 {
+                ForEach(viewModel.zoomState.lensOptions) { option in
+                    ZoomLensButton(
+                        option: option,
+                        isSelected: abs(viewModel.zoomState.displayFactor - option.displayFactor) < 0.08
+                    ) {
+                        withAnimation(.easeOut(duration: 0.16)) {
+                            viewModel.setZoomFactor(option.displayFactor)
+                        }
                     }
                 }
-            }
-
-            if viewModel.zoomState.lensOptions.count < 2 {
+            } else {
                 Text("\(viewModel.zoomState.displayFactorText)x")
                     .font(.caption.monospacedDigit().weight(.semibold))
                     .foregroundStyle(StillLightTheme.text)
@@ -316,6 +326,11 @@ struct CameraScreen: View {
         .clipShape(Capsule())
         .padding(.bottom, 12)
         .opacity(viewModel.isRecording ? 0.72 : 1)
+    }
+
+    private var recentStoredImage: UIImage? {
+        guard let latestRecord = appState.photoStore.records.first else { return nil }
+        return UIImage(contentsOfFile: latestRecord.processedPath)
     }
 
     private var captureModeControl: some View {

@@ -29,10 +29,12 @@ Choose a film roll
 - Haptic shutter feedback
 - Aspect ratios: 3:2, 4:3, 1:1, 16:9, Half
 - Lightweight film roll counter with persistent remaining shots
+- Mechanical-style exposure counter in the film drawer
 - Dazz-like style library with 27 switchable film/camera presets across featured, portrait, color negative, classic camera, instant, black-and-white, digital and experimental categories
-- Featured scene-first presets: Human Warm 400, Shadow Walk 800 and Soft Muse 400
+- Tuned scene-first presets for the current product direction: Human Warm 400, Shadow Walk 800 and Soft Muse 400
 - HNCS-inspired natural color, compact rangefinder, GR-style street, 500C medium-format, half-frame diary, CCD and instant looks
-- Individually designed film cover art for every preset in the roll picker
+- Dazz-inspired physical film drawer with individually drawn film boxes, canisters, instant packs, paper sleeves, disposable cameras, half-frame tickets and camera bodies
+- Deterministic paper wear, package speckles, contact shadows, shelf depth and layered lens glass drawn in SwiftUI
 - White-frame and instant/paper border output with the selected camera/model label burned into the exported image
 - English / Chinese UI switch in Settings
 - 27 film presets, including:
@@ -55,24 +57,28 @@ Choose a film roll
   - Half Frame Diary
 - Film simulation pipeline:
   - orientation-aware downsampling
+  - high-quality 3200px processing path
   - center crop
   - exposure correction
   - temperature and tint shift
   - contrast and saturation
   - tone curve
-  - halation
-  - vignette
-  - light leak
-  - luminance-aware grain
-  - timestamp
-  - instant, paper and white-frame borders
+  - highlight/shadow adjustment
+  - film-specific color response matrix
+  - highlight-masked warm halation
+  - soft radial lens falloff
+  - stable seeded light leaks
+  - luminance-aware finishing texture with skin protection
+  - imperfect timestamp rendering
+  - textured instant, paper and white-frame borders
   - camera/model frame label
 - Processed photo export to local Roll first, then Photos when permission allows
 - Film metadata written into exported JPEG metadata
 - Optional original photo retention
 - Local JSON photo records
-- Roll gallery and photo detail with long-press original comparison
+- Roll gallery with page swipe detail browsing and long-press original comparison
 - Import Lab with multi-photo PhotosPicker selection, current/all developing, cancellable batch progress, failed-frame retry, current/all save and shared pipeline processing
+- Import Lab preview supports horizontal swiping across selected imported frames
 - Import Lab processing timing summary with total milliseconds, input/output pixels and pipeline stage timings
 - Explainable local smart film recommendation with Top 3 candidates based on brightness, color, warmth and contrast
 - Share sheet
@@ -133,7 +139,8 @@ See `docs/DEVICE_RUNBOOK.md` for the exact iPhone setup flow.
 
 ## Next Steps
 
-- Enable the prepared app icon asset catalog after the local Xcode install has an iOS simulator runtime
-- Surface Top 3 recommendation candidates directly in Import Lab UI
-- Move LUT, grain and vignette into Metal for realtime preview
+- Add real 3D LUT / CIColorCube assets for the flagship rolls
+- Move preview-safe tone, grain and vignette stages into Metal for realtime camera preview
+- Apply film processing to video export and eventually live recording
 - Replace local smart recommendation with Vision/CoreML scene tags later
+- Add user-generated custom rolls from a small reference photo set

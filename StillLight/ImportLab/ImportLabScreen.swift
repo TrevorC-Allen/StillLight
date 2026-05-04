@@ -9,6 +9,7 @@ struct ImportLabScreen: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var showsFilmPicker = false
     @State private var showsShareSheet = false
+    @State private var showsOriginalPreview = false
 
     var body: some View {
         NavigationStack {
@@ -44,30 +45,44 @@ struct ImportLabScreen: View {
                     framesLoadedFormat: appState.t(.framesLoaded)
                 )
             }
+            .onChange(of: viewModel.selectedFrame?.id) { _, _ in
+                showsOriginalPreview = false
+            }
         }
     }
 
     private var previewArea: some View {
         let selectedFrame = viewModel.selectedFrame
+        let isComparingOriginal = showsOriginalPreview && selectedFrame?.processedImage != nil
+        let previewImage = isComparingOriginal ? selectedFrame?.originalImage : (selectedFrame?.processedImage ?? selectedFrame?.originalImage)
 
         return ZStack {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(StillLightTheme.panel)
                 .aspectRatio(0.78, contentMode: .fit)
 
-            if let processedImage = selectedFrame?.processedImage {
-                Image(uiImage: processedImage)
-                    .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            } else if let originalImage = selectedFrame?.originalImage {
-                Image(uiImage: originalImage)
+            if let previewImage {
+                Image(uiImage: previewImage)
                     .resizable()
                     .scaledToFit()
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .overlay {
-                        Color.black.opacity(0.08)
+                        if selectedFrame?.processedImage == nil {
+                            Color.black.opacity(0.08)
+                        }
                     }
+                    .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .onLongPressGesture(
+                        minimumDuration: 0.18,
+                        maximumDistance: 80,
+                        pressing: { pressing in
+                            guard selectedFrame?.processedImage != nil else { return }
+                            withAnimation(.easeInOut(duration: 0.12)) {
+                                showsOriginalPreview = pressing
+                            }
+                        },
+                        perform: {}
+                    )
             } else {
                 VStack(spacing: 12) {
                     Image(systemName: "photo.badge.plus")
@@ -87,6 +102,15 @@ struct ImportLabScreen: View {
             if let number = viewModel.selectedFrameNumber {
                 VStack {
                     HStack {
+                        if selectedFrame?.processedImage != nil {
+                            Text(isComparingOriginal ? appState.t(.original) : appState.t(.developed))
+                                .font(.caption.monospacedDigit().weight(.semibold))
+                                .foregroundStyle(StillLightTheme.text)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 7)
+                                .background(StillLightTheme.panel.opacity(0.82))
+                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        }
                         Spacer()
                         Text("\(number)/\(viewModel.frames.count)")
                             .font(.caption.monospacedDigit().weight(.semibold))
@@ -241,7 +265,12 @@ struct ImportLabScreen: View {
                                                 )
                                         }
 
-                                    if frame.processedImage != nil {
+                                    if frame.processingError != nil {
+                                        Image(systemName: "exclamationmark.circle.fill")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundStyle(Color(red: 0.78, green: 0.36, blue: 0.33))
+                                            .padding(5)
+                                    } else if frame.processedImage != nil {
                                         Image(systemName: "checkmark.circle.fill")
                                             .font(.system(size: 15, weight: .semibold))
                                             .foregroundStyle(StillLightTheme.accent)
@@ -281,7 +310,9 @@ struct ImportLabScreen: View {
                         film: appState.selectedFilm,
                         addTimestamp: appState.addTimestamp,
                         developedWithPrefix: appState.t(.developedWith),
-                        progressFormat: appState.t(.developingFrame),
+                        progressFormat: appState.t(.developingFrameProgress),
+                        cancelledFormat: appState.t(.batchDevelopCancelled),
+                        completedFormat: appState.t(.batchDevelopedFrames),
                         language: appState.language
                     )
                 } label: {
@@ -290,6 +321,32 @@ struct ImportLabScreen: View {
                 }
                 .buttonStyle(LabButtonStyle())
                 .disabled(viewModel.frames.isEmpty || viewModel.isProcessing)
+            }
+
+            if viewModel.isBatchDeveloping {
+                Button {
+                    viewModel.cancelBatchDevelop()
+                } label: {
+                    Label(appState.t(.cancelDevelop), systemImage: "stop.circle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(LabButtonStyle())
+            }
+
+            if viewModel.hasSelectedFailedFrame {
+                Button {
+                    viewModel.developSelected(
+                        film: appState.selectedFilm,
+                        addTimestamp: appState.addTimestamp,
+                        developedWithPrefix: appState.t(.developedWith),
+                        language: appState.language
+                    )
+                } label: {
+                    Label(appState.t(.tryAgain), systemImage: "arrow.clockwise")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(LabButtonStyle())
+                .disabled(!viewModel.hasSelectedFrame || viewModel.isProcessing)
             }
 
             if viewModel.hasAnyProcessedImage {
@@ -356,6 +413,12 @@ struct ImportLabScreen: View {
                     .foregroundStyle(Color(red: 0.78, green: 0.36, blue: 0.33))
                     .multilineTextAlignment(.center)
                     .padding(.top, 4)
+            } else if let processingError = viewModel.selectedFrame?.processingError {
+                Text(processingError)
+                    .font(.footnote)
+                    .foregroundStyle(Color(red: 0.78, green: 0.36, blue: 0.33))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 4)
             }
         }
     }
@@ -368,6 +431,7 @@ private struct ImportLabFrame: Identifiable {
     var processedImage: UIImage?
     var savedRecord: PhotoRecord?
     var recommendation: FilmRecommendation?
+    var processingError: String?
 }
 
 @MainActor
@@ -380,8 +444,10 @@ private final class ImportLabViewModel: ObservableObject {
     @Published var processingMessage: String?
     @Published var strength = 1.0
     @Published var aspectRatio: CaptureAspectRatio = .ratio3x2
+    @Published private(set) var isBatchDeveloping = false
 
     private var activeLoadID = UUID()
+    private var batchDevelopTask: Task<Void, Never>?
 
     var selectedFrame: ImportLabFrame? {
         guard let selectedFrameID else { return frames.first }
@@ -407,6 +473,10 @@ private final class ImportLabViewModel: ObservableObject {
 
     var hasSelectedProcessedImage: Bool {
         selectedFrame?.processedImage != nil
+    }
+
+    var hasSelectedFailedFrame: Bool {
+        selectedFrame?.processingError != nil
     }
 
     var hasAnyProcessedImage: Bool {
@@ -495,6 +565,10 @@ private final class ImportLabViewModel: ObservableObject {
         let aspectRatio = aspectRatio
         let strength = strength
         let sourceFrame = frames[selectedIndex]
+        let sourceFrameID = sourceFrame.id
+        updateFrame(at: selectedIndex) { frame in
+            frame.processingError = nil
+        }
 
         Task {
             do {
@@ -505,12 +579,20 @@ private final class ImportLabViewModel: ObservableObject {
                     addTimestamp: addTimestamp,
                     strength: strength
                 )
-                updateFrame(at: selectedIndex) { frame in
-                    frame.processedImage = output
-                    frame.savedRecord = nil
+                if let index = frames.firstIndex(where: { $0.id == sourceFrameID }) {
+                    updateFrame(at: index) { frame in
+                        frame.processedImage = output
+                        frame.savedRecord = nil
+                        frame.processingError = nil
+                    }
                 }
                 statusMessage = "\(developedWithPrefix) \(film.displayShortName(language: language))"
             } catch {
+                if let index = frames.firstIndex(where: { $0.id == sourceFrameID }) {
+                    updateFrame(at: index) { frame in
+                        frame.processingError = error.localizedDescription
+                    }
+                }
                 errorMessage = error.localizedDescription
             }
 
@@ -518,26 +600,58 @@ private final class ImportLabViewModel: ObservableObject {
         }
     }
 
+    func cancelBatchDevelop() {
+        batchDevelopTask?.cancel()
+    }
+
     func developAll(
         film: FilmPreset,
         addTimestamp: Bool,
         developedWithPrefix: String,
         progressFormat: String,
+        cancelledFormat: String,
+        completedFormat: String,
         language: AppLanguage
     ) {
         guard !frames.isEmpty else { return }
+        batchDevelopTask?.cancel()
         isProcessing = true
+        isBatchDeveloping = true
         errorMessage = nil
         statusMessage = nil
 
         let aspectRatio = aspectRatio
         let strength = strength
         let sourceFrames = frames
+        let totalCount = sourceFrames.count
 
-        Task {
-            do {
-                for (offset, frame) in sourceFrames.enumerated() {
-                    processingMessage = String(format: progressFormat, offset + 1, sourceFrames.count)
+        batchDevelopTask = Task {
+            var completedCount = 0
+            var successCount = 0
+            var failedCount = 0
+            var wasCancelled = false
+
+            for (offset, frame) in sourceFrames.enumerated() {
+                if Task.isCancelled {
+                    wasCancelled = true
+                    break
+                }
+
+                if let index = frames.firstIndex(where: { $0.id == frame.id }) {
+                    updateFrame(at: index) { editableFrame in
+                        editableFrame.processingError = nil
+                    }
+                }
+
+                processingMessage = String(
+                    format: progressFormat,
+                    offset + 1,
+                    totalCount,
+                    successCount,
+                    failedCount
+                )
+
+                do {
                     let output = try await render(
                         frame: frame,
                         film: film,
@@ -545,20 +659,53 @@ private final class ImportLabViewModel: ObservableObject {
                         addTimestamp: addTimestamp,
                         strength: strength
                     )
+
+                    if Task.isCancelled {
+                        wasCancelled = true
+                        break
+                    }
+
                     if let index = frames.firstIndex(where: { $0.id == frame.id }) {
                         updateFrame(at: index) { editableFrame in
                             editableFrame.processedImage = output
                             editableFrame.savedRecord = nil
+                            editableFrame.processingError = nil
                         }
                     }
+                    successCount += 1
+                } catch is CancellationError {
+                    wasCancelled = true
+                    break
+                } catch {
+                    if let index = frames.firstIndex(where: { $0.id == frame.id }) {
+                        updateFrame(at: index) { editableFrame in
+                            editableFrame.processingError = error.localizedDescription
+                        }
+                    }
+                    failedCount += 1
                 }
-                statusMessage = "\(developedWithPrefix) \(film.displayShortName(language: language)) · \(sourceFrames.count)"
-            } catch {
-                errorMessage = error.localizedDescription
+
+                completedCount += 1
+                processingMessage = String(
+                    format: progressFormat,
+                    min(offset + 2, totalCount),
+                    totalCount,
+                    successCount,
+                    failedCount
+                )
+            }
+
+            if wasCancelled {
+                statusMessage = String(format: cancelledFormat, completedCount, totalCount, successCount, failedCount)
+            } else {
+                statusMessage = "\(developedWithPrefix) \(film.displayShortName(language: language)) · "
+                    + String(format: completedFormat, successCount, totalCount, failedCount)
             }
 
             processingMessage = nil
+            isBatchDeveloping = false
             isProcessing = false
+            batchDevelopTask = nil
         }
     }
 

@@ -61,8 +61,12 @@ enum AppText {
         case selectedFrames
         case framesLoaded
         case developingFrame
+        case developingFrameProgress
+        case batchDevelopCancelled
+        case batchDevelopedFrames
         case developCurrent
         case developAll
+        case cancelDevelop
         case saveCurrent
         case saveAll
         case savingFrame
@@ -138,8 +142,12 @@ enum AppText {
         .selectedFrames: "%d frames selected",
         .framesLoaded: "%d frames loaded",
         .developingFrame: "Developing %d/%d",
+        .developingFrameProgress: "Developing %d/%d · %d done · %d failed",
+        .batchDevelopCancelled: "Stopped after %d/%d · %d done · %d failed",
+        .batchDevelopedFrames: "Developed %d/%d · %d failed",
         .developCurrent: "Develop Current",
         .developAll: "Develop All",
+        .cancelDevelop: "Cancel Developing",
         .saveCurrent: "Save Current",
         .saveAll: "Save All",
         .savingFrame: "Saving %d/%d",
@@ -215,8 +223,12 @@ enum AppText {
         .selectedFrames: "已选择 %d 张",
         .framesLoaded: "已载入 %d 张照片",
         .developingFrame: "冲洗中 %d/%d",
+        .developingFrameProgress: "冲洗中 %d/%d · 成功 %d · 失败 %d",
+        .batchDevelopCancelled: "已停止 %d/%d · 成功 %d · 失败 %d",
+        .batchDevelopedFrames: "已冲洗 %d/%d · 失败 %d",
         .developCurrent: "冲洗当前",
         .developAll: "冲洗全部",
+        .cancelDevelop: "取消冲洗",
         .saveCurrent: "保存当前",
         .saveAll: "保存全部",
         .savingFrame: "保存中 %d/%d",

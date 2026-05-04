@@ -33,8 +33,8 @@ StillLight 是一个 iOS-only 的个人作品级胶片相机 MVP，使用 SwiftU
 - 白框、拍立得纸框、相纸边框，以及机型 / 胶卷标注
 - 中文 / 英文 UI 切换
 - 暗房支持一次导入多张照片
-- 暗房支持冲洗当前 / 冲洗全部、保存当前 / 保存全部
-- 本地智能胶卷推荐：根据亮度、饱和度、冷暖和反差推荐风格
+- 暗房支持冲洗当前 / 冲洗全部、取消批量冲洗、失败项重试、保存当前 / 保存全部
+- 本地可解释胶卷推荐：根据亮度、饱和度、冷暖和反差生成 Top 3 候选
 - 分享、相册、照片详情、长按原图对比
 
 ## 图像处理管线
@@ -124,11 +124,13 @@ scripts/run_on_iphone.sh YOUR_DEVICE_ID
 - [iOS 技术架构](docs/zh-CN/IOS_ARCHITECTURE.md)
 - [胶卷预设系统](docs/zh-CN/PRESETS.md)
 - [iPhone 真机运行手册](docs/zh-CN/DEVICE_RUNBOOK.md)
+- [AI 胶卷推荐说明](docs/zh-CN/AI_RECOMMENDER.md)
+- [中文演示脚本](docs/zh-CN/DEMO_SCRIPT.md)
 - [4 周开发路线](docs/zh-CN/ROADMAP.md)
 
 ## 下一步
 
-- 暗房批量任务增加取消和更细进度
+- 在暗房 UI 直接展示 Top 3 推荐候选
 - 将 LUT、颗粒、暗角迁移到 Metal，支持实时预览
 - 录像接入实时胶片效果
 - 用 Vision / CoreML 替代当前启发式推荐

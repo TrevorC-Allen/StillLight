@@ -8,6 +8,7 @@
 - [iOS 技术架构](IOS_ARCHITECTURE.md)
 - [胶卷预设系统](PRESETS.md)
 - [iPhone 真机运行手册](DEVICE_RUNBOOK.md)
+- [AI 胶卷推荐说明](AI_RECOMMENDER.md)
 - [中文演示脚本](DEMO_SCRIPT.md)
 - [4 周开发路线](ROADMAP.md)
 
@@ -21,10 +22,11 @@ StillLight 是一个 iOS 胶片相机 App：用真实相机交互承载模块化
 - 拍照直出
 - 原生录像
 - 27 个胶片 / 机型风格
-- 多图导入暗房
+- 多图导入暗房，支持批量进度、取消、失败项重试和原图 / 成片对比
 - 胶片颗粒、暗角、漏光、Halation、边框和日期戳
 - 中文 / 英文 UI
 - 可讲清楚的图像处理 pipeline
+- 本地可解释 Top 3 胶卷推荐
 
 ## 面试讲解主线
 

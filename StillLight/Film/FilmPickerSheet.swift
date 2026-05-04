@@ -138,7 +138,7 @@ private struct FilmPresetRow: View {
                             .lineLimit(1)
 
                         Text(statusLine)
-                            .font(.caption2.monospacedDigit().weight(currentRoll == nil ? .regular : .semibold))
+                            .font(.caption2.weight(currentRoll == nil ? .regular : .semibold))
                             .foregroundStyle(currentRoll == nil ? StillLightTheme.secondaryText.opacity(0.72) : StillLightTheme.accent.opacity(0.86))
                             .lineLimit(1)
                     }
@@ -178,14 +178,17 @@ private struct FilmPresetRow: View {
         let sceneSummary = scenes.prefix(2).joined(separator: " / ")
 
         if sceneSummary.isEmpty {
-            return "\(category) · ISO \(film.iso)"
+            return category
         }
-        return "\(category) · \(sceneSummary) · ISO \(film.iso)"
+        return "\(category) · \(sceneSummary)"
     }
 
     private var statusLine: String {
         if let currentRoll {
-            return "\(AppText.get(.roll, language: language)) \(currentRoll.remainingShots)/\(currentRoll.totalShots)"
+            if language == .chinese {
+                return "剩余 \(currentRoll.remainingShots) 张"
+            }
+            return "\(currentRoll.remainingShots) exposures left"
         }
         return film.displayCameraName(language: language)
     }
@@ -204,41 +207,35 @@ private struct FilmCoverView: View {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(style.paper)
 
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(LinearGradient(colors: style.wash, startPoint: .topLeading, endPoint: .bottomTrailing))
-                .padding(4)
+            wrapperBands
 
-            RadialGradient(colors: [style.accent.opacity(0.34), .clear], center: style.glowCenter, startRadius: 2, endRadius: 56)
-                .blendMode(.screen)
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .stroke(style.ink.opacity(0.09), lineWidth: 1)
+                .padding(5)
 
             coverArtwork
-                .padding(8)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 13)
 
-            grainMarks
-                .foregroundStyle(style.ink.opacity(0.12))
+            paperFolds
+                .foregroundStyle(style.ink.opacity(0.10))
 
             VStack {
-                HStack(spacing: 3) {
-                    Capsule()
-                        .fill(style.accent.opacity(0.86))
-                        .frame(width: 10, height: 3)
+                HStack(spacing: 4) {
+                    Rectangle()
+                        .fill(style.ink.opacity(0.58))
+                        .frame(width: 13, height: 1)
                     Text(style.label)
-                        .font(.system(size: 6.5, weight: .bold, design: .monospaced))
+                        .font(.system(size: 6, weight: .bold, design: .monospaced))
+                        .tracking(0.2)
                         .lineLimit(1)
                     Spacer()
                 }
-                .foregroundStyle(style.ink.opacity(0.76))
+                .foregroundStyle(style.ink.opacity(0.68))
 
                 Spacer()
 
-                HStack(spacing: 3) {
-                    ForEach(0..<style.swatches.count, id: \.self) { index in
-                        Rectangle()
-                            .fill(style.swatches[index])
-                            .frame(width: 7, height: 4)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .trailing)
+                productionMarks
             }
             .padding(7)
         }
@@ -250,121 +247,208 @@ private struct FilmCoverView: View {
         }
     }
 
+    private var wrapperBands: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(style.wash[0].opacity(0.72))
+                .frame(height: 15)
+            Rectangle()
+                .fill(style.paper.opacity(0.88))
+            Rectangle()
+                .fill(style.wash[1].opacity(0.64))
+                .frame(height: 13)
+            Rectangle()
+                .fill(style.wash[2].opacity(0.78))
+                .frame(height: 14)
+        }
+        .overlay(alignment: .topTrailing) {
+            Rectangle()
+                .fill(style.accent.opacity(0.76))
+                .frame(width: 7)
+        }
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(style.ink.opacity(0.08))
+                .frame(width: 1)
+                .padding(.vertical, 5)
+                .padding(.leading, 7)
+        }
+        .padding(4)
+        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+    }
+
     @ViewBuilder
     private var coverArtwork: some View {
         switch style.kind {
         case .filmStrip:
-            HStack(spacing: 5) {
-                sprocketRail
-                VStack(spacing: 4) {
-                    ForEach(0..<3, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(style.swatches[index % style.swatches.count].opacity(0.74))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                    .stroke(style.ink.opacity(0.22), lineWidth: 0.7)
+            VStack(spacing: 5) {
+                HStack(spacing: 3) {
+                    sprocketRail
+                    Rectangle()
+                        .fill(style.ink.opacity(0.70))
+                        .frame(width: 19, height: 42)
+                        .overlay {
+                            VStack(spacing: 4) {
+                                ForEach(0..<3, id: \.self) { index in
+                                    Rectangle()
+                                        .fill(style.swatches[index % style.swatches.count].opacity(0.82))
+                                        .frame(height: 9)
+                                }
                             }
-                    }
+                            .padding(.horizontal, 4)
+                        }
+                    sprocketRail
                 }
-                sprocketRail
+                Rectangle()
+                    .fill(style.accent.opacity(0.82))
+                    .frame(width: 37, height: 3)
             }
             .rotationEffect(.degrees(style.tilt))
 
         case .contactSheet:
-            VStack(spacing: 4) {
-                ForEach(0..<3, id: \.self) { row in
-                    HStack(spacing: 4) {
+            VStack(spacing: 3) {
+                ForEach(0..<2, id: \.self) { row in
+                    HStack(spacing: 3) {
                         ForEach(0..<2, id: \.self) { column in
-                            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                .fill(style.swatches[(row + column) % style.swatches.count].opacity(0.62))
-                                .overlay(alignment: .bottom) {
+                            Rectangle()
+                                .fill(style.paper.opacity(0.82))
+                                .frame(width: 17, height: 20)
+                                .overlay {
                                     Rectangle()
-                                        .fill(style.ink.opacity(0.18))
-                                        .frame(height: 2)
+                                        .fill(style.swatches[(row + column) % style.swatches.count].opacity(0.50))
+                                        .padding(3)
+                                }
+                                .overlay(alignment: .bottomTrailing) {
+                                    Rectangle()
+                                        .fill(style.ink.opacity(0.24))
+                                        .frame(width: 7, height: 1)
+                                        .padding(3)
                                 }
                         }
                     }
                 }
             }
-            .padding(.vertical, 7)
-            .padding(.horizontal, 3)
+            .padding(5)
+            .background(style.ink.opacity(0.12))
+            .rotationEffect(.degrees(style.tilt))
 
         case .darkroomCard:
             ZStack {
-                ForEach(0..<3, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .stroke(style.swatches[index % style.swatches.count].opacity(0.66), lineWidth: 2)
-                        .frame(width: CGFloat(34 - index * 7), height: CGFloat(46 - index * 9))
-                        .rotationEffect(.degrees(style.tilt + Double(index * 9)))
+                Rectangle()
+                    .fill(style.paper.opacity(0.78))
+                    .frame(width: 39, height: 48)
+                    .overlay(alignment: .top) {
+                        Rectangle()
+                            .fill(style.accent.opacity(0.74))
+                            .frame(height: 7)
+                    }
+                    .overlay {
+                        VStack(spacing: 5) {
+                            Rectangle().fill(style.ink.opacity(0.30)).frame(width: 25, height: 1)
+                            Rectangle().fill(style.ink.opacity(0.18)).frame(width: 30, height: 1)
+                            Rectangle().fill(style.ink.opacity(0.22)).frame(width: 18, height: 1)
+                        }
+                        .padding(.top, 7)
+                    }
+                ForEach(0..<2, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .stroke(style.swatches[index].opacity(0.54), lineWidth: 1.4)
+                        .frame(width: CGFloat(31 - index * 7), height: CGFloat(31 - index * 6))
+                        .offset(x: CGFloat(index * 4 - 2), y: CGFloat(index * 5 + 2))
                 }
-                Capsule()
-                    .fill(style.accent.opacity(0.72))
-                    .frame(width: 38, height: 8)
-                    .rotationEffect(.degrees(-18))
-                    .blur(radius: 0.4)
             }
+            .rotationEffect(.degrees(style.tilt))
 
         case .colorRecipe:
-            VStack(spacing: 5) {
-                ForEach(0..<style.swatches.count, id: \.self) { index in
-                    HStack(spacing: 4) {
-                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                            .fill(style.swatches[index])
-                            .frame(width: 14, height: 10)
-                        VStack(spacing: 2) {
-                            Rectangle().fill(style.ink.opacity(0.28)).frame(height: 1)
-                            Rectangle().fill(style.ink.opacity(0.16)).frame(height: 1)
-                        }
-                    }
+            Rectangle()
+                .fill(style.paper.opacity(0.74))
+                .frame(width: 40, height: 48)
+                .overlay(alignment: .leading) {
+                    Rectangle()
+                        .fill(style.accent.opacity(0.74))
+                        .frame(width: 7)
                 }
-            }
-            .padding(.top, 8)
+                .overlay {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Rectangle().fill(style.ink.opacity(0.34)).frame(width: 24, height: 1)
+                        Rectangle().fill(style.ink.opacity(0.20)).frame(width: 19, height: 1)
+                        Rectangle().fill(style.ink.opacity(0.18)).frame(width: 27, height: 1)
+                        Spacer().frame(height: 2)
+                        Rectangle().fill(style.ink.opacity(0.26)).frame(width: 13, height: 1)
+                    }
+                    .padding(.leading, 13)
+                    .padding(.vertical, 10)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .stroke(style.ink.opacity(0.18), lineWidth: 1)
+                }
+                .rotationEffect(.degrees(style.tilt))
 
         case .instantFrame:
             VStack(spacing: 4) {
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(style.ink.opacity(0.18))
-                    .overlay {
-                        LinearGradient(colors: style.swatches.map { $0.opacity(0.68) }, startPoint: .top, endPoint: .bottom)
-                            .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
-                            .padding(3)
-                    }
                 Rectangle()
-                    .fill(style.paper.opacity(0.76))
-                    .frame(height: 12)
+                    .fill(style.paper.opacity(0.92))
+                    .frame(width: 39, height: 44)
+                    .overlay {
+                        Rectangle()
+                            .fill(style.swatches[1].opacity(0.45))
+                            .padding(.top, 5)
+                            .padding(.horizontal, 5)
+                            .padding(.bottom, 13)
+                    }
+                    .overlay(alignment: .bottom) {
+                        HStack(spacing: 3) {
+                            Rectangle().fill(style.ink.opacity(0.20)).frame(width: 11, height: 1)
+                            Rectangle().fill(style.accent.opacity(0.70)).frame(width: 9, height: 1)
+                        }
+                        .padding(.bottom, 6)
+                    }
             }
-            .padding(.top, 6)
+            .rotationEffect(.degrees(style.tilt))
 
         case .halfFrame:
-            HStack(spacing: 4) {
+            HStack(spacing: 3) {
                 ForEach(0..<2, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(style.swatches[index % style.swatches.count].opacity(0.66))
+                    Rectangle()
+                        .fill(style.ink.opacity(0.16))
+                        .frame(width: 18, height: 43)
                         .overlay {
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .stroke(style.paper.opacity(0.75), lineWidth: 2)
+                            Rectangle()
+                                .fill(style.swatches[index % style.swatches.count].opacity(0.52))
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 6)
                         }
                 }
             }
-            .padding(.vertical, 9)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(style.accent.opacity(0.78))
+                    .frame(width: 34, height: 3)
+            }
             .rotationEffect(.degrees(style.tilt))
 
         case .negativeSleeve:
             VStack(spacing: 4) {
                 sprocketRow
-                HStack(spacing: 3) {
+                HStack(spacing: 2) {
                     ForEach(0..<4, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                            .fill(style.swatches[index % style.swatches.count].opacity(0.48))
+                        Rectangle()
+                            .fill(style.ink.opacity(0.56))
+                            .frame(width: 8, height: 24)
                             .overlay {
-                                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                                    .stroke(style.ink.opacity(0.18), lineWidth: 0.6)
+                                Rectangle()
+                                    .fill(style.swatches[index % style.swatches.count].opacity(0.38))
+                                    .padding(2)
                             }
                     }
                 }
                 sprocketRow
             }
-            .padding(.vertical, 10)
+            .padding(.vertical, 7)
+            .padding(.horizontal, 4)
+            .background(style.paper.opacity(0.48))
+            .rotationEffect(.degrees(style.tilt))
         }
     }
 
@@ -388,12 +472,31 @@ private struct FilmCoverView: View {
         }
     }
 
-    private var grainMarks: some View {
+    private var productionMarks: some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Rectangle()
+                .fill(style.ink.opacity(0.34))
+                .frame(width: 17, height: 1)
+            Rectangle()
+                .fill(style.ink.opacity(0.22))
+                .frame(width: 9, height: 1)
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    private var paperFolds: some View {
         ZStack {
-            ForEach(0..<10, id: \.self) { index in
-                Circle()
-                    .frame(width: index.isMultiple(of: 3) ? 2 : 1, height: index.isMultiple(of: 3) ? 2 : 1)
-                    .offset(x: CGFloat((index * 13) % 42) - 21, y: CGFloat((index * 19) % 54) - 27)
+            Rectangle()
+                .frame(width: 48, height: 1)
+                .offset(y: -22)
+            Rectangle()
+                .frame(width: 1, height: 58)
+                .offset(x: -22)
+            ForEach(0..<3, id: \.self) { index in
+                Rectangle()
+                    .frame(width: CGFloat(11 + index * 3), height: 1)
+                    .rotationEffect(.degrees(index.isMultiple(of: 2) ? -8 : 10))
+                    .offset(x: CGFloat(index * 14 - 16), y: CGFloat(index * 19 - 15))
             }
         }
     }
@@ -417,7 +520,7 @@ private struct FilmCoverStyle {
         case "human-vignette-800":
             return .init(paper: c(0.22, 0.20, 0.16), wash: [c(0.47, 0.43, 0.32), c(0.17, 0.20, 0.16), c(0.04, 0.04, 0.035)], glowCenter: .center, ink: c(0.89, 0.78, 0.55), accent: c(0.77, 0.55, 0.28), swatches: [c(0.68, 0.58, 0.38), c(0.26, 0.30, 0.22), c(0.06, 0.06, 0.05)], label: "LOW KEY", kind: .darkroomCard, tilt: 6)
         case "muse-portrait-400":
-            return .init(paper: c(0.89, 0.78, 0.73), wash: [c(0.96, 0.73, 0.65), c(0.76, 0.56, 0.52), c(0.48, 0.39, 0.41)], glowCenter: .top, ink: c(0.29, 0.15, 0.15), accent: c(0.98, 0.72, 0.68), swatches: [c(0.96, 0.68, 0.61), c(0.74, 0.58, 0.58), c(0.42, 0.35, 0.38)], label: "MUSE LAB", kind: .colorRecipe, tilt: 1)
+            return .init(paper: c(0.89, 0.78, 0.73), wash: [c(0.96, 0.73, 0.65), c(0.76, 0.56, 0.52), c(0.48, 0.39, 0.41)], glowCenter: .top, ink: c(0.29, 0.15, 0.15), accent: c(0.98, 0.72, 0.68), swatches: [c(0.96, 0.68, 0.61), c(0.74, 0.58, 0.58), c(0.42, 0.35, 0.38)], label: "PORTRAIT", kind: .colorRecipe, tilt: 1)
         case "sunlit-gold-200":
             return .init(paper: c(0.88, 0.78, 0.52), wash: [c(0.96, 0.72, 0.32), c(0.61, 0.62, 0.36), c(0.27, 0.27, 0.15)], glowCenter: .topLeading, ink: c(0.20, 0.13, 0.04), accent: c(1.00, 0.82, 0.36), swatches: [c(0.99, 0.78, 0.34), c(0.72, 0.67, 0.35), c(0.33, 0.30, 0.14)], label: "GOLDEN HR", kind: .contactSheet, tilt: -2)
         case "soft-portrait-400":
@@ -429,9 +532,9 @@ private struct FilmCoverStyle {
         case "tungsten-800":
             return .init(paper: c(0.19, 0.20, 0.30), wash: [c(0.21, 0.25, 0.44), c(0.62, 0.30, 0.21), c(0.07, 0.06, 0.11)], glowCenter: .trailing, ink: c(0.94, 0.60, 0.38), accent: c(1.00, 0.34, 0.16), swatches: [c(0.18, 0.28, 0.58), c(0.84, 0.38, 0.18), c(0.09, 0.07, 0.15)], label: "TUNGSTEN", kind: .darkroomCard, tilt: -8)
         case "pocket-flash":
-            return .init(paper: c(0.91, 0.64, 0.34), wash: [c(0.98, 0.71, 0.30), c(0.72, 0.23, 0.20), c(0.12, 0.09, 0.07)], glowCenter: .topLeading, ink: c(0.24, 0.09, 0.05), accent: c(1.00, 0.92, 0.64), swatches: [c(1.00, 0.82, 0.35), c(0.82, 0.24, 0.17), c(0.18, 0.10, 0.07)], label: "FLASH LAB", kind: .contactSheet, tilt: 2)
+            return .init(paper: c(0.91, 0.64, 0.34), wash: [c(0.98, 0.71, 0.30), c(0.72, 0.23, 0.20), c(0.12, 0.09, 0.07)], glowCenter: .topLeading, ink: c(0.24, 0.09, 0.05), accent: c(1.00, 0.92, 0.64), swatches: [c(1.00, 0.82, 0.35), c(0.82, 0.24, 0.17), c(0.18, 0.10, 0.07)], label: "FLASH", kind: .contactSheet, tilt: 2)
         case "ccd-2003":
-            return .init(paper: c(0.72, 0.84, 0.88), wash: [c(0.74, 0.87, 0.91), c(0.39, 0.55, 0.69), c(0.15, 0.19, 0.27)], glowCenter: .topTrailing, ink: c(0.04, 0.15, 0.23), accent: c(0.78, 0.94, 1.00), swatches: [c(0.66, 0.91, 1.00), c(0.37, 0.57, 0.79), c(0.15, 0.23, 0.34)], label: "CCD TONE", kind: .colorRecipe, tilt: 0)
+            return .init(paper: c(0.72, 0.84, 0.88), wash: [c(0.74, 0.87, 0.91), c(0.39, 0.55, 0.69), c(0.15, 0.19, 0.27)], glowCenter: .topTrailing, ink: c(0.04, 0.15, 0.23), accent: c(0.78, 0.94, 1.00), swatches: [c(0.66, 0.91, 1.00), c(0.37, 0.57, 0.79), c(0.15, 0.23, 0.34)], label: "DIGITAL", kind: .colorRecipe, tilt: 0)
         case "instant-square":
             return .init(paper: c(0.93, 0.86, 0.70), wash: [c(0.93, 0.85, 0.69), c(0.61, 0.51, 0.41), c(0.30, 0.25, 0.21)], glowCenter: .center, ink: c(0.27, 0.21, 0.14), accent: c(1.00, 0.91, 0.72), swatches: [c(0.88, 0.76, 0.55), c(0.62, 0.51, 0.40), c(0.32, 0.26, 0.21)], label: "SX SQUARE", kind: .instantFrame, tilt: 0)
         case "hncs-natural":
@@ -441,7 +544,7 @@ private struct FilmCoverStyle {
         case "t-compact-gold":
             return .init(paper: c(0.89, 0.68, 0.38), wash: [c(0.94, 0.72, 0.35), c(0.73, 0.43, 0.26), c(0.19, 0.15, 0.11)], glowCenter: .top, ink: c(0.20, 0.11, 0.04), accent: c(1.00, 0.83, 0.43), swatches: [c(0.97, 0.74, 0.33), c(0.78, 0.46, 0.25), c(0.26, 0.16, 0.09)], label: "COMPACT", kind: .filmStrip, tilt: -2)
         case "gr-street-snap":
-            return .init(paper: c(0.70, 0.73, 0.70), wash: [c(0.72, 0.75, 0.71), c(0.33, 0.38, 0.39), c(0.045, 0.055, 0.065)], glowCenter: .bottom, ink: c(0.09, 0.13, 0.13), accent: c(0.82, 0.90, 0.88), swatches: [c(0.76, 0.80, 0.75), c(0.39, 0.45, 0.45), c(0.06, 0.07, 0.08)], label: "SNAP LOG", kind: .contactSheet, tilt: 1)
+            return .init(paper: c(0.70, 0.73, 0.70), wash: [c(0.72, 0.75, 0.71), c(0.33, 0.38, 0.39), c(0.045, 0.055, 0.065)], glowCenter: .bottom, ink: c(0.09, 0.13, 0.13), accent: c(0.82, 0.90, 0.88), swatches: [c(0.76, 0.80, 0.75), c(0.39, 0.45, 0.45), c(0.06, 0.07, 0.08)], label: "SNAP", kind: .contactSheet, tilt: 1)
         case "classic-chrome-x":
             return .init(paper: c(0.65, 0.68, 0.62), wash: [c(0.62, 0.67, 0.63), c(0.42, 0.48, 0.49), c(0.21, 0.23, 0.21)], glowCenter: .topLeading, ink: c(0.13, 0.15, 0.13), accent: c(0.76, 0.79, 0.66), swatches: [c(0.68, 0.72, 0.64), c(0.45, 0.51, 0.51), c(0.23, 0.25, 0.22)], label: "CHROME X", kind: .colorRecipe, tilt: 0)
         case "medium-500c":
@@ -467,7 +570,7 @@ private struct FilmCoverStyle {
         case "noir-soft":
             return .init(paper: c(0.76, 0.74, 0.68), wash: [c(0.75, 0.73, 0.67), c(0.35, 0.34, 0.33), c(0.035, 0.035, 0.04)], glowCenter: .center, ink: c(0.07, 0.07, 0.07), accent: c(0.87, 0.84, 0.76), swatches: [c(0.80, 0.78, 0.71), c(0.39, 0.38, 0.36), c(0.05, 0.05, 0.05)], label: "NOIR SOFT", kind: .instantFrame, tilt: 0)
         default:
-            return .init(paper: c(0.84, 0.71, 0.50), wash: [c(0.91, 0.66, 0.29), c(0.52, 0.60, 0.43), c(0.17, 0.17, 0.13)], glowCenter: .center, ink: c(0.17, 0.11, 0.04), accent: c(1.00, 0.79, 0.44), swatches: [c(0.94, 0.68, 0.30), c(0.54, 0.64, 0.42), c(0.20, 0.18, 0.13)], label: "STILL LAB", kind: .contactSheet, tilt: 0)
+            return .init(paper: c(0.84, 0.71, 0.50), wash: [c(0.91, 0.66, 0.29), c(0.52, 0.60, 0.43), c(0.17, 0.17, 0.13)], glowCenter: .center, ink: c(0.17, 0.11, 0.04), accent: c(1.00, 0.79, 0.44), swatches: [c(0.94, 0.68, 0.30), c(0.54, 0.64, 0.42), c(0.20, 0.18, 0.13)], label: "STILL", kind: .contactSheet, tilt: 0)
         }
     }
 

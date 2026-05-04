@@ -4,6 +4,7 @@ struct FilmPickerSheet: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
     @State private var selectedCategory: FilmCategory?
+    @State private var focusedFilmId: String?
 
     var body: some View {
         ZStack {
@@ -16,28 +17,54 @@ struct FilmPickerSheet: View {
 
                     if filteredPresets.isEmpty, selectedCategory == .favorites {
                         favoriteEmptyState
-                    } else {
-                        ForEach(filteredPresets) { film in
-                            FilmPresetRow(
-                                film: film,
-                                isSelected: film.id == appState.selectedFilm.id,
-                                isFavorite: appState.isFavorite(film),
-                                currentRoll: film.id == appState.currentRoll.filmPresetId ? appState.currentRoll : nil,
-                                language: appState.language,
-                                favoriteTitle: appState.t(appState.isFavorite(film) ? .unfavoriteFilm : .favoriteFilm),
-                                selectAction: {
-                                    appState.selectFilm(film)
-                                    dismiss()
-                                },
-                                favoriteAction: {
-                                    appState.toggleFavorite(film)
-                                }
-                            )
+                    } else if let focusedFilm {
+                        FilmPickerHero(
+                            film: focusedFilm,
+                            isLoaded: focusedFilm.id == appState.selectedFilm.id,
+                            currentRoll: focusedFilm.id == appState.currentRoll.filmPresetId ? appState.currentRoll : nil,
+                            language: appState.language
+                        )
+
+                        FilmObjectShelf(
+                            films: filteredPresets,
+                            focusedFilmId: focusedFilm.id,
+                            selectedFilmId: appState.selectedFilm.id,
+                            favoriteIds: appState.favoriteFilmIds,
+                            language: appState.language
+                        ) { film in
+                            withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
+                                focusedFilmId = film.id
+                            }
                         }
+
+                        FilmSelectionDetailPanel(
+                            film: focusedFilm,
+                            isLoaded: focusedFilm.id == appState.selectedFilm.id,
+                            isFavorite: appState.isFavorite(focusedFilm),
+                            currentRoll: focusedFilm.id == appState.currentRoll.filmPresetId ? appState.currentRoll : nil,
+                            language: appState.language,
+                            favoriteAction: {
+                                appState.toggleFavorite(focusedFilm)
+                            },
+                            loadAction: {
+                                if focusedFilm.id == appState.selectedFilm.id {
+                                    dismiss()
+                                } else {
+                                    appState.selectFilm(focusedFilm)
+                                    dismiss()
+                                }
+                            }
+                        )
                     }
                 }
                 .padding(18)
             }
+        }
+        .onAppear {
+            ensureFocusedFilm()
+        }
+        .onChange(of: selectedCategory) { _, _ in
+            ensureFocusedFilm()
         }
     }
 
@@ -83,11 +110,33 @@ struct FilmPickerSheet: View {
         return appState.filmLibrary.presets(matching: selectedCategory, favoriteIds: appState.favoriteFilmIds)
     }
 
+    private var focusedFilm: FilmPreset? {
+        if let focusedFilmId,
+           let focused = filteredPresets.first(where: { $0.id == focusedFilmId }) {
+            return focused
+        }
+        if let selected = filteredPresets.first(where: { $0.id == appState.selectedFilm.id }) {
+            return selected
+        }
+        return filteredPresets.first
+    }
+
+    private func ensureFocusedFilm() {
+        guard !filteredPresets.isEmpty else {
+            focusedFilmId = nil
+            return
+        }
+        if let focusedFilmId,
+           filteredPresets.contains(where: { $0.id == focusedFilmId }) {
+            return
+        }
+        focusedFilmId = filteredPresets.first(where: { $0.id == appState.selectedFilm.id })?.id ?? filteredPresets[0].id
+    }
+
     private var favoriteEmptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "star")
-                .font(.system(size: 30, weight: .light))
-                .foregroundStyle(StillLightTheme.accent)
+            EmptyShelfMark()
+                .frame(width: 96, height: 62)
             Text(appState.t(.favoriteEmptyTitle))
                 .font(.headline)
                 .foregroundStyle(StillLightTheme.text)
@@ -99,6 +148,807 @@ struct FilmPickerSheet: View {
         }
         .frame(maxWidth: .infinity)
         .stillLightPanel()
+    }
+}
+
+private struct FilmPickerHero: View {
+    let film: FilmPreset
+    let isLoaded: Bool
+    let currentRoll: FilmRoll?
+    let language: AppLanguage
+
+    private var style: FilmCoverStyle {
+        FilmCoverStyle.style(for: film)
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(StillLightTheme.panel.opacity(0.74))
+
+            shelfGlow
+
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(isLoaded ? loadedText : drawerText)
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .tracking(0.9)
+                            .foregroundStyle(style.accent.opacity(0.86))
+                        Text(film.displayName(language: language))
+                            .font(.system(size: 24, weight: .semibold, design: .rounded))
+                            .foregroundStyle(StillLightTheme.text)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.76)
+                    }
+
+                    Spacer()
+
+                    ExposureCounter(film: film, currentRoll: currentRoll, language: language)
+                }
+
+                ZStack(alignment: .bottomTrailing) {
+                    CameraModelPlate(film: film)
+                        .frame(height: 142)
+                        .padding(.trailing, 16)
+
+                    FilmPhysicalPackageView(film: film, scale: .hero)
+                        .offset(x: 4, y: 10)
+                }
+                .frame(maxWidth: .infinity)
+
+                Text(film.displayCameraName(language: language))
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(StillLightTheme.secondaryText)
+                    .lineLimit(1)
+            }
+            .padding(18)
+
+            if isLoaded {
+                LoadedSeal(language: language)
+                    .padding(14)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 292)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(StillLightTheme.text.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private var shelfGlow: some View {
+        VStack {
+            Spacer()
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            style.accent.opacity(0.16),
+                            StillLightTheme.background.opacity(0.0)
+                        ],
+                        startPoint: .bottom,
+                        endPoint: .top
+                    )
+                )
+                .frame(height: 92)
+        }
+    }
+
+    private var loadedText: String {
+        language == .chinese ? "已装入" : "LOADED"
+    }
+
+    private var drawerText: String {
+        language == .chinese ? "胶卷抽屉" : "FILM DRAWER"
+    }
+}
+
+private struct FilmObjectShelf: View {
+    let films: [FilmPreset]
+    let focusedFilmId: String
+    let selectedFilmId: String
+    let favoriteIds: Set<String>
+    let language: AppLanguage
+    let focusAction: (FilmPreset) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(language == .chinese ? "选择一卷" : "Choose a roll")
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .tracking(0.8)
+                .foregroundStyle(StillLightTheme.secondaryText.opacity(0.72))
+
+            ZStack(alignment: .bottom) {
+                shelfSurface
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .bottom, spacing: 16) {
+                        ForEach(films) { film in
+                            FilmObjectCard(
+                                film: film,
+                                isFocused: film.id == focusedFilmId,
+                                isLoaded: film.id == selectedFilmId,
+                                isFavorite: favoriteIds.contains(film.id),
+                                language: language
+                            ) {
+                                focusAction(film)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.top, 18)
+                    .padding(.bottom, 12)
+                }
+            }
+            .frame(height: 194)
+        }
+    }
+
+    private var shelfSurface: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            Rectangle()
+                .fill(StillLightTheme.panelElevated.opacity(0.55))
+                .frame(height: 1)
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            StillLightTheme.panelElevated.opacity(0.86),
+                            StillLightTheme.panel.opacity(0.28),
+                            StillLightTheme.background.opacity(0.0)
+                        ],
+                        startPoint: .bottom,
+                        endPoint: .top
+                    )
+                )
+                .frame(height: 58)
+        }
+    }
+}
+
+private struct FilmObjectCard: View {
+    let film: FilmPreset
+    let isFocused: Bool
+    let isLoaded: Bool
+    let isFavorite: Bool
+    let language: AppLanguage
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 9) {
+                ZStack(alignment: .topTrailing) {
+                    FilmPhysicalPackageView(film: film, scale: .shelf)
+                        .shadow(color: .black.opacity(isFocused ? 0.36 : 0.22), radius: isFocused ? 18 : 10, x: 0, y: isFocused ? 14 : 8)
+
+                    if isLoaded {
+                        LoadedTab(language: language)
+                            .offset(x: 5, y: 7)
+                    } else if isFavorite {
+                        FavoritePin()
+                            .offset(x: 2, y: 4)
+                    }
+                }
+                .scaleEffect(isFocused ? 1.06 : 0.94)
+                .offset(y: isFocused ? -10 : 2)
+
+                Text(film.displayShortName(language: language))
+                    .font(.system(size: 12, weight: isFocused ? .semibold : .medium, design: .rounded))
+                    .foregroundStyle(isFocused ? StillLightTheme.text : StillLightTheme.secondaryText)
+                    .lineLimit(1)
+                    .frame(width: 118)
+
+                Rectangle()
+                    .fill(isFocused ? FilmCoverStyle.style(for: film).accent.opacity(0.88) : .clear)
+                    .frame(width: 36, height: 2)
+            }
+            .frame(width: 124)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.34, dampingFraction: 0.82), value: isFocused)
+        .accessibilityLabel(film.displayName(language: language))
+    }
+}
+
+private struct FilmSelectionDetailPanel: View {
+    let film: FilmPreset
+    let isLoaded: Bool
+    let isFavorite: Bool
+    let currentRoll: FilmRoll?
+    let language: AppLanguage
+    let favoriteAction: () -> Void
+    let loadAction: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(film.displayName(language: language))
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        .foregroundStyle(StillLightTheme.text)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                    Text(film.displayDescription(language: language))
+                        .font(.system(size: 13, weight: .regular, design: .rounded))
+                        .foregroundStyle(StillLightTheme.secondaryText)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("ISO \(film.iso)")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundStyle(StillLightTheme.text)
+                    Text(exposureText)
+                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(StillLightTheme.secondaryText.opacity(0.82))
+                }
+            }
+
+            sceneTags
+
+            HStack(spacing: 10) {
+                FilmMiniStat(title: language == .chinese ? "颗粒" : "Grain", value: normalized(film.grainAmount, upperBound: 0.46), accent: style.accent)
+                FilmMiniStat(title: language == .chinese ? "反差" : "Contrast", value: normalized(film.contrast - 0.86, upperBound: 0.34), accent: style.accent)
+                FilmMiniStat(title: language == .chinese ? "暖度" : "Warmth", value: normalized(film.temperatureShift + 0.26, upperBound: 0.72), accent: style.accent)
+            }
+
+            HStack(spacing: 10) {
+                Button(action: favoriteAction) {
+                    Text(isFavorite ? favoriteOnText : favoriteOffText)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(isFavorite ? StillLightTheme.background : StillLightTheme.text)
+                        .frame(height: 44)
+                        .frame(maxWidth: .infinity)
+                        .background(isFavorite ? style.accent : StillLightTheme.panelElevated.opacity(0.86))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                Button(action: loadAction) {
+                    Text(loadButtonText)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(StillLightTheme.background)
+                        .frame(height: 44)
+                        .frame(maxWidth: .infinity)
+                        .background(StillLightTheme.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(16)
+        .background(StillLightTheme.panel.opacity(0.86))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(StillLightTheme.text.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private var style: FilmCoverStyle {
+        FilmCoverStyle.style(for: film)
+    }
+
+    private var sceneTags: some View {
+        let scenes = language == .chinese && !film.localizedSuitableScenes.isEmpty
+            ? film.localizedSuitableScenes
+            : film.suitableScenes
+
+        return HStack(spacing: 7) {
+            ForEach(Array(scenes.prefix(3)), id: \.self) { scene in
+                Text(scene)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(StillLightTheme.text.opacity(0.86))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 6)
+                    .background(style.accent.opacity(0.16))
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            }
+        }
+    }
+
+    private var exposureText: String {
+        if let currentRoll {
+            return language == .chinese ? "剩余 \(currentRoll.remainingShots) 张" : "\(currentRoll.remainingShots) LEFT"
+        }
+        switch film.category {
+        case .instant:
+            return "10 SHOTS"
+        case .digital:
+            return "99 FILES"
+        default:
+            return "\(film.defaultShotCount) EXP"
+        }
+    }
+
+    private var loadButtonText: String {
+        if isLoaded {
+            return language == .chinese ? "继续拍" : "Keep Shooting"
+        }
+        return language == .chinese ? "装入相机" : "Load Camera"
+    }
+
+    private var favoriteOnText: String {
+        language == .chinese ? "已收藏" : "Pinned"
+    }
+
+    private var favoriteOffText: String {
+        language == .chinese ? "收藏" : "Pin"
+    }
+
+    private func normalized(_ value: Double, upperBound: Double) -> Double {
+        min(1.0, Swift.max(0.0, value / upperBound))
+    }
+}
+
+private struct FilmMiniStat: View {
+    let title: String
+    let value: Double
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(title)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .tracking(0.4)
+                .foregroundStyle(StillLightTheme.secondaryText.opacity(0.8))
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(StillLightTheme.panelElevated.opacity(0.84))
+                    Capsule()
+                        .fill(accent.opacity(0.82))
+                        .frame(width: proxy.size.width * value)
+                }
+            }
+            .frame(height: 4)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity)
+        .background(StillLightTheme.panelElevated.opacity(0.46))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private enum FilmPackageScale {
+    case hero
+    case shelf
+
+    var size: CGSize {
+        switch self {
+        case .hero:
+            return CGSize(width: 112, height: 144)
+        case .shelf:
+            return CGSize(width: 88, height: 112)
+        }
+    }
+}
+
+private enum FilmPackageKind {
+    case paperBox
+    case canister
+    case instantPack
+    case cameraBody
+    case paperSleeve
+    case disposable
+    case halfFrameTicket
+
+    static func kind(for film: FilmPreset) -> FilmPackageKind {
+        switch film.id {
+        case "pocket-flash":
+            return .disposable
+        case "half-frame-diary":
+            return .halfFrameTicket
+        case "holga-120-dream", "lca-vivid":
+            return .paperSleeve
+        default:
+            switch film.category {
+            case .blackWhite:
+                return .canister
+            case .instant:
+                return .instantPack
+            case .camera, .digital:
+                return .cameraBody
+            case .experimental:
+                return .paperSleeve
+            default:
+                return .paperBox
+            }
+        }
+    }
+}
+
+private struct FilmPhysicalPackageView: View {
+    let film: FilmPreset
+    let scale: FilmPackageScale
+
+    private var style: FilmCoverStyle {
+        FilmCoverStyle.style(for: film)
+    }
+
+    private var size: CGSize {
+        scale.size
+    }
+
+    var body: some View {
+        Group {
+            switch FilmPackageKind.kind(for: film) {
+            case .paperBox:
+                paperBox
+            case .canister:
+                canister
+            case .instantPack:
+                instantPack
+            case .cameraBody:
+                cameraBody
+            case .paperSleeve:
+                paperSleeve
+            case .disposable:
+                disposable
+            case .halfFrameTicket:
+                halfFrameTicket
+            }
+        }
+        .frame(width: size.width, height: size.height)
+    }
+
+    private var paperBox: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(style.paper)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(LinearGradient(colors: style.wash, startPoint: .topLeading, endPoint: .bottomTrailing))
+                .padding(6)
+            paperTexture
+            VStack(alignment: .leading, spacing: size.height * 0.045) {
+                Text(style.label)
+                    .font(.system(size: size.width * 0.105, weight: .black, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(style.ink.opacity(0.78))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                Spacer()
+                Text("STILLLIGHT")
+                    .font(.system(size: size.width * 0.063, weight: .bold, design: .monospaced))
+                    .tracking(1.0)
+                    .foregroundStyle(style.ink.opacity(0.58))
+                HStack {
+                    Text("\(film.iso)")
+                    Spacer()
+                    Text("\(film.defaultShotCount) EXP")
+                }
+                .font(.system(size: size.width * 0.075, weight: .bold, design: .monospaced))
+                .foregroundStyle(style.ink.opacity(0.72))
+            }
+            .padding(size.width * 0.12)
+            Rectangle()
+                .fill(style.accent.opacity(0.78))
+                .frame(width: size.width * 0.09)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.vertical, 7)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .overlay(packageStroke)
+    }
+
+    private var canister: some View {
+        ZStack {
+            Capsule()
+                .fill(LinearGradient(colors: [style.ink.opacity(0.92), style.ink.opacity(0.58)], startPoint: .top, endPoint: .bottom))
+                .frame(width: size.width * 0.74, height: size.height * 0.78)
+            Capsule()
+                .stroke(style.paper.opacity(0.72), lineWidth: 5)
+                .frame(width: size.width * 0.82, height: size.height * 0.86)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(style.paper.opacity(0.88))
+                .frame(width: size.width * 0.62, height: size.height * 0.32)
+                .overlay(alignment: .leading) {
+                    Rectangle()
+                        .fill(style.accent.opacity(0.82))
+                        .frame(width: size.width * 0.09)
+                }
+                .overlay {
+                    VStack(spacing: 4) {
+                        Text(style.label)
+                            .font(.system(size: size.width * 0.07, weight: .bold, design: .monospaced))
+                            .foregroundStyle(style.ink.opacity(0.78))
+                            .lineLimit(1)
+                        Text("B&W \(film.iso)")
+                            .font(.system(size: size.width * 0.065, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(style.ink.opacity(0.62))
+                    }
+                    .padding(.leading, size.width * 0.08)
+                }
+        }
+        .overlay(packageStroke)
+    }
+
+    private var instantPack: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(style.paper.opacity(0.96))
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(style.wash[1].opacity(0.42))
+                .padding(.top, size.height * 0.14)
+                .padding(.horizontal, size.width * 0.14)
+                .padding(.bottom, size.height * 0.28)
+            Rectangle()
+                .fill(style.accent.opacity(0.76))
+                .frame(height: size.height * 0.08)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .padding(.horizontal, size.width * 0.16)
+                .padding(.bottom, size.height * 0.12)
+            Text(style.label)
+                .font(.system(size: size.width * 0.085, weight: .bold, design: .monospaced))
+                .tracking(0.6)
+                .foregroundStyle(style.ink.opacity(0.72))
+                .frame(maxHeight: .infinity, alignment: .top)
+                .padding(.top, size.height * 0.08)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .overlay(packageStroke)
+    }
+
+    private var cameraBody: some View {
+        CameraModelPlate(film: film)
+            .frame(width: size.width, height: size.height * 0.72)
+            .overlay(alignment: .bottomLeading) {
+                Text(style.label)
+                    .font(.system(size: size.width * 0.07, weight: .bold, design: .monospaced))
+                    .foregroundStyle(style.paper.opacity(0.82))
+                    .padding(.leading, size.width * 0.12)
+                    .padding(.bottom, size.height * 0.09)
+            }
+    }
+
+    private var paperSleeve: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(style.paper.opacity(0.72))
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .stroke(style.ink.opacity(0.2), lineWidth: 1)
+                .padding(8)
+            Rectangle()
+                .fill(style.accent.opacity(0.74))
+                .frame(height: size.height * 0.13)
+                .rotationEffect(.degrees(-12))
+            Text(style.label)
+                .font(.system(size: size.width * 0.085, weight: .bold, design: .monospaced))
+                .foregroundStyle(style.ink.opacity(0.74))
+                .rotationEffect(.degrees(-6))
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+        .overlay(packageStroke)
+    }
+
+    private var disposable: some View {
+        ZStack(alignment: .topTrailing) {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(style.wash[0])
+            Rectangle()
+                .fill(style.wash[1].opacity(0.76))
+                .frame(height: size.height * 0.34)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(style.paper.opacity(0.82))
+                .frame(width: size.width * 0.34, height: size.height * 0.20)
+                .padding(size.width * 0.10)
+            Circle()
+                .fill(style.ink.opacity(0.72))
+                .frame(width: size.width * 0.28)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            Text(style.label)
+                .font(.system(size: size.width * 0.075, weight: .bold, design: .monospaced))
+                .foregroundStyle(style.ink.opacity(0.72))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                .padding(size.width * 0.12)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(packageStroke)
+    }
+
+    private var halfFrameTicket: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(style.paper)
+            HStack(spacing: size.width * 0.07) {
+                ForEach(0..<2, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(style.swatches[index].opacity(0.74))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .stroke(style.ink.opacity(0.16), lineWidth: 1)
+                        }
+                }
+            }
+            .padding(size.width * 0.13)
+            Text(style.label)
+                .font(.system(size: size.width * 0.067, weight: .bold, design: .monospaced))
+                .foregroundStyle(style.ink.opacity(0.72))
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, size.height * 0.08)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .overlay(packageStroke)
+    }
+
+    private var paperTexture: some View {
+        ZStack {
+            ForEach(0..<12, id: \.self) { index in
+                Rectangle()
+                    .fill(style.ink.opacity(index.isMultiple(of: 3) ? 0.08 : 0.045))
+                    .frame(width: CGFloat(9 + (index % 4) * 7), height: 1)
+                    .rotationEffect(.degrees(index.isMultiple(of: 2) ? -7 : 9))
+                    .offset(
+                        x: CGFloat((index * 17) % Int(size.width)) - size.width / 2,
+                        y: CGFloat((index * 23) % Int(size.height)) - size.height / 2
+                    )
+            }
+        }
+        .opacity(0.55)
+    }
+
+    private var packageStroke: some View {
+        RoundedRectangle(cornerRadius: 7, style: .continuous)
+            .stroke(style.ink.opacity(0.16), lineWidth: 1)
+    }
+}
+
+private struct CameraModelPlate: View {
+    let film: FilmPreset
+
+    private var style: FilmCoverStyle {
+        FilmCoverStyle.style(for: film)
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(LinearGradient(colors: [style.ink.opacity(0.90), style.ink.opacity(0.58)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(style.paper.opacity(0.18))
+                    .frame(height: height * 0.34)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(style.paper.opacity(0.78))
+                    .frame(width: width * 0.20, height: height * 0.16)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(width * 0.10)
+                Circle()
+                    .fill(style.paper.opacity(0.20))
+                    .frame(width: min(width, height) * 0.48)
+                    .overlay {
+                        Circle()
+                            .stroke(style.paper.opacity(0.70), lineWidth: 3)
+                            .padding(5)
+                    }
+                    .overlay {
+                        Circle()
+                            .fill(style.ink.opacity(0.74))
+                            .padding(14)
+                    }
+                Capsule()
+                    .fill(style.accent.opacity(0.72))
+                    .frame(width: width * 0.26, height: 4)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(width * 0.12)
+            }
+            .shadow(color: .black.opacity(0.28), radius: 18, x: 0, y: 10)
+        }
+    }
+}
+
+private struct ExposureCounter: View {
+    let film: FilmPreset
+    let currentRoll: FilmRoll?
+    let language: AppLanguage
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            Text(formatText)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .tracking(0.6)
+                .foregroundStyle(StillLightTheme.secondaryText.opacity(0.86))
+            Text(countText)
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .foregroundStyle(StillLightTheme.text)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(StillLightTheme.panelElevated.opacity(0.72))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private var formatText: String {
+        switch film.category {
+        case .instant:
+            return "INSTANT"
+        case .digital:
+            return "CCD"
+        default:
+            return "135"
+        }
+    }
+
+    private var countText: String {
+        if let currentRoll {
+            return language == .chinese ? "\(currentRoll.remainingShots) 张" : "\(currentRoll.remainingShots) left"
+        }
+        return "\(film.defaultShotCount)"
+    }
+}
+
+private struct LoadedSeal: View {
+    let language: AppLanguage
+
+    var body: some View {
+        Text(language == .chinese ? "已装卷" : "LOADED")
+            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .tracking(0.8)
+            .foregroundStyle(StillLightTheme.background)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(StillLightTheme.accent)
+            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+    }
+}
+
+private struct LoadedTab: View {
+    let language: AppLanguage
+
+    var body: some View {
+        Text(language == .chinese ? "装入" : "IN")
+            .font(.system(size: 8, weight: .black, design: .monospaced))
+            .foregroundStyle(StillLightTheme.background)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(StillLightTheme.accent)
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+    }
+}
+
+private struct FavoritePin: View {
+    var body: some View {
+        Circle()
+            .fill(StillLightTheme.accent)
+            .frame(width: 12, height: 12)
+            .overlay {
+                Circle()
+                    .stroke(StillLightTheme.background.opacity(0.76), lineWidth: 1)
+                    .padding(3)
+            }
+    }
+}
+
+private struct EmptyShelfMark: View {
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(StillLightTheme.secondaryText.opacity(0.28), lineWidth: 1)
+                .frame(width: 58, height: 44)
+                .offset(y: -10)
+            HStack(spacing: 8) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(StillLightTheme.panelElevated.opacity(0.9))
+                    .frame(width: 20, height: 34)
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(StillLightTheme.panelElevated.opacity(0.52))
+                    .frame(width: 20, height: 28)
+            }
+            Rectangle()
+                .fill(StillLightTheme.accent.opacity(0.48))
+                .frame(width: 86, height: 2)
+        }
     }
 }
 

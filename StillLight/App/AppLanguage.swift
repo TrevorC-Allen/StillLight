@@ -111,14 +111,14 @@ enum AppText {
     }
 
     private static let english: [Key: String] = [
-        .filmRoll: "Film Roll",
-        .filmRollSubtitle: "Choose a camera or film before shooting. Each roll defines color, contrast, grain, border, and frame label.",
+        .filmRoll: "Film Drawer",
+        .filmRollSubtitle: "Load a roll before shooting. Color, grain, frame, and camera label travel together.",
         .all: "All",
         .favorites: "Favorites",
         .favoriteFilm: "Add to Favorites",
         .unfavoriteFilm: "Remove from Favorites",
         .favoriteEmptyTitle: "No favorites yet",
-        .favoriteEmptySubtitle: "Tap the star on any roll to keep it close at hand.",
+        .favoriteEmptySubtitle: "Pin any roll and it will stay close at hand.",
         .selectedFilm: "Selected",
         .addFavorite: "Add Favorite",
         .removeFavorite: "Remove Favorite",
@@ -195,14 +195,14 @@ enum AppText {
     ]
 
     private static let chinese: [Key: String] = [
-        .filmRoll: "胶卷库",
-        .filmRollSubtitle: "拍摄前选择胶卷或经典机型。每一卷都会定义色彩、反差、颗粒、边框和机型标注。",
+        .filmRoll: "胶卷抽屉",
+        .filmRollSubtitle: "选择一卷装入相机。色彩、颗粒、边框和机型标注会一起生效。",
         .all: "全部",
         .favorites: "收藏",
         .favoriteFilm: "加入收藏",
         .unfavoriteFilm: "取消收藏",
         .favoriteEmptyTitle: "还没有收藏",
-        .favoriteEmptySubtitle: "点亮任意胶卷上的星标，它会出现在这里。",
+        .favoriteEmptySubtitle: "收藏任意胶卷后，它会固定在这里。",
         .selectedFilm: "已选",
         .addFavorite: "加入收藏",
         .removeFavorite: "取消收藏",

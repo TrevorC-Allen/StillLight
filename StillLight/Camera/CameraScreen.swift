@@ -135,19 +135,13 @@ struct CameraScreen: View {
             Button {
                 showsFilmPicker = true
             } label: {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(StillLightTheme.accent)
-                        .frame(width: 8, height: 8)
-                    Text(appState.selectedFilm.displayShortName(language: appState.language))
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    Text("\(appState.currentRoll.remainingShots)")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(StillLightTheme.secondaryText)
-                }
-                .foregroundStyle(StillLightTheme.text)
-                .stillLightPanel()
+                FilmRollBadge(
+                    title: appState.selectedFilm.displayShortName(language: appState.language),
+                    remainingShots: appState.currentRoll.remainingShots
+                )
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(appState.selectedFilm.displayShortName(language: appState.language)), \(appState.currentRoll.remainingShots)")
 
             Spacer()
 
@@ -526,6 +520,110 @@ struct CameraScreen: View {
 private struct FocusIndicator: Identifiable {
     let id = UUID()
     let point: CGPoint
+}
+
+private struct FilmRollBadge: View {
+    let title: String
+    let remainingShots: Int
+
+    var body: some View {
+        HStack(spacing: 9) {
+            MiniFilmPackIcon()
+
+            Text(title)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .truncationMode(.tail)
+                .foregroundStyle(StillLightTheme.text)
+                .frame(maxWidth: 76, alignment: .leading)
+                .layoutPriority(1)
+
+            Text("\(remainingShots)")
+                .font(.system(size: 12, weight: .bold, design: .rounded).monospacedDigit())
+                .foregroundStyle(StillLightTheme.background)
+                .frame(minWidth: 28)
+                .frame(height: 22)
+                .padding(.horizontal, 3)
+                .background(StillLightTheme.accent)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .stroke(Color.white.opacity(0.20), lineWidth: 0.8)
+                }
+        }
+        .padding(.leading, 8)
+        .padding(.trailing, 9)
+        .frame(height: 44)
+        .frame(maxWidth: 166, alignment: .leading)
+        .background(StillLightTheme.panel.opacity(0.92))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private struct MiniFilmPackIcon: View {
+    var body: some View {
+        ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.21, green: 0.20, blue: 0.17),
+                            Color(red: 0.08, green: 0.08, blue: 0.08)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(alignment: .top) {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(StillLightTheme.accent.opacity(0.92))
+                        .frame(height: 7)
+                        .padding(.horizontal, 5)
+                        .padding(.top, 4)
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    HStack(spacing: 2) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: 1, style: .continuous)
+                                .fill(StillLightTheme.text.opacity(0.34))
+                                .frame(width: 3, height: 4)
+                        }
+                    }
+                    .padding(.trailing, 5)
+                    .padding(.bottom, 4)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                }
+
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(Color.black.opacity(0.42))
+                .frame(width: 8)
+
+            Circle()
+                .fill(StillLightTheme.panelElevated)
+                .frame(width: 14, height: 14)
+                .overlay {
+                    Circle()
+                        .stroke(StillLightTheme.accent.opacity(0.72), lineWidth: 2)
+                }
+                .overlay {
+                    Circle()
+                        .fill(StillLightTheme.text.opacity(0.58))
+                        .frame(width: 3, height: 3)
+                }
+                .offset(x: 7)
+        }
+        .frame(width: 36, height: 28)
+        .shadow(color: .black.opacity(0.22), radius: 6, y: 3)
+    }
 }
 
 private struct CameraModeButton: View {

@@ -770,6 +770,1015 @@ private enum FilmPackageKind {
     }
 }
 
+private enum FilmCoverComposition {
+    case warmCafePacket
+    case vignetteEnvelope
+    case musePolaroids
+    case sunlitProofs
+    case softPortraitCard
+    case silverArchive
+    case greenTransit
+    case tungstenNightSleeve
+    case pocketFlashWrap
+    case ccdMemory
+    case instantSquareStack
+    case naturalRollBand
+    case rangefinderPlate
+    case compactGold
+    case grContact
+    case chromeRecipe
+    case mediumTwinSlide
+    case holgaVellum
+    case lcaDiagonal
+    case instantWidePrint
+    case sxFlowerFade
+    case halfFrameDiary
+    case ektarSlides
+    case triXArchive
+    case cyberCcd
+    case superiaPacket
+    case noirWindow
+    case archiveDefault
+
+    static func composition(for film: FilmPreset) -> FilmCoverComposition {
+        switch film.id {
+        case "human-warm-400":
+            return .warmCafePacket
+        case "human-vignette-800":
+            return .vignetteEnvelope
+        case "muse-portrait-400":
+            return .musePolaroids
+        case "sunlit-gold-200":
+            return .sunlitProofs
+        case "soft-portrait-400":
+            return .softPortraitCard
+        case "silver-hp5":
+            return .silverArchive
+        case "green-street-400":
+            return .greenTransit
+        case "tungsten-800":
+            return .tungstenNightSleeve
+        case "pocket-flash":
+            return .pocketFlashWrap
+        case "ccd-2003":
+            return .ccdMemory
+        case "instant-square":
+            return .instantSquareStack
+        case "hncs-natural":
+            return .naturalRollBand
+        case "m-rangefinder":
+            return .rangefinderPlate
+        case "t-compact-gold":
+            return .compactGold
+        case "gr-street-snap":
+            return .grContact
+        case "classic-chrome-x":
+            return .chromeRecipe
+        case "medium-500c":
+            return .mediumTwinSlide
+        case "holga-120-dream":
+            return .holgaVellum
+        case "lca-vivid":
+            return .lcaDiagonal
+        case "instant-wide":
+            return .instantWidePrint
+        case "sx-fade":
+            return .sxFlowerFade
+        case "half-frame-diary":
+            return .halfFrameDiary
+        case "ektar-vivid-100":
+            return .ektarSlides
+        case "tri-x-street":
+            return .triXArchive
+        case "cyber-ccd-blue":
+            return .cyberCcd
+        case "superia-green":
+            return .superiaPacket
+        case "noir-soft":
+            return .noirWindow
+        default:
+            return .archiveDefault
+        }
+    }
+}
+
+private struct FilmIdentityArtworkView: View {
+    let film: FilmPreset
+    let style: FilmCoverStyle
+
+    private var composition: FilmCoverComposition {
+        FilmCoverComposition.composition(for: film)
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+
+            ZStack {
+                paperBase(width: width, height: height)
+                compositionArtwork(width: width, height: height)
+                printFinish(width: width, height: height)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: min(width, height) * 0.075, style: .continuous))
+        }
+    }
+
+    private func paperBase(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    style.paper.opacity(0.98),
+                    style.wash[0].opacity(0.46),
+                    style.wash[2].opacity(0.34)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            ForEach(0..<8, id: \.self) { index in
+                Rectangle()
+                    .fill((index.isMultiple(of: 2) ? style.ink : style.paper).opacity(0.045))
+                    .frame(width: width * CGFloat(0.22 + Double(seed(index, salt: 7) % 24) / 100.0), height: 1)
+                    .rotationEffect(.degrees(Double(seed(index, salt: 13) % 22) - 11))
+                    .offset(
+                        x: offset(index, salt: 19, length: width * 0.84),
+                        y: offset(index, salt: 29, length: height * 0.84)
+                    )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func compositionArtwork(width: CGFloat, height: CGFloat) -> some View {
+        switch composition {
+        case .warmCafePacket:
+            ZStack {
+                diagonalBand(color: style.wash[0], width: width, height: height, angle: -16, y: -0.25, thickness: 0.24)
+                proofStrip(count: 3, width: width, height: height)
+                    .frame(width: width * 0.34, height: height * 0.86)
+                    .offset(x: -width * 0.26, y: height * 0.02)
+                receiptLabel(width: width, height: height, title: "CN", subtitle: "WARM")
+                    .offset(x: width * 0.18, y: height * 0.18)
+                cafeStamp(width: width, height: height)
+                    .offset(x: width * 0.22, y: -height * 0.25)
+            }
+        case .vignetteEnvelope:
+            ZStack {
+                envelopeFlap(width: width, height: height)
+                Circle()
+                    .fill(style.accent.opacity(0.64))
+                    .frame(width: width * 0.22, height: width * 0.22)
+                    .blur(radius: 1.4)
+                    .offset(x: width * 0.22, y: -height * 0.26)
+                proofStrip(count: 2, width: width, height: height)
+                    .frame(width: width * 0.70, height: height * 0.32)
+                    .rotationEffect(.degrees(-8))
+                    .offset(y: height * 0.08)
+                tape(width: width, height: height, color: style.paper, angle: 8)
+                    .offset(x: -width * 0.22, y: -height * 0.18)
+            }
+        case .musePolaroids:
+            ZStack {
+                instantPrint(width: width, height: height, rotation: -8)
+                    .frame(width: width * 0.50, height: height * 0.66)
+                    .offset(x: -width * 0.12, y: height * 0.02)
+                instantPrint(width: width, height: height, rotation: 6)
+                    .frame(width: width * 0.46, height: height * 0.60)
+                    .offset(x: width * 0.18, y: -height * 0.06)
+                tape(width: width, height: height, color: style.accent, angle: -12)
+                    .offset(x: width * 0.06, y: -height * 0.34)
+            }
+        case .sunlitProofs:
+            ZStack {
+                Circle()
+                    .fill(style.accent.opacity(0.78))
+                    .frame(width: width * 0.23, height: width * 0.23)
+                    .offset(x: width * 0.25, y: -height * 0.32)
+                contactGrid(columns: 2, rows: 3, width: width, height: height)
+                    .padding(.horizontal, width * 0.13)
+                    .padding(.vertical, height * 0.12)
+                registrationTicks(width: width, height: height)
+            }
+        case .softPortraitCard:
+            ZStack {
+                RoundedRectangle(cornerRadius: width * 0.05, style: .continuous)
+                    .fill(style.paper.opacity(0.54))
+                    .padding(width * 0.12)
+                    .overlay(photoCorners(width: width, height: height))
+                FilmSampleSceneView(film: film, style: style)
+                    .padding(.horizontal, width * 0.23)
+                    .padding(.vertical, height * 0.22)
+                    .opacity(0.74)
+                Capsule()
+                    .fill(style.accent.opacity(0.66))
+                    .frame(width: width * 0.44, height: height * 0.045)
+                    .offset(y: height * 0.30)
+            }
+        case .silverArchive:
+            ZStack {
+                archiveSleeve(width: width, height: height)
+                proofStrip(count: 4, width: width, height: height)
+                    .frame(width: width * 0.82, height: height * 0.30)
+                    .rotationEffect(.degrees(-3))
+                receiptLabel(width: width, height: height, title: "B&W", subtitle: "SILVER")
+                    .offset(y: height * 0.28)
+            }
+        case .greenTransit:
+            ZStack {
+                contactGrid(columns: 2, rows: 2, width: width, height: height)
+                    .padding(.horizontal, width * 0.17)
+                    .padding(.top, height * 0.14)
+                    .padding(.bottom, height * 0.30)
+                transitPunches(width: width, height: height)
+                Rectangle()
+                    .fill(style.accent.opacity(0.78))
+                    .frame(width: width * 0.16)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        case .tungstenNightSleeve:
+            ZStack {
+                Rectangle().fill(style.ink.opacity(0.52))
+                diagonalBand(color: style.accent, width: width, height: height, angle: -20, y: -0.20, thickness: 0.12)
+                proofStrip(count: 3, width: width, height: height)
+                    .frame(width: width * 0.76, height: height * 0.26)
+                    .rotationEffect(.degrees(7))
+                    .offset(y: height * 0.18)
+                neonPips(width: width, height: height)
+            }
+        case .pocketFlashWrap:
+            ZStack {
+                diagonalBand(color: style.accent, width: width, height: height, angle: -14, y: 0.28, thickness: 0.22)
+                compactCameraGlyph(width: width, height: height)
+                    .frame(width: width * 0.72, height: height * 0.46)
+                    .offset(y: -height * 0.10)
+                burstSeal(width: width, height: height)
+                    .offset(x: width * 0.25, y: height * 0.24)
+            }
+        case .ccdMemory:
+            ZStack {
+                memoryCard(width: width, height: height)
+                    .frame(width: width * 0.64, height: height * 0.68)
+                    .rotationEffect(.degrees(-3))
+                lcdScreen(width: width, height: height)
+                    .frame(width: width * 0.48, height: height * 0.26)
+                    .offset(x: width * 0.18, y: -height * 0.20)
+            }
+        case .instantSquareStack:
+            ZStack {
+                instantPrint(width: width, height: height, rotation: 4)
+                    .frame(width: width * 0.62, height: height * 0.76)
+                    .offset(x: width * 0.06, y: height * 0.04)
+                instantPrint(width: width, height: height, rotation: -7)
+                    .frame(width: width * 0.56, height: height * 0.70)
+                    .offset(x: -width * 0.12, y: -height * 0.04)
+            }
+        case .naturalRollBand:
+            ZStack {
+                landscapeBand(width: width, height: height)
+                rollSeal(width: width, height: height)
+                    .offset(x: -width * 0.25, y: -height * 0.26)
+                receiptLabel(width: width, height: height, title: "120", subtitle: "FIELD")
+                    .offset(x: width * 0.18, y: height * 0.22)
+            }
+        case .rangefinderPlate:
+            ZStack {
+                leatherPanel(width: width, height: height)
+                rangefinderGlyph(width: width, height: height)
+                    .frame(width: width * 0.74, height: height * 0.42)
+                    .offset(y: -height * 0.04)
+                Rectangle()
+                    .fill(style.accent.opacity(0.78))
+                    .frame(width: width * 0.56, height: 2)
+                    .offset(y: height * 0.29)
+            }
+        case .compactGold:
+            ZStack {
+                diagonalBand(color: style.wash[0], width: width, height: height, angle: -10, y: -0.22, thickness: 0.22)
+                compactCameraGlyph(width: width, height: height)
+                    .frame(width: width * 0.70, height: height * 0.44)
+                    .offset(y: -height * 0.04)
+                proofStrip(count: 2, width: width, height: height)
+                    .frame(width: width * 0.62, height: height * 0.18)
+                    .offset(y: height * 0.30)
+            }
+        case .grContact:
+            ZStack {
+                Rectangle().fill(style.ink.opacity(0.38))
+                contactGrid(columns: 3, rows: 2, width: width, height: height)
+                    .padding(.horizontal, width * 0.10)
+                    .padding(.vertical, height * 0.18)
+                tape(width: width, height: height, color: style.paper, angle: -6)
+                    .offset(x: -width * 0.24, y: -height * 0.33)
+            }
+        case .chromeRecipe:
+            ZStack {
+                recipeTabs(width: width, height: height)
+                FilmSampleSceneView(film: film, style: style)
+                    .padding(.horizontal, width * 0.22)
+                    .padding(.vertical, height * 0.24)
+                    .opacity(0.62)
+                swatchStack(width: width, height: height)
+                    .offset(x: width * 0.28, y: height * 0.28)
+            }
+        case .mediumTwinSlide:
+            ZStack {
+                twinSlides(width: width, height: height)
+                rollSeal(width: width, height: height)
+                    .offset(x: width * 0.25, y: -height * 0.28)
+            }
+        case .holgaVellum:
+            ZStack {
+                Circle()
+                    .fill(style.accent.opacity(0.40))
+                    .frame(width: width * 0.72, height: width * 0.72)
+                    .blur(radius: 5)
+                    .offset(x: width * 0.20, y: -height * 0.26)
+                proofStrip(count: 3, width: width, height: height)
+                    .frame(width: width * 0.82, height: height * 0.28)
+                    .rotationEffect(.degrees(-9))
+                vellumSheet(width: width, height: height)
+            }
+        case .lcaDiagonal:
+            ZStack {
+                diagonalBand(color: style.wash[0], width: width, height: height, angle: -24, y: -0.22, thickness: 0.24)
+                diagonalBand(color: style.wash[1], width: width, height: height, angle: -24, y: 0.06, thickness: 0.20)
+                diagonalBand(color: style.accent, width: width, height: height, angle: -24, y: 0.30, thickness: 0.12)
+                instantPrint(width: width, height: height, rotation: 8)
+                    .frame(width: width * 0.42, height: height * 0.54)
+                    .offset(x: width * 0.18, y: -height * 0.02)
+            }
+        case .instantWidePrint:
+            ZStack {
+                wideInstant(width: width, height: height)
+                    .frame(width: width * 0.80, height: height * 0.62)
+                    .rotationEffect(.degrees(-3))
+                tape(width: width, height: height, color: style.accent, angle: 7)
+                    .offset(x: width * 0.22, y: -height * 0.32)
+            }
+        case .sxFlowerFade:
+            ZStack {
+                instantPrint(width: width, height: height, rotation: -4)
+                    .frame(width: width * 0.60, height: height * 0.74)
+                flowerCluster(width: width, height: height)
+                    .offset(x: width * 0.20, y: height * 0.22)
+                fadeWash(width: width, height: height)
+            }
+        case .halfFrameDiary:
+            ZStack {
+                HStack(spacing: width * 0.045) {
+                    FilmSampleSceneView(film: film, style: style)
+                    FilmSampleSceneView(film: film, style: style)
+                        .opacity(0.78)
+                }
+                .padding(.horizontal, width * 0.13)
+                .padding(.top, height * 0.14)
+                .padding(.bottom, height * 0.28)
+                diaryBinding(width: width, height: height)
+            }
+        case .ektarSlides:
+            ZStack {
+                slideMount(width: width, height: height, rotation: -8)
+                    .frame(width: width * 0.48, height: height * 0.54)
+                    .offset(x: -width * 0.16, y: -height * 0.06)
+                slideMount(width: width, height: height, rotation: 7)
+                    .frame(width: width * 0.48, height: height * 0.54)
+                    .offset(x: width * 0.17, y: height * 0.08)
+                swatchStack(width: width, height: height)
+                    .offset(y: -height * 0.34)
+            }
+        case .triXArchive:
+            ZStack {
+                archiveSleeve(width: width, height: height)
+                proofStrip(count: 5, width: width, height: height)
+                    .frame(width: width * 0.86, height: height * 0.26)
+                    .offset(y: -height * 0.04)
+                registrationTicks(width: width, height: height)
+            }
+        case .cyberCcd:
+            ZStack {
+                lcdScreen(width: width, height: height)
+                    .frame(width: width * 0.68, height: height * 0.42)
+                    .rotationEffect(.degrees(4))
+                    .offset(y: -height * 0.09)
+                memoryCard(width: width, height: height)
+                    .frame(width: width * 0.42, height: height * 0.46)
+                    .rotationEffect(.degrees(-10))
+                    .offset(x: -width * 0.24, y: height * 0.22)
+            }
+        case .superiaPacket:
+            ZStack {
+                Rectangle()
+                    .fill(style.wash[0].opacity(0.78))
+                    .frame(height: height * 0.30)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                Rectangle()
+                    .fill(style.wash[1].opacity(0.74))
+                    .frame(height: height * 0.34)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                wideInstant(width: width, height: height)
+                    .frame(width: width * 0.64, height: height * 0.42)
+                    .offset(y: height * 0.06)
+                rollSeal(width: width, height: height)
+                    .offset(x: width * 0.25, y: -height * 0.29)
+            }
+        case .noirWindow:
+            ZStack {
+                Rectangle().fill(style.ink.opacity(0.72))
+                RoundedRectangle(cornerRadius: width * 0.025, style: .continuous)
+                    .fill(style.paper.opacity(0.72))
+                    .frame(width: width * 0.30, height: height * 0.66)
+                    .offset(x: -width * 0.24, y: -height * 0.08)
+                    .blur(radius: 0.7)
+                instantPrint(width: width, height: height, rotation: 5)
+                    .frame(width: width * 0.44, height: height * 0.58)
+                    .offset(x: width * 0.16, y: height * 0.08)
+            }
+        case .archiveDefault:
+            ZStack {
+                contactGrid(columns: 2, rows: 2, width: width, height: height)
+                    .padding(width * 0.16)
+                receiptLabel(width: width, height: height, title: "SL", subtitle: "ROLL")
+                    .offset(y: height * 0.28)
+            }
+        }
+    }
+
+    private func printFinish(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [.white.opacity(0.16), .clear, style.ink.opacity(0.12)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            ForEach(0..<14, id: \.self) { index in
+                Circle()
+                    .fill(style.ink.opacity(index.isMultiple(of: 4) ? 0.055 : 0.026))
+                    .frame(width: CGFloat(1 + seed(index, salt: 47) % 3))
+                    .offset(
+                        x: offset(index, salt: 61, length: width * 0.92),
+                        y: offset(index, salt: 73, length: height * 0.92)
+                    )
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func contactGrid(columns: Int, rows: Int, width: CGFloat, height: CGFloat) -> some View {
+        VStack(spacing: height * 0.035) {
+            ForEach(0..<rows, id: \.self) { _ in
+                HStack(spacing: width * 0.035) {
+                    ForEach(0..<columns, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: width * 0.02, style: .continuous)
+                            .fill(style.ink.opacity(0.62))
+                            .overlay {
+                                FilmSampleSceneView(film: film, style: style)
+                                    .padding(width * 0.018)
+                                    .opacity(0.72)
+                            }
+                            .overlay {
+                                RoundedRectangle(cornerRadius: width * 0.016, style: .continuous)
+                                    .stroke(style.paper.opacity(0.20), lineWidth: 1)
+                            }
+                    }
+                }
+            }
+        }
+        .padding(width * 0.035)
+        .background(style.ink.opacity(0.78))
+        .clipShape(RoundedRectangle(cornerRadius: width * 0.035, style: .continuous))
+    }
+
+    private func proofStrip(count: Int, width: CGFloat, height: CGFloat) -> some View {
+        HStack(spacing: width * 0.03) {
+            ForEach(0..<count, id: \.self) { index in
+                RoundedRectangle(cornerRadius: width * 0.018, style: .continuous)
+                    .fill(style.swatches[index % style.swatches.count].opacity(0.72))
+                    .overlay {
+                        FilmSampleSceneView(film: film, style: style)
+                            .padding(width * 0.014)
+                            .opacity(index.isMultiple(of: 2) ? 0.68 : 0.52)
+                    }
+            }
+        }
+        .padding(.horizontal, width * 0.08)
+        .padding(.vertical, height * 0.18)
+        .background(style.ink.opacity(0.84))
+        .clipShape(RoundedRectangle(cornerRadius: width * 0.025, style: .continuous))
+        .overlay(alignment: .top) {
+            sprocketRow(width: width, height: height)
+                .padding(.top, height * 0.045)
+        }
+        .overlay(alignment: .bottom) {
+            sprocketRow(width: width, height: height)
+                .padding(.bottom, height * 0.045)
+        }
+    }
+
+    private func sprocketRow(width: CGFloat, height: CGFloat) -> some View {
+        HStack(spacing: width * 0.035) {
+            ForEach(0..<8, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(style.paper.opacity(0.55))
+                    .frame(width: width * 0.028, height: height * 0.025)
+            }
+        }
+    }
+
+    private func instantPrint(width: CGFloat, height: CGFloat, rotation: Double) -> some View {
+        ZStack(alignment: .top) {
+            RoundedRectangle(cornerRadius: width * 0.04, style: .continuous)
+                .fill(style.paper.opacity(0.95))
+                .shadow(color: style.ink.opacity(0.12), radius: 3, x: 0, y: 2)
+            FilmSampleSceneView(film: film, style: style)
+                .padding(.horizontal, width * 0.10)
+                .padding(.top, height * 0.10)
+                .padding(.bottom, height * 0.30)
+            Rectangle()
+                .fill(style.ink.opacity(0.16))
+                .frame(height: 1)
+                .padding(.horizontal, width * 0.16)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, height * 0.17)
+        }
+        .rotationEffect(.degrees(rotation))
+    }
+
+    private func wideInstant(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .top) {
+            RoundedRectangle(cornerRadius: width * 0.035, style: .continuous)
+                .fill(style.paper.opacity(0.96))
+            FilmSampleSceneView(film: film, style: style)
+                .padding(.horizontal, width * 0.08)
+                .padding(.top, height * 0.12)
+                .padding(.bottom, height * 0.26)
+        }
+    }
+
+    private func receiptLabel(width: CGFloat, height: CGFloat, title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: height * 0.020) {
+            Text(title)
+                .font(.system(size: width * 0.078, weight: .black, design: .monospaced))
+                .tracking(0.3)
+            Text(subtitle)
+                .font(.system(size: width * 0.050, weight: .bold, design: .monospaced))
+                .tracking(0.4)
+            HStack(spacing: width * 0.026) {
+                ForEach(0..<3, id: \.self) { index in
+                    Rectangle()
+                        .fill(style.swatches[index].opacity(0.80))
+                        .frame(width: width * 0.13, height: 2)
+                }
+            }
+        }
+        .foregroundStyle(style.ink.opacity(0.72))
+        .padding(.horizontal, width * 0.07)
+        .padding(.vertical, height * 0.055)
+        .background(style.paper.opacity(0.82))
+        .clipShape(RoundedRectangle(cornerRadius: width * 0.025, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: width * 0.025, style: .continuous)
+                .stroke(style.ink.opacity(0.12), lineWidth: 1)
+        }
+    }
+
+    private func diagonalBand(color: Color, width: CGFloat, height: CGFloat, angle: Double, y: CGFloat, thickness: CGFloat) -> some View {
+        Rectangle()
+            .fill(color.opacity(0.78))
+            .frame(width: width * 1.35, height: height * thickness)
+            .rotationEffect(.degrees(angle))
+            .offset(y: height * y)
+    }
+
+    private func tape(width: CGFloat, height: CGFloat, color: Color, angle: Double) -> some View {
+        RoundedRectangle(cornerRadius: width * 0.018, style: .continuous)
+            .fill(color.opacity(0.68))
+            .frame(width: width * 0.38, height: height * 0.075)
+            .overlay {
+                Rectangle()
+                    .fill(.white.opacity(0.18))
+                    .frame(height: 1)
+                    .padding(.horizontal, width * 0.05)
+            }
+            .rotationEffect(.degrees(angle))
+    }
+
+    private func cafeStamp(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .stroke(style.ink.opacity(0.32), lineWidth: 1)
+                .frame(width: width * 0.24, height: width * 0.24)
+            Capsule()
+                .fill(style.ink.opacity(0.28))
+                .frame(width: width * 0.12, height: height * 0.030)
+                .offset(y: height * 0.035)
+            RoundedRectangle(cornerRadius: width * 0.020, style: .continuous)
+                .fill(style.paper.opacity(0.58))
+                .frame(width: width * 0.10, height: height * 0.070)
+                .offset(y: -height * 0.025)
+        }
+    }
+
+    private func envelopeFlap(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: height * 0.20))
+                path.addLine(to: CGPoint(x: width * 0.50, y: height * 0.58))
+                path.addLine(to: CGPoint(x: width, y: height * 0.20))
+                path.addLine(to: CGPoint(x: width, y: height))
+                path.addLine(to: CGPoint(x: 0, y: height))
+                path.closeSubpath()
+            }
+            .fill(style.paper.opacity(0.22))
+            Rectangle()
+                .fill(style.ink.opacity(0.12))
+                .frame(height: 1)
+                .rotationEffect(.degrees(24))
+                .offset(x: -width * 0.24, y: height * 0.06)
+            Rectangle()
+                .fill(style.ink.opacity(0.12))
+                .frame(height: 1)
+                .rotationEffect(.degrees(-24))
+                .offset(x: width * 0.24, y: height * 0.06)
+        }
+    }
+
+    private func archiveSleeve(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: width * 0.030, style: .continuous)
+                .fill(style.paper.opacity(0.46))
+                .padding(width * 0.07)
+            Rectangle()
+                .fill(style.ink.opacity(0.11))
+                .frame(height: 1)
+                .offset(y: -height * 0.25)
+            HStack(spacing: width * 0.035) {
+                ForEach(0..<5, id: \.self) { _ in
+                    Circle()
+                        .fill(style.ink.opacity(0.18))
+                        .frame(width: width * 0.030, height: width * 0.030)
+                }
+            }
+            .offset(y: -height * 0.36)
+        }
+    }
+
+    private func photoCorners(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            ForEach(0..<4, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .trim(from: 0, to: 0.50)
+                    .stroke(style.ink.opacity(0.22), lineWidth: 1)
+                    .frame(width: width * 0.13, height: width * 0.13)
+                    .rotationEffect(.degrees(Double(index) * 90))
+                    .offset(
+                        x: width * CGFloat(index == 0 || index == 3 ? -0.32 : 0.32),
+                        y: height * CGFloat(index < 2 ? -0.34 : 0.34)
+                    )
+            }
+        }
+    }
+
+    private func transitPunches(width: CGFloat, height: CGFloat) -> some View {
+        HStack(spacing: width * 0.05) {
+            ForEach(0..<5, id: \.self) { index in
+                Circle()
+                    .fill((index.isMultiple(of: 2) ? style.ink : style.paper).opacity(0.22))
+                    .frame(width: width * 0.040, height: width * 0.040)
+            }
+        }
+        .offset(y: height * 0.36)
+    }
+
+    private func registrationTicks(width: CGFloat, height: CGFloat) -> some View {
+        VStack {
+            HStack {
+                tickMark(width: width, height: height)
+                Spacer()
+                tickMark(width: width, height: height)
+                    .rotationEffect(.degrees(90))
+            }
+            Spacer()
+            HStack {
+                tickMark(width: width, height: height)
+                    .rotationEffect(.degrees(-90))
+                Spacer()
+                tickMark(width: width, height: height)
+                    .rotationEffect(.degrees(180))
+            }
+        }
+        .padding(width * 0.08)
+    }
+
+    private func tickMark(width: CGFloat, height: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            Rectangle().fill(style.ink.opacity(0.22)).frame(width: width * 0.10, height: 1)
+            Rectangle().fill(style.ink.opacity(0.22)).frame(width: 1, height: height * 0.045)
+        }
+    }
+
+    private func neonPips(width: CGFloat, height: CGFloat) -> some View {
+        HStack(spacing: width * 0.045) {
+            ForEach(0..<3, id: \.self) { index in
+                Circle()
+                    .fill(style.swatches[index].opacity(0.78))
+                    .frame(width: width * 0.055, height: width * 0.055)
+                    .blur(radius: index == 1 ? 1.2 : 0)
+            }
+        }
+        .offset(x: width * 0.19, y: -height * 0.34)
+    }
+
+    private func burstSeal(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .fill(style.paper.opacity(0.78))
+                .frame(width: width * 0.22, height: width * 0.22)
+            ForEach(0..<8, id: \.self) { index in
+                Rectangle()
+                    .fill(style.ink.opacity(0.24))
+                    .frame(width: 1, height: height * 0.060)
+                    .offset(y: -height * 0.085)
+                    .rotationEffect(.degrees(Double(index) * 45))
+            }
+        }
+    }
+
+    private func compactCameraGlyph(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: width * 0.060, style: .continuous)
+                .fill(style.ink.opacity(0.78))
+            RoundedRectangle(cornerRadius: width * 0.028, style: .continuous)
+                .fill(style.paper.opacity(0.58))
+                .frame(width: width * 0.22, height: height * 0.22)
+                .offset(x: -width * 0.26, y: -height * 0.18)
+            Circle()
+                .fill(style.paper.opacity(0.84))
+                .frame(width: height * 0.46, height: height * 0.46)
+                .overlay {
+                    Circle()
+                        .fill(style.ink.opacity(0.72))
+                        .padding(height * 0.10)
+                }
+                .offset(x: width * 0.12, y: height * 0.06)
+            Capsule()
+                .fill(style.accent.opacity(0.70))
+                .frame(width: width * 0.24, height: height * 0.040)
+                .offset(x: width * 0.22, y: -height * 0.28)
+        }
+    }
+
+    private func memoryCard(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .top) {
+            RoundedRectangle(cornerRadius: width * 0.050, style: .continuous)
+                .fill(style.ink.opacity(0.74))
+            Rectangle()
+                .fill(style.paper.opacity(0.78))
+                .frame(height: height * 0.22)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .padding(.horizontal, width * 0.14)
+                .padding(.top, height * 0.10)
+            HStack(spacing: width * 0.035) {
+                ForEach(0..<4, id: \.self) { _ in
+                    Rectangle()
+                        .fill(style.accent.opacity(0.64))
+                        .frame(width: width * 0.075, height: height * 0.20)
+                }
+            }
+            .offset(y: height * 0.58)
+        }
+    }
+
+    private func lcdScreen(width: CGFloat, height: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: width * 0.045, style: .continuous)
+            .fill(style.ink.opacity(0.66))
+            .overlay {
+                FilmSampleSceneView(film: film, style: style)
+                    .padding(width * 0.040)
+                    .opacity(0.66)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                HStack(spacing: width * 0.018) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        Circle()
+                            .fill(style.paper.opacity(0.44))
+                            .frame(width: width * 0.025, height: width * 0.025)
+                    }
+                }
+                .padding(width * 0.06)
+            }
+    }
+
+    private func landscapeBand(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottom) {
+            Circle()
+                .fill(style.accent.opacity(0.58))
+                .frame(width: width * 0.22, height: width * 0.22)
+                .offset(x: width * 0.20, y: -height * 0.56)
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: height * 0.66))
+                path.addCurve(
+                    to: CGPoint(x: width, y: height * 0.60),
+                    control1: CGPoint(x: width * 0.28, y: height * 0.44),
+                    control2: CGPoint(x: width * 0.60, y: height * 0.78)
+                )
+                path.addLine(to: CGPoint(x: width, y: height))
+                path.addLine(to: CGPoint(x: 0, y: height))
+                path.closeSubpath()
+            }
+            .fill(style.swatches[1].opacity(0.62))
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: height * 0.78))
+                path.addCurve(
+                    to: CGPoint(x: width, y: height * 0.72),
+                    control1: CGPoint(x: width * 0.20, y: height * 0.62),
+                    control2: CGPoint(x: width * 0.76, y: height * 0.88)
+                )
+                path.addLine(to: CGPoint(x: width, y: height))
+                path.addLine(to: CGPoint(x: 0, y: height))
+                path.closeSubpath()
+            }
+            .fill(style.swatches[2].opacity(0.58))
+        }
+    }
+
+    private func rollSeal(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .stroke(style.ink.opacity(0.24), lineWidth: 1)
+                .frame(width: width * 0.19, height: width * 0.19)
+            Circle()
+                .fill(style.accent.opacity(0.62))
+                .frame(width: width * 0.10, height: width * 0.10)
+        }
+    }
+
+    private func leatherPanel(width: CGFloat, height: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: width * 0.035, style: .continuous)
+            .fill(style.ink.opacity(0.52))
+            .padding(.horizontal, width * 0.10)
+            .padding(.vertical, height * 0.18)
+            .overlay {
+                ForEach(0..<5, id: \.self) { index in
+                    Rectangle()
+                        .fill(style.paper.opacity(0.07))
+                        .frame(height: 1)
+                        .offset(y: height * CGFloat(Double(index) * 0.10 - 0.22))
+                }
+            }
+    }
+
+    private func rangefinderGlyph(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: width * 0.045, style: .continuous)
+                .fill(style.paper.opacity(0.58))
+            Circle()
+                .fill(style.ink.opacity(0.74))
+                .frame(width: height * 0.40, height: height * 0.40)
+                .overlay {
+                    Circle()
+                        .stroke(style.paper.opacity(0.70), lineWidth: 2)
+                        .padding(height * 0.06)
+                }
+                .offset(x: width * 0.16)
+            RoundedRectangle(cornerRadius: width * 0.020, style: .continuous)
+                .fill(style.ink.opacity(0.42))
+                .frame(width: width * 0.18, height: height * 0.20)
+                .offset(x: -width * 0.26, y: -height * 0.12)
+        }
+    }
+
+    private func recipeTabs(width: CGFloat, height: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            ForEach(0..<3, id: \.self) { index in
+                Rectangle()
+                    .fill(style.swatches[index].opacity(0.62))
+            }
+        }
+        .overlay(alignment: .leading) {
+            VStack(spacing: height * 0.035) {
+                ForEach(0..<3, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 1, style: .continuous)
+                        .fill(style.paper.opacity(0.60))
+                        .frame(width: width * CGFloat(0.16 + Double(index) * 0.05), height: 2)
+                }
+            }
+            .padding(.leading, width * 0.10)
+        }
+    }
+
+    private func swatchStack(width: CGFloat, height: CGFloat) -> some View {
+        VStack(spacing: height * 0.018) {
+            ForEach(0..<3, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(style.swatches[index].opacity(0.88))
+                    .frame(width: width * CGFloat(0.16 + Double(index) * 0.035), height: height * 0.032)
+            }
+        }
+    }
+
+    private func twinSlides(width: CGFloat, height: CGFloat) -> some View {
+        HStack(spacing: width * 0.08) {
+            slideMount(width: width, height: height, rotation: -4)
+            slideMount(width: width, height: height, rotation: 5)
+        }
+        .padding(.horizontal, width * 0.10)
+        .padding(.vertical, height * 0.18)
+    }
+
+    private func slideMount(width: CGFloat, height: CGFloat, rotation: Double) -> some View {
+        RoundedRectangle(cornerRadius: width * 0.030, style: .continuous)
+            .fill(style.paper.opacity(0.92))
+            .overlay {
+                FilmSampleSceneView(film: film, style: style)
+                    .padding(width * 0.070)
+                    .opacity(0.72)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: width * 0.020, style: .continuous)
+                    .stroke(style.ink.opacity(0.13), lineWidth: 1)
+                    .padding(width * 0.035)
+            }
+            .rotationEffect(.degrees(rotation))
+    }
+
+    private func vellumSheet(width: CGFloat, height: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: width * 0.030, style: .continuous)
+            .fill(style.paper.opacity(0.34))
+            .background(.ultraThinMaterial.opacity(0.20))
+            .padding(.horizontal, width * 0.12)
+            .padding(.vertical, height * 0.14)
+            .overlay {
+                Rectangle()
+                    .fill(.white.opacity(0.18))
+                    .frame(height: 1)
+                    .offset(y: -height * 0.20)
+            }
+    }
+
+    private func flowerCluster(width: CGFloat, height: CGFloat) -> some View {
+        HStack(spacing: width * 0.035) {
+            ForEach(0..<3, id: \.self) { index in
+                ZStack {
+                    ForEach(0..<4, id: \.self) { petal in
+                        Circle()
+                            .fill(style.wash[petal % style.wash.count].opacity(0.72))
+                            .frame(width: width * 0.065, height: width * 0.065)
+                            .offset(
+                                x: width * CGFloat([0.035, -0.035, 0.0, 0.0][petal]),
+                                y: height * CGFloat([0.0, 0.0, 0.025, -0.025][petal])
+                            )
+                    }
+                    Circle()
+                        .fill(style.accent.opacity(0.85))
+                        .frame(width: width * 0.036, height: width * 0.036)
+                }
+                .offset(y: height * CGFloat(index == 1 ? -0.04 : 0.0))
+            }
+        }
+    }
+
+    private func fadeWash(width: CGFloat, height: CGFloat) -> some View {
+        LinearGradient(
+            colors: [style.paper.opacity(0.24), .clear, style.accent.opacity(0.18)],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    private func diaryBinding(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            Rectangle()
+                .fill(style.ink.opacity(0.14))
+                .frame(width: 1)
+            VStack(spacing: height * 0.08) {
+                ForEach(0..<5, id: \.self) { _ in
+                    Circle()
+                        .fill(style.paper.opacity(0.52))
+                        .frame(width: width * 0.030, height: width * 0.030)
+                }
+            }
+            .offset(y: -height * 0.02)
+        }
+    }
+
+    private func seed(_ index: Int, salt: UInt64) -> Int {
+        var value: UInt64 = 14_695_981_039_346_656_037 &+ salt
+        for scalar in film.id.unicodeScalars {
+            value ^= UInt64(scalar.value)
+            value = value &* 1_099_511_628_211
+        }
+        value ^= UInt64(index + 1) &* 16_777_619
+        return Int(value % 10_000)
+    }
+
+    private func offset(_ index: Int, salt: UInt64, length: CGFloat) -> CGFloat {
+        let normalized = CGFloat(seed(index, salt: salt)) / 10_000.0
+        return normalized * length - length / 2
+    }
+}
+
 private struct FilmPhysicalPackageView: View {
     let film: FilmPreset
     let scale: FilmPackageScale

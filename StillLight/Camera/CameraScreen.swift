@@ -308,13 +308,11 @@ struct CameraScreen: View {
                             viewModel.setZoomFactor(option.displayFactor)
                         }
                     }
+                    .simultaneousGesture(zoomControlDragGesture)
                 }
             } else {
-                Text("\(viewModel.zoomState.displayFactorText)x")
-                    .font(.caption.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(StillLightTheme.text)
-                    .padding(.horizontal, 10)
-                    .frame(height: 30)
+                ZoomDisplayChip(text: viewModel.zoomState.displayFactorText)
+                    .simultaneousGesture(zoomControlDragGesture)
             }
         }
         .padding(5)
@@ -668,6 +666,29 @@ private struct ZoomLensButton: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct ZoomDisplayChip: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 1) {
+            Text(text)
+                .font(.system(size: 14, weight: .bold, design: .rounded).monospacedDigit())
+            Text("x")
+                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .baselineOffset(1)
+        }
+        .foregroundStyle(Color.black.opacity(0.86))
+        .frame(minWidth: 42, minHeight: 34)
+        .padding(.horizontal, 2)
+        .background(NativeCameraZoomColors.selected)
+        .clipShape(Capsule())
+        .overlay {
+            Capsule()
+                .stroke(Color.white.opacity(0.22), lineWidth: 1)
+        }
     }
 }
 

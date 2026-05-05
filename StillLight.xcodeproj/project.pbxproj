@@ -15,6 +15,7 @@
 		000000000000000000000206 /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000106 /* CameraService.swift */; };
 		000000000000000000000207 /* CameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000107 /* CameraViewModel.swift */; };
 		000000000000000000000208 /* PhotoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000108 /* PhotoExporter.swift */; };
+		000000000000000000000292 /* ProcessedPhotoFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000290 /* ProcessedPhotoFormat.swift */; };
 		000000000000000000000209 /* FilmLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000109 /* FilmLibrary.swift */; };
 		000000000000000000000210 /* FilmPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000110 /* FilmPickerSheet.swift */; };
 		000000000000000000000211 /* FilmPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000111 /* FilmPreset.swift */; };
@@ -84,6 +85,7 @@
 		000000000000000000000106 /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
 		000000000000000000000107 /* CameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewModel.swift; sourceTree = "<group>"; };
 		000000000000000000000108 /* PhotoExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoExporter.swift; sourceTree = "<group>"; };
+		000000000000000000000290 /* ProcessedPhotoFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessedPhotoFormat.swift; sourceTree = "<group>"; };
 		000000000000000000000109 /* FilmLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLibrary.swift; sourceTree = "<group>"; };
 		000000000000000000000110 /* FilmPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmPickerSheet.swift; sourceTree = "<group>"; };
 		000000000000000000000111 /* FilmPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmPreset.swift; sourceTree = "<group>"; };
@@ -236,6 +238,7 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000108 /* PhotoExporter.swift */,
+				000000000000000000000290 /* ProcessedPhotoFormat.swift */,
 				000000000000000000000126 /* VideoExporter.swift */,
 			);
 			path = Export;
@@ -447,6 +450,7 @@
 				000000000000000000000206 /* CameraService.swift in Sources */,
 				000000000000000000000207 /* CameraViewModel.swift in Sources */,
 				000000000000000000000208 /* PhotoExporter.swift in Sources */,
+				000000000000000000000292 /* ProcessedPhotoFormat.swift in Sources */,
 				000000000000000000000209 /* FilmLibrary.swift in Sources */,
 				000000000000000000000210 /* FilmPickerSheet.swift in Sources */,
 				000000000000000000000211 /* FilmPreset.swift in Sources */,

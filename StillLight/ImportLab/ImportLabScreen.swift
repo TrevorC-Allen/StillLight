@@ -506,6 +506,7 @@ struct ImportLabScreen: View {
                             await viewModel.saveSelected(
                                 film: appState.selectedFilm,
                                 jpegQuality: appState.effectiveJPEGQuality,
+                                processedFormat: appState.effectiveProcessedPhotoFormat,
                                 saveOriginal: appState.effectiveSaveOriginalPhoto,
                                 photoStore: appState.photoStore,
                                 successMessage: appState.t(.savedToRoll),
@@ -524,6 +525,7 @@ struct ImportLabScreen: View {
                             await viewModel.saveAll(
                                 film: appState.selectedFilm,
                                 jpegQuality: appState.effectiveJPEGQuality,
+                                processedFormat: appState.effectiveProcessedPhotoFormat,
                                 saveOriginal: appState.effectiveSaveOriginalPhoto,
                                 photoStore: appState.photoStore,
                                 successFormat: appState.t(.savedFrames),
@@ -895,6 +897,7 @@ private final class ImportLabViewModel: ObservableObject {
     func saveSelected(
         film: FilmPreset,
         jpegQuality: Double,
+        processedFormat: ProcessedPhotoFormat,
         saveOriginal: Bool,
         photoStore: PhotoStore,
         successMessage: String,
@@ -913,6 +916,7 @@ private final class ImportLabViewModel: ObservableObject {
                 film: film,
                 aspectRatio: aspectRatio,
                 jpegQuality: jpegQuality,
+                processedFormat: processedFormat,
                 photosSaveFailedPrefix: photosSaveFailedPrefix
             )
             updateFrame(at: selectedIndex) { editableFrame in
@@ -930,6 +934,7 @@ private final class ImportLabViewModel: ObservableObject {
     func saveAll(
         film: FilmPreset,
         jpegQuality: Double,
+        processedFormat: ProcessedPhotoFormat,
         saveOriginal: Bool,
         photoStore: PhotoStore,
         successFormat: String,
@@ -955,6 +960,7 @@ private final class ImportLabViewModel: ObservableObject {
                     film: film,
                     aspectRatio: aspectRatio,
                     jpegQuality: jpegQuality,
+                    processedFormat: processedFormat,
                     photosSaveFailedPrefix: photosSaveFailedPrefix
                 )
                 if let index = frames.firstIndex(where: { $0.id == frame.id }) {

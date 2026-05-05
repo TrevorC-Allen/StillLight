@@ -92,6 +92,10 @@ enum AppText {
         case saveOriginalPhoto
         case fidelityMode
         case fidelityModeDescription
+        case outputFormat
+        case losslessPNG
+        case highQualityJPEG
+        case losslessOutputDescription
         case addDateStamp
         case jpegQuality
         case camera
@@ -189,6 +193,10 @@ enum AppText {
         .saveOriginalPhoto: "Save original photo",
         .fidelityMode: "Fidelity mode",
         .fidelityModeDescription: "Preserves the original file and applies a gentler film mix by default.",
+        .outputFormat: "Processed format",
+        .losslessPNG: "Lossless PNG",
+        .highQualityJPEG: "High-quality JPEG",
+        .losslessOutputDescription: "PNG keeps the rendered file lossless. Originals are still stored separately in their source format.",
         .addDateStamp: "Add date stamp",
         .jpegQuality: "JPEG quality",
         .camera: "Camera",
@@ -286,6 +294,10 @@ enum AppText {
         .saveOriginalPhoto: "保留原片",
         .fidelityMode: "保真模式",
         .fidelityModeDescription: "原始文件会完整保留，默认使用更轻的胶片强度，避免破坏原片观感。",
+        .outputFormat: "处理图格式",
+        .losslessPNG: "无损 PNG",
+        .highQualityJPEG: "高质量 JPEG",
+        .losslessOutputDescription: "PNG 会无损保存处理图；原片仍会按来源格式单独保留。",
         .addDateStamp: "添加日期戳",
         .jpegQuality: "JPEG 质量",
         .camera: "相机",

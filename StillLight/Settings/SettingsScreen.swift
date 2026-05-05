@@ -26,6 +26,14 @@ struct SettingsScreen: View {
                         Text(appState.t(.fidelityModeDescription))
                             .font(.caption)
                             .foregroundStyle(StillLightTheme.secondaryText)
+                        Picker(appState.t(.outputFormat), selection: $appState.processedPhotoFormat) {
+                            Text(appState.t(.losslessPNG)).tag(ProcessedPhotoFormat.pngLossless)
+                            Text(appState.t(.highQualityJPEG)).tag(ProcessedPhotoFormat.jpegHighQuality)
+                        }
+                        .pickerStyle(.segmented)
+                        Text(appState.t(.losslessOutputDescription))
+                            .font(.caption)
+                            .foregroundStyle(StillLightTheme.secondaryText)
                         Toggle(appState.t(.addDateStamp), isOn: $appState.addTimestamp)
 
                         VStack(alignment: .leading, spacing: 8) {
@@ -38,6 +46,8 @@ struct SettingsScreen: View {
                             }
                             Slider(value: $appState.jpegQuality, in: 0.75...0.98, step: 0.01)
                         }
+                        .disabled(appState.processedPhotoFormat == .pngLossless)
+                        .opacity(appState.processedPhotoFormat == .pngLossless ? 0.48 : 1)
                     }
 
                     Section(appState.t(.camera)) {

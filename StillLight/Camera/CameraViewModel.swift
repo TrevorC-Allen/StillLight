@@ -269,6 +269,7 @@ final class CameraViewModel: ObservableObject {
         let saveOriginal = appState.effectiveSaveOriginalPhoto
         let addTimestamp = appState.addTimestamp
         let quality = appState.effectiveJPEGQuality
+        let processedFormat = appState.effectiveProcessedPhotoFormat
         let flash = flashMode
         let starburstIntensity = starburstIntensity
         let renderIntensity = appState.effectiveFilmIntensity
@@ -282,6 +283,7 @@ final class CameraViewModel: ObservableObject {
                     saveOriginal: saveOriginal,
                     addTimestamp: addTimestamp,
                     jpegQuality: quality,
+                    processedFormat: processedFormat,
                     starburstIntensity: starburstIntensity,
                     renderIntensity: renderIntensity,
                     appState: appState
@@ -304,6 +306,7 @@ final class CameraViewModel: ObservableObject {
         let saveOriginal = appState.effectiveSaveOriginalPhoto
         let addTimestamp = appState.addTimestamp
         let quality = appState.effectiveJPEGQuality
+        let processedFormat = appState.effectiveProcessedPhotoFormat
         let flash = flashMode
         let blendMode = doubleExposureState.blendMode
         let starburstIntensity = starburstIntensity
@@ -318,6 +321,7 @@ final class CameraViewModel: ObservableObject {
                     saveOriginal: saveOriginal,
                     addTimestamp: addTimestamp,
                     jpegQuality: quality,
+                    processedFormat: processedFormat,
                     blendMode: blendMode,
                     starburstIntensity: starburstIntensity,
                     renderIntensity: renderIntensity,
@@ -341,6 +345,7 @@ final class CameraViewModel: ObservableObject {
         let saveOriginal = appState.effectiveSaveOriginalPhoto
         let addTimestamp = appState.addTimestamp
         let quality = appState.effectiveJPEGQuality
+        let processedFormat = appState.effectiveProcessedPhotoFormat
         let flash = flashMode
         let request = longExposureState.request.normalized
         let starburstIntensity = starburstIntensity
@@ -369,6 +374,7 @@ final class CameraViewModel: ObservableObject {
                         saveOriginal: saveOriginal,
                         addTimestamp: addTimestamp,
                         jpegQuality: quality,
+                        processedFormat: processedFormat,
                         starburstIntensity: starburstIntensity,
                         renderIntensity: renderIntensity,
                         appState: appState
@@ -385,6 +391,7 @@ final class CameraViewModel: ObservableObject {
         saveOriginal: Bool,
         addTimestamp: Bool,
         jpegQuality: Double,
+        processedFormat: ProcessedPhotoFormat,
         starburstIntensity: Double,
         renderIntensity: Double,
         appState: AppState
@@ -420,6 +427,7 @@ final class CameraViewModel: ObservableObject {
                 film: film,
                 aspectRatio: aspectRatio,
                 jpegQuality: jpegQuality,
+                processedFormat: processedFormat,
                 photosSaveFailedPrefix: appState.t(.photosSaveFailed)
             )
 
@@ -447,6 +455,7 @@ final class CameraViewModel: ObservableObject {
         saveOriginal: Bool,
         addTimestamp: Bool,
         jpegQuality: Double,
+        processedFormat: ProcessedPhotoFormat,
         blendMode: CameraDoubleExposureBlendMode,
         starburstIntensity: Double,
         renderIntensity: Double,
@@ -506,6 +515,7 @@ final class CameraViewModel: ObservableObject {
                 film: film,
                 aspectRatio: aspectRatio,
                 jpegQuality: jpegQuality,
+                processedFormat: processedFormat,
                 photosSaveFailedPrefix: appState.t(.photosSaveFailed)
             )
 
@@ -534,6 +544,7 @@ final class CameraViewModel: ObservableObject {
         saveOriginal: Bool,
         addTimestamp: Bool,
         jpegQuality: Double,
+        processedFormat: ProcessedPhotoFormat,
         starburstIntensity: Double,
         renderIntensity: Double,
         appState: AppState
@@ -579,6 +590,7 @@ final class CameraViewModel: ObservableObject {
                 film: film,
                 aspectRatio: aspectRatio,
                 jpegQuality: jpegQuality,
+                processedFormat: processedFormat,
                 photosSaveFailedPrefix: appState.t(.photosSaveFailed)
             )
 

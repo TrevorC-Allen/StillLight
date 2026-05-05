@@ -15,6 +15,11 @@ final class AppState: ObservableObject {
     @Published var showGrid = true
     @Published var showLevel = true
     @Published var jpegQuality: Double = 0.98
+    @Published var processedPhotoFormat: ProcessedPhotoFormat {
+        didSet {
+            UserDefaults.standard.set(processedPhotoFormat.rawValue, forKey: Self.processedPhotoFormatKey)
+        }
+    }
     @Published var photoStore = PhotoStore()
     @Published private(set) var currentRoll: FilmRoll
     @Published private(set) var favoriteFilmIds: Set<String> = [] {
@@ -33,6 +38,7 @@ final class AppState: ObservableObject {
     private static let languageKey = "StillLight.language"
     private static let favoriteFilmIdsKey = "StillLight.favoriteFilmIds"
     private static let fidelityModeKey = "StillLight.fidelityMode"
+    private static let processedPhotoFormatKey = "StillLight.processedPhotoFormat"
     static let fidelityFilmIntensity = 0.62
 
     init() {
@@ -42,6 +48,8 @@ final class AppState: ObservableObject {
         let storedLanguage = UserDefaults.standard.string(forKey: Self.languageKey)
         language = storedLanguage.flatMap(AppLanguage.init(rawValue:)) ?? Self.defaultLanguage
         fidelityMode = UserDefaults.standard.object(forKey: Self.fidelityModeKey) as? Bool ?? true
+        let storedFormat = UserDefaults.standard.string(forKey: Self.processedPhotoFormatKey)
+        processedPhotoFormat = storedFormat.flatMap(ProcessedPhotoFormat.init(rawValue:)) ?? .pngLossless
         favoriteFilmIds = Self.loadFavoriteFilmIds(from: UserDefaults.standard, library: filmLibrary)
         persistFavoriteFilmIds()
         photoStore.load()
@@ -57,6 +65,10 @@ final class AppState: ObservableObject {
 
     var effectiveJPEGQuality: Double {
         fidelityMode ? max(jpegQuality, 0.98) : jpegQuality
+    }
+
+    var effectiveProcessedPhotoFormat: ProcessedPhotoFormat {
+        processedPhotoFormat
     }
 
     func selectFilm(_ film: FilmPreset) {

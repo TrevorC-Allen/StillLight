@@ -15,23 +15,25 @@ enum PhotoExporter {
         film: FilmPreset,
         aspectRatio: CaptureAspectRatio,
         jpegQuality: Double,
+        processedFormat: ProcessedPhotoFormat,
         photosSaveFailedPrefix: String = "Saved to StillLight Roll. Photos save failed:"
     ) async throws -> PhotoExportResult {
         let id = UUID()
         let createdAt = Date()
         let directory = try appDirectory()
-        let processedURL = directory.appendingPathComponent("\(id.uuidString)-processed.jpg")
+        let processedURL = directory.appendingPathComponent("\(id.uuidString)-processed.\(processedFormat.fileExtension)")
         let originalURL = originalData.map {
             directory.appendingPathComponent("\(id.uuidString)-original.\(originalFileExtension(for: $0))")
         }
 
-        let jpegData = try encodedJPEGData(
+        let processedData = try encodedProcessedPhotoData(
             image: processedImage,
             film: film,
             aspectRatio: aspectRatio,
-            quality: jpegQuality
+            quality: jpegQuality,
+            format: processedFormat
         )
-        try jpegData.write(to: processedURL, options: .atomic)
+        try processedData.write(to: processedURL, options: .atomic)
 
         if let originalData, let originalURL {
             try originalData.write(to: originalURL, options: .atomic)
@@ -70,11 +72,12 @@ enum PhotoExporter {
         return directory
     }
 
-    private static func encodedJPEGData(
+    private static func encodedProcessedPhotoData(
         image: UIImage,
         film: FilmPreset,
         aspectRatio: CaptureAspectRatio,
-        quality: Double
+        quality: Double,
+        format: ProcessedPhotoFormat
     ) throws -> Data {
         guard let cgImage = image.cgImage else {
             throw ExportError.cannotEncodeImage
@@ -83,23 +86,17 @@ enum PhotoExporter {
         let data = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(
             data,
-            UTType.jpeg.identifier as CFString,
+            format.utType.identifier as CFString,
             1,
             nil
         ) else {
             throw ExportError.cannotEncodeImage
         }
 
-        let metadata: [CFString: Any] = [
-            kCGImageDestinationLossyCompressionQuality: quality,
-            kCGImagePropertyTIFFDictionary: [
-                kCGImagePropertyTIFFSoftware: "StillLight",
-                kCGImagePropertyTIFFImageDescription: "StillLight \(film.name) / \(film.cameraName) / ISO \(film.iso) / \(aspectRatio.label)"
-            ],
-            kCGImagePropertyExifDictionary: [
-                kCGImagePropertyExifUserComment: "Film=\(film.name); Camera=\(film.cameraName); Category=\(film.category.rawValue); ISO=\(film.iso); Preset=\(film.id); Ratio=\(aspectRatio.label)"
-            ]
-        ]
+        var metadata = imageMetadata(film: film, aspectRatio: aspectRatio)
+        if format == .jpegHighQuality {
+            metadata[kCGImageDestinationLossyCompressionQuality] = quality
+        }
 
         CGImageDestinationAddImage(destination, cgImage, metadata as CFDictionary)
 
@@ -108,6 +105,18 @@ enum PhotoExporter {
         }
 
         return data as Data
+    }
+
+    private static func imageMetadata(film: FilmPreset, aspectRatio: CaptureAspectRatio) -> [CFString: Any] {
+        [
+            kCGImagePropertyTIFFDictionary: [
+                kCGImagePropertyTIFFSoftware: "StillLight",
+                kCGImagePropertyTIFFImageDescription: "StillLight \(film.name) / \(film.cameraName) / ISO \(film.iso) / \(aspectRatio.label)"
+            ],
+            kCGImagePropertyExifDictionary: [
+                kCGImagePropertyExifUserComment: "Film=\(film.name); Camera=\(film.cameraName); Category=\(film.category.rawValue); ISO=\(film.iso); Preset=\(film.id); Ratio=\(aspectRatio.label)"
+            ]
+        ]
     }
 
     private static func originalFileExtension(for data: Data) -> String {

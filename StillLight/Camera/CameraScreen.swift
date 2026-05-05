@@ -103,6 +103,7 @@ struct CameraScreen: View {
                 Spacer()
                 zoomControl
                 whiteBalanceControl
+                creativeAccessoryPanel
                 exposureControl
                 accessoryDock
                 captureModeControl
@@ -213,6 +214,213 @@ struct CameraScreen: View {
         .padding(.horizontal, 22)
         .padding(.bottom, 8)
         .opacity(viewModel.isRecording ? 0.52 : 1)
+    }
+
+    @ViewBuilder
+    private var creativeAccessoryPanel: some View {
+        switch viewModel.creativeCaptureMode {
+        case .standard:
+            if viewModel.starburstIntensity > 0.01 {
+                starburstControl
+            }
+        case .doubleExposure:
+            doubleExposureControl
+        case .longExposure:
+            longExposureControl
+        }
+    }
+
+    private var doubleExposureControl: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                doubleExposurePreview
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(doubleExposureTitle)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(StillLightTheme.text)
+                    Text(doubleExposureSubtitle)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(StillLightTheme.secondaryText)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                if viewModel.doubleExposureState.hasBufferedFirstShot {
+                    Button {
+                        viewModel.resetDoubleExposureBuffer()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(StillLightTheme.text)
+                            .frame(width: 30, height: 30)
+                            .background(Color.white.opacity(0.07))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(appState.language == .chinese ? "取消第一张" : "Cancel first shot")
+                }
+            }
+
+            HStack(spacing: 7) {
+                ForEach(CameraDoubleExposureBlendMode.allCases) { mode in
+                    Button {
+                        viewModel.updateDoubleExposureBlendMode(mode)
+                    } label: {
+                        Text(doubleExposureBlendTitle(mode))
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .foregroundStyle(viewModel.doubleExposureState.blendMode == mode ? StillLightTheme.background : StillLightTheme.text)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 30)
+                            .background(viewModel.doubleExposureState.blendMode == mode ? NativeCameraChrome.active : Color.white.opacity(0.07))
+                            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(12)
+        .background(Color.black.opacity(0.48))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        }
+        .padding(.horizontal, 22)
+        .padding(.bottom, 8)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    private var doubleExposurePreview: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(Color.white.opacity(0.07))
+                .frame(width: 52, height: 52)
+
+            if let preview = viewModel.doubleExposureState.firstShotPreview {
+                Image(uiImage: preview)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 52, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .stroke(NativeCameraChrome.active.opacity(0.70), lineWidth: 1)
+                    }
+            } else {
+                Image(systemName: "1.circle")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundStyle(StillLightTheme.secondaryText)
+            }
+        }
+    }
+
+    private var longExposureControl: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "camera.aperture")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(NativeCameraChrome.active)
+                    .frame(width: 30, height: 30)
+                    .background(Color.white.opacity(0.07))
+                    .clipShape(Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(appState.t(.longExposure))
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(StillLightTheme.text)
+                    Text(longExposureSubtitle)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(StillLightTheme.secondaryText)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Text(longExposureProgressText)
+                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    .foregroundStyle(NativeCameraChrome.active)
+            }
+
+            ProgressView(value: longExposureProgressValue)
+                .tint(NativeCameraChrome.active)
+                .opacity(viewModel.longExposureState.phase == .idle ? 0.34 : 1)
+
+            HStack(spacing: 7) {
+                longExposureStepButton(title: "0.8s", duration: 0.8, frames: 3)
+                longExposureStepButton(title: "1.2s", duration: 1.2, frames: 4)
+                longExposureStepButton(title: "2s", duration: 2.0, frames: 6)
+                longExposureStepButton(title: "4s", duration: 4.0, frames: 8)
+            }
+        }
+        .padding(12)
+        .background(Color.black.opacity(0.48))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        }
+        .padding(.horizontal, 22)
+        .padding(.bottom, 8)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    private func longExposureStepButton(title: String, duration: TimeInterval, frames: Int) -> some View {
+        let isSelected = abs(viewModel.longExposureState.request.duration - duration) < 0.05
+        return Button {
+            viewModel.updateLongExposureDuration(duration)
+            viewModel.updateLongExposureFrameCount(frames)
+        } label: {
+            Text(title)
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(isSelected ? StillLightTheme.background : StillLightTheme.text)
+                .frame(maxWidth: .infinity)
+                .frame(height: 30)
+                .background(isSelected ? NativeCameraChrome.active : Color.white.opacity(0.07))
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(viewModel.isProcessing)
+        .opacity(viewModel.isProcessing ? 0.54 : 1)
+    }
+
+    private var starburstControl: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(NativeCameraChrome.active)
+                .frame(width: 24)
+
+            Slider(
+                value: Binding(
+                    get: { viewModel.starburstIntensity },
+                    set: { viewModel.updateStarburstIntensity($0) }
+                ),
+                in: 0...1,
+                step: 0.05
+            )
+            .tint(NativeCameraChrome.active)
+
+            Text("\(Int((viewModel.starburstIntensity * 100).rounded()))")
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundStyle(NativeCameraChrome.active)
+                .frame(width: 30, alignment: .trailing)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.black.opacity(0.46))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.white.opacity(0.07), lineWidth: 1)
+        }
+        .padding(.horizontal, 22)
+        .padding(.bottom, 8)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     @ViewBuilder
@@ -453,6 +661,66 @@ struct CameraScreen: View {
             return "ON"
         case .auto:
             return "A"
+        }
+    }
+
+    private var doubleExposureTitle: String {
+        appState.language == .chinese ? "双重曝光" : "Double Exposure"
+    }
+
+    private var doubleExposureSubtitle: String {
+        if viewModel.doubleExposureState.hasBufferedFirstShot {
+            return appState.language == .chinese ? "第一张已缓存。调整混合方式后拍第二张。" : "First frame is buffered. Pick a blend mode, then shoot again."
+        }
+        return appState.language == .chinese ? "先拍第一张，相机会保留它等待第二次曝光。" : "Shoot the first frame. The camera will hold it for the second exposure."
+    }
+
+    private func doubleExposureBlendTitle(_ mode: CameraDoubleExposureBlendMode) -> String {
+        switch (mode, appState.language) {
+        case (.screen, .chinese):
+            return "滤色"
+        case (.multiply, .chinese):
+            return "正片"
+        case (.softLight, .chinese):
+            return "柔光"
+        case (.screen, _):
+            return "Screen"
+        case (.multiply, _):
+            return "Multiply"
+        case (.softLight, _):
+            return "Soft"
+        }
+    }
+
+    private var longExposureSubtitle: String {
+        let request = viewModel.longExposureState.request.normalized
+        let framesText = appState.language == .chinese ? "\(request.frameCount) 帧合成" : "\(request.frameCount) frames blended"
+        return "\(String(format: "%.1fs", request.duration)) · \(framesText)"
+    }
+
+    private var longExposureProgressText: String {
+        switch viewModel.longExposureState.phase {
+        case .idle:
+            return appState.language == .chinese ? "待拍" : "READY"
+        case .collectingFrames:
+            return "\(viewModel.longExposureState.capturedFrameCount)/\(viewModel.longExposureState.totalFrameCount)"
+        case .processingFrames:
+            return appState.language == .chinese ? "合成中" : "MERGE"
+        case .completed:
+            return appState.language == .chinese ? "完成" : "DONE"
+        }
+    }
+
+    private var longExposureProgressValue: Double {
+        switch viewModel.longExposureState.phase {
+        case .idle:
+            return 0
+        case .collectingFrames:
+            return viewModel.longExposureState.progress
+        case .processingFrames:
+            return max(viewModel.longExposureState.progress, 0.94)
+        case .completed:
+            return 1
         }
     }
 

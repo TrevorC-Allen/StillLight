@@ -196,6 +196,9 @@ final class CameraViewModel: ObservableObject {
         if mode != .doubleExposure {
             resetDoubleExposureBuffer()
         }
+        if mode != .longExposure {
+            resetLongExposureProgress()
+        }
     }
 
     func setDoubleExposureEnabled(_ isEnabled: Bool) {
@@ -211,6 +214,13 @@ final class CameraViewModel: ObservableObject {
         doubleExposureState.phase = .idle
         doubleExposureState.firstShotPreview = nil
         doubleExposureState.firstCapturedAt = nil
+        clearStatus()
+    }
+
+    func resetLongExposureProgress() {
+        longExposureState.phase = .idle
+        longExposureState.capturedFrameCount = 0
+        longExposureState.totalFrameCount = longExposureState.request.frameCount
     }
 
     func updateLongExposureDuration(_ duration: TimeInterval) {
@@ -573,6 +583,7 @@ final class CameraViewModel: ObservableObject {
             } else if capture.isMultiFrameApproximation {
                 showTransientStatus(String(format: appState.t(.longExposureFramesBlended), capture.frameData.count))
             }
+            resetLongExposureProgress()
         } catch {
             errorMessage = error.localizedDescription
             longExposureState.phase = .idle

@@ -33,7 +33,7 @@ final class AppState: ObservableObject {
         selectedFilm = firstFilm
         currentRoll = filmRollStore.loadOrCreate(for: firstFilm)
         let storedLanguage = UserDefaults.standard.string(forKey: Self.languageKey)
-        language = storedLanguage.flatMap(AppLanguage.init(rawValue:)) ?? .english
+        language = storedLanguage.flatMap(AppLanguage.init(rawValue:)) ?? Self.defaultLanguage
         favoriteFilmIds = Self.loadFavoriteFilmIds(from: UserDefaults.standard, library: filmLibrary)
         persistFavoriteFilmIds()
         photoStore.load()
@@ -69,6 +69,13 @@ final class AppState: ObservableObject {
     private static func loadFavoriteFilmIds(from defaults: UserDefaults, library: FilmLibrary) -> Set<String> {
         let storedIds = Set(defaults.stringArray(forKey: favoriteFilmIdsKey) ?? [])
         return storedIds.intersection(library.presetIds)
+    }
+
+    private static var defaultLanguage: AppLanguage {
+        guard let preferredLanguage = Locale.preferredLanguages.first else {
+            return .english
+        }
+        return preferredLanguage.lowercased().hasPrefix("zh") ? .chinese : .english
     }
 
     private func persistFavoriteFilmIds() {

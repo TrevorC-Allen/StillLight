@@ -209,7 +209,7 @@ private struct FilmPickerHero: View {
                     )
                 )
 
-            FilmSampleSceneView(film: film, style: style)
+            FilmSampleSceneView(film: film, style: style, sampleRole: .blur)
                 .scaleEffect(1.18)
                 .blur(radius: 10)
                 .opacity(0.22)
@@ -1537,7 +1537,12 @@ private struct FilmIdentityArtworkView: View {
                         RoundedRectangle(cornerRadius: width * 0.02, style: .continuous)
                             .fill(style.ink.opacity(0.62))
                             .overlay {
-                                FilmSampleSceneView(film: film, style: style, photoFrame: frames[index % frames.count])
+                                FilmSampleSceneView(
+                                    film: film,
+                                    style: style,
+                                    photoFrame: frames[index % frames.count],
+                                    sampleRole: .micro
+                                )
                                     .padding(width * 0.018)
                                     .opacity(0.72)
                             }
@@ -1561,7 +1566,12 @@ private struct FilmIdentityArtworkView: View {
                 RoundedRectangle(cornerRadius: width * 0.018, style: .continuous)
                     .fill(style.swatches[index % style.swatches.count].opacity(0.72))
                     .overlay {
-                        FilmSampleSceneView(film: film, style: style, photoFrame: frames[index % frames.count])
+                        FilmSampleSceneView(
+                            film: film,
+                            style: style,
+                            photoFrame: frames[index % frames.count],
+                            sampleRole: .micro
+                        )
                             .padding(width * 0.014)
                             .opacity(index.isMultiple(of: 2) ? 0.68 : 0.52)
                     }
@@ -4124,11 +4134,18 @@ private struct FilmSampleSceneView: View {
     let film: FilmPreset
     let style: FilmCoverStyle
     let photoFrame: FilmSamplePhotoFrame?
+    let sampleRole: FilmSampleRole
 
-    init(film: FilmPreset, style: FilmCoverStyle, photoFrame: FilmSamplePhotoFrame? = nil) {
+    init(
+        film: FilmPreset,
+        style: FilmCoverStyle,
+        photoFrame: FilmSamplePhotoFrame? = nil,
+        sampleRole: FilmSampleRole = .thumb
+    ) {
         self.film = film
         self.style = style
         self.photoFrame = photoFrame
+        self.sampleRole = sampleRole
     }
 
     private var scene: FilmSampleSceneKind {
@@ -4176,7 +4193,7 @@ private struct FilmSampleSceneView: View {
     @ViewBuilder
     private func sampleImage(width: CGFloat, height: CGFloat) -> some View {
         let maxPixelSize = Int(max(width, height) * UIScreen.main.scale * 1.5)
-        if let image = FilmSampleCatalog.image(for: film, role: .micro, maxPixelSize: maxPixelSize) {
+        if let image = FilmSampleCatalog.image(for: film, role: sampleRole, maxPixelSize: maxPixelSize) {
             Image(uiImage: image)
                 .resizable()
                 .interpolation(.high)

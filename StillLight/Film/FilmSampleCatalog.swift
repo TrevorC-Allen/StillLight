@@ -93,7 +93,8 @@ private enum FilmSampleImageProvider {
         let candidates = [
             relativePath,
             relativePath.replacingOccurrences(of: "FilmSamples/", with: ""),
-            relativePath.replacingOccurrences(of: "FilmSamples/Samples/", with: "Samples/")
+            relativePath.replacingOccurrences(of: "FilmSamples/Samples/", with: "Samples/"),
+            URL(fileURLWithPath: relativePath).lastPathComponent
         ]
 
         return candidates

@@ -561,20 +561,28 @@ final class CameraService: NSObject, ObservableObject {
         minDisplayFactor: CGFloat,
         maxDisplayFactor: CGFloat
     ) -> [CameraLensOption] {
-        let candidates: [CGFloat]
+        var candidates: [CGFloat] = [1]
 
-        switch device.deviceType {
-        case .builtInTripleCamera:
-            candidates = [0.5, 1, 3]
-        case .builtInDualWideCamera:
-            candidates = [0.5, 1]
-        case .builtInDualCamera:
-            candidates = [1, 2]
-        default:
-            candidates = [1, 2, 3]
+        if minDisplayFactor < 0.95 {
+            candidates.append(minDisplayFactor)
         }
 
-        let options = candidates
+        candidates.append(contentsOf: device.virtualDeviceSwitchOverVideoZoomFactors.map {
+            CGFloat(truncating: $0) / zoomDisplayScale
+        })
+
+        let fallbackCandidates: [CGFloat]
+        switch device.deviceType {
+        case .builtInTripleCamera, .builtInDualWideCamera:
+            fallbackCandidates = [0.5, 1, 2, 3, 5]
+        case .builtInDualCamera:
+            fallbackCandidates = [1, 2, 3]
+        default:
+            fallbackCandidates = [1, 2, 3]
+        }
+        candidates.append(contentsOf: fallbackCandidates)
+
+        let options = Self.uniqueLensFactors(candidates)
             .filter { $0 >= minDisplayFactor - 0.01 && $0 <= maxDisplayFactor + 0.01 }
             .map(CameraLensOption.init(displayFactor:))
 
@@ -583,6 +591,16 @@ final class CameraService: NSObject, ObservableObject {
         }
 
         return options
+    }
+
+    private static func uniqueLensFactors(_ factors: [CGFloat]) -> [CGFloat] {
+        factors
+            .filter { $0.isFinite && $0 > 0 }
+            .sorted()
+            .reduce(into: [CGFloat]()) { result, factor in
+                guard !result.contains(where: { abs($0 - factor) < 0.04 }) else { return }
+                result.append(factor)
+            }
     }
 
     private func configureVideoConnection(

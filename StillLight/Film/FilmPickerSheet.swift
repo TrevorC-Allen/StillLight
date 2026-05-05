@@ -303,7 +303,7 @@ private struct FilmPickerHero: View {
 
                 HStack(spacing: 6) {
                     CameraCapabilityPill(text: profile.category.title(language: language), style: style)
-                    ForEach(Array(profile.accessoryLabels(language: language).prefix(3)), id: \.self) { label in
+                    ForEach(Array(profile.accessoryLabels(language: language).prefix(2)), id: \.self) { label in
                         CameraCapabilityPill(text: label, style: style)
                     }
                     Spacer(minLength: 0)

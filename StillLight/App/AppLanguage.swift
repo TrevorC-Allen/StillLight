@@ -101,6 +101,10 @@ enum AppText {
         case styleLibrary
         case presets
         case pipeline
+        case pipelineValue
+        case filmVideoPipeline
+        case docsMode
+        case docsModeValue
         case photosSaveFailed
         case photoMode
         case videoMode
@@ -185,6 +189,10 @@ enum AppText {
         .styleLibrary: "Style Library",
         .presets: "Presets",
         .pipeline: "Pipeline",
+        .pipelineValue: "CoreImage + grain + frames",
+        .filmVideoPipeline: "Photo and video share film rendering",
+        .docsMode: "Docs Mode",
+        .docsModeValue: "English + Chinese runbooks",
         .photosSaveFailed: "Saved to StillLight Roll. Photos save failed:",
         .photoMode: "Photo",
         .videoMode: "Video",
@@ -269,6 +277,10 @@ enum AppText {
         .styleLibrary: "风格库",
         .presets: "预设数量",
         .pipeline: "图像管线",
+        .pipelineValue: "CoreImage + 颗粒 + 边框",
+        .filmVideoPipeline: "照片和录像共用胶片渲染",
+        .docsMode: "文档模式",
+        .docsModeValue: "英文 + 中文运行手册",
         .photosSaveFailed: "已保存到 StillLight 胶卷。系统照片保存失败：",
         .photoMode: "拍照",
         .videoMode: "录像",

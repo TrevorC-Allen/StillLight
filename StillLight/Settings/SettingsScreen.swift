@@ -47,10 +47,18 @@ struct SettingsScreen: View {
 
                     Section(appState.t(.styleLibrary)) {
                         LabeledContent(appState.t(.pipeline)) {
-                            Text("CoreImage + Grain")
+                            Text(appState.t(.pipelineValue))
+                        }
+                        LabeledContent(appState.t(.filmVideoPipeline)) {
+                            Text("ON")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(StillLightTheme.accent)
                         }
                         LabeledContent(appState.t(.presets)) {
                             Text("\(appState.filmLibrary.presets.count)")
+                        }
+                        LabeledContent(appState.t(.docsMode)) {
+                            Text(appState.t(.docsModeValue))
                         }
                     }
                 }

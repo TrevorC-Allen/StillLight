@@ -418,24 +418,24 @@ private struct CameraLibraryTile: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 8) {
                 ZStack(alignment: .topTrailing) {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(
+                    FilmSampleSceneView(film: film, style: style, sampleRole: .thumb)
+                        .opacity(0.90)
+                        .overlay {
                             LinearGradient(
                                 colors: [
-                                    style.ink.opacity(0.78),
-                                    StillLightTheme.panelElevated.opacity(0.78),
-                                    StillLightTheme.panel.opacity(0.52)
+                                    .black.opacity(0.10),
+                                    style.ink.opacity(0.34),
+                                    .black.opacity(0.62)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
-                        )
+                        }
                         .overlay(alignment: .bottomLeading) {
-                            Circle()
-                                .fill(style.accent.opacity(0.26))
-                                .frame(width: 78, height: 78)
-                                .blur(radius: 12)
-                                .offset(x: -20, y: 22)
+                            Rectangle()
+                                .fill(style.accent.opacity(0.82))
+                                .frame(width: 42, height: 3)
+                                .padding(8)
                         }
 
                     CameraModelPlate(film: film)
@@ -461,10 +461,9 @@ private struct CameraLibraryTile: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 5) {
-                        Image(systemName: profile.markerIconName)
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(style.accent)
-                            .frame(width: 14)
+                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                            .fill(style.accent)
+                            .frame(width: 4, height: 14)
                         Text(profile.displayName(language: language))
                             .font(.system(size: 12, weight: .bold, design: .rounded))
                             .foregroundStyle(StillLightTheme.text)
@@ -3236,18 +3235,18 @@ private enum CameraPlateKind {
     case toy
 
     static func kind(for film: FilmPreset) -> CameraPlateKind {
-        switch film.id {
-        case "medium-500c", "hncs-natural":
+        switch film.cameraProfile.bodyStyle {
+        case .hSystemBack, .waistLevelMedium:
             return .medium
-        case "ccd-2003", "cyber-ccd-blue":
+        case .earlyCCDCard, .blueCCDCard:
             return .ccd
-        case "instant-square", "instant-wide", "sx-fade":
+        case .squareInstantBox, .wideInstantPlastic, .foldingInstant:
             return .instant
-        case "pocket-flash", "holga-120-dream", "lca-vivid":
+        case .disposableFlashShell, .plasticToy120, .lomoCompact:
             return .toy
-        case "t-compact-gold", "gr-street-snap", "classic-chrome-x", "half-frame-diary":
+        case .daylightPointAndShoot, .halfFrameDiary:
             return .compact
-        default:
+        case .brassRangefinder, .blackPocketCompact, .leatheretteSLR, .studioPortraitSLR, .tungstenCinemaRig, .noirCinemaBody:
             return .rangefinder
         }
     }

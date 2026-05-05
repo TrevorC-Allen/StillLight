@@ -525,7 +525,7 @@ private struct FilmSelectionDetailPanel: View {
             HStack(spacing: 10) {
                 FilmMiniStat(title: language == .chinese ? "颗粒" : "Grain", value: normalized(film.grainAmount, upperBound: 0.46), accent: style.accent)
                 FilmMiniStat(title: language == .chinese ? "反差" : "Contrast", value: normalized(film.contrast - 0.86, upperBound: 0.34), accent: style.accent)
-                FilmMiniStat(title: language == .chinese ? "暖度" : "Warmth", value: normalized(film.temperatureShift + 0.26, upperBound: 0.72), accent: style.accent)
+                FilmMiniStat(title: language == .chinese ? "暖度" : "Warmth", value: normalized(film.temperatureShift + 700, upperBound: 1200), accent: style.accent)
             }
 
             HStack(spacing: 10) {
@@ -3464,22 +3464,22 @@ private struct FilmCoverView: View {
 }
 
 private struct FilmContactSheetCrop: View {
-    let quadrant: FilmSamplePhotoQuadrant
+    let frame: FilmSamplePhotoFrame
 
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
             let height = proxy.size.height
 
-            if let contactSheet = UIImage(named: "film_sample_contact_sheet") {
+            if let contactSheet = UIImage(named: frame.assetName) {
                 Image(uiImage: contactSheet)
                     .resizable()
                     .interpolation(.high)
                     .scaledToFill()
-                    .frame(width: width * 2.08, height: height * 2.08)
+                    .frame(width: width * CGFloat(frame.columns) * 1.04, height: height * CGFloat(frame.rows) * 1.04)
                     .offset(
-                        x: quadrant.offsetX * width,
-                        y: quadrant.offsetY * height
+                        x: frame.offsetX * width,
+                        y: frame.offsetY * height
                     )
                     .frame(width: width, height: height)
                     .clipped()
@@ -3497,42 +3497,79 @@ private struct FilmContactSheetCrop: View {
     }
 }
 
-private enum FilmSamplePhotoQuadrant {
-    case cafe
-    case shadow
-    case portrait
-    case night
+private enum FilmSamplePhotoFrame {
+    case warmCafe
+    case shadowInterior
+    case windowPortrait
+    case streetMarket
+    case naturalProduct
+    case tungstenNight
+    case ccdParty
+    case instantDesk
+    case noirWindow
+
+    var assetName: String {
+        "film_sample_contact_sheet_v2"
+    }
+
+    var columns: Int { 3 }
+    var rows: Int { 3 }
+
+    private var gridPosition: (column: Int, row: Int) {
+        switch self {
+        case .warmCafe:
+            return (0, 0)
+        case .shadowInterior:
+            return (1, 0)
+        case .windowPortrait:
+            return (2, 0)
+        case .streetMarket:
+            return (0, 1)
+        case .naturalProduct:
+            return (1, 1)
+        case .tungstenNight:
+            return (2, 1)
+        case .ccdParty:
+            return (0, 2)
+        case .instantDesk:
+            return (1, 2)
+        case .noirWindow:
+            return (2, 2)
+        }
+    }
 
     var offsetX: CGFloat {
-        switch self {
-        case .cafe, .portrait:
-            return 0.52
-        case .shadow, .night:
-            return -0.52
-        }
+        let centerColumn = CGFloat(columns - 1) / 2
+        return (centerColumn - CGFloat(gridPosition.column)) * 1.04
     }
 
     var offsetY: CGFloat {
-        switch self {
-        case .cafe, .shadow:
-            return 0.52
-        case .portrait, .night:
-            return -0.52
-        }
+        let centerRow = CGFloat(rows - 1) / 2
+        return (centerRow - CGFloat(gridPosition.row)) * 1.04
     }
 
-    static func quadrant(for film: FilmPreset) -> FilmSamplePhotoQuadrant? {
+    static func frame(for film: FilmPreset) -> FilmSamplePhotoFrame {
         switch film.id {
-        case "human-warm-400", "classic-chrome-x", "sunlit-gold-200":
-            return .cafe
+        case "human-warm-400", "sunlit-gold-200", "t-compact-gold", "classic-chrome-x":
+            return .warmCafe
         case "human-vignette-800", "gr-street-snap", "green-street-400":
-            return .shadow
-        case "muse-portrait-400", "soft-portrait-400", "medium-500c":
-            return .portrait
-        case "tungsten-800", "cyber-ccd-blue", "ccd-2003":
-            return .night
+            return .shadowInterior
+        case "muse-portrait-400", "soft-portrait-400", "m-rangefinder", "medium-500c":
+            return .windowPortrait
+        case "superia-green", "half-frame-diary", "lca-vivid":
+            return .streetMarket
+        case "hncs-natural", "ektar-vivid-100":
+            return .naturalProduct
+        case "tungsten-800", "cyber-ccd-blue":
+            return .tungstenNight
+        case "ccd-2003", "pocket-flash":
+            return .ccdParty
+        case "instant-square", "instant-wide", "sx-fade", "holga-120-dream":
+            return .instantDesk
+        case "silver-hp5", "tri-x-street", "noir-soft":
+            return .noirWindow
         default:
-            return nil
+            return .streetMarket
         }
     }
 }
@@ -3545,8 +3582,8 @@ private struct FilmSampleSceneView: View {
         FilmSampleSceneKind.kind(for: film)
     }
 
-    private var photoQuadrant: FilmSamplePhotoQuadrant? {
-        FilmSamplePhotoQuadrant.quadrant(for: film)
+    private var photoFrame: FilmSamplePhotoFrame {
+        FilmSamplePhotoFrame.frame(for: film)
     }
 
     var body: some View {
@@ -3555,13 +3592,8 @@ private struct FilmSampleSceneView: View {
             let height = proxy.size.height
 
             ZStack {
-                if let photoQuadrant {
-                    FilmContactSheetCrop(quadrant: photoQuadrant)
-                    photoPrintFinish(width: width, height: height)
-                } else {
-                    sceneBackdrop(width: width, height: height)
-                    sceneContent(scene, width: width, height: height)
-                }
+                FilmContactSheetCrop(frame: photoFrame)
+                photoPrintFinish(width: width, height: height)
                 sceneTone(width: width, height: height)
                 sceneGrain(width: width, height: height)
             }

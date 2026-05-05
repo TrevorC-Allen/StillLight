@@ -3770,6 +3770,196 @@ private enum FilmSampleImageCache {
     }
 }
 
+private struct FilmSampleTreatment {
+    let scale: CGFloat
+    let offset: CGSize
+    let rotation: Double
+    let saturation: Double
+    let contrast: Double
+    let brightness: Double
+    let hueShift: Double
+    let tint: Color
+    let tintOpacity: Double
+    let tintBlendMode: BlendMode
+    let vignetteAmount: Double
+    let vignetteColor: Color
+    let vignetteCenter: UnitPoint
+    let lightLeakOpacity: Double
+    let lightLeakColor: Color
+    let lightLeakStart: UnitPoint
+    let lightLeakEnd: UnitPoint
+
+    static func treatment(for film: FilmPreset, style: FilmCoverStyle) -> FilmSampleTreatment {
+        let seed = checksum(for: film.id)
+        let baseScale = CGFloat(1.04 + Double(seed % 7) * 0.012)
+        let baseOffset = CGSize(
+            width: CGFloat(Double((seed / 7) % 9) - 4.0) * 0.008,
+            height: CGFloat(Double((seed / 19) % 9) - 4.0) * 0.008
+        )
+        let baseRotation = Double((seed / 31) % 7) - 3.0
+
+        let base = FilmSampleTreatment(
+            scale: baseScale,
+            offset: baseOffset,
+            rotation: baseRotation,
+            saturation: max(0.0, min(1.36, 0.94 + film.saturation * 0.22)),
+            contrast: max(0.82, min(1.34, 0.98 + film.contrast * 0.18)),
+            brightness: max(-0.06, min(0.07, film.exposureBias * 0.018)),
+            hueShift: max(-9, min(9, film.temperatureShift / 75.0)),
+            tint: style.accent,
+            tintOpacity: 0.12,
+            tintBlendMode: .softLight,
+            vignetteAmount: max(0.18, min(0.82, 0.18 + film.vignetteAmount * 0.92)),
+            vignetteColor: style.ink,
+            vignetteCenter: .center,
+            lightLeakOpacity: film.lightLeakAmount > 0 ? max(0.08, min(0.34, film.lightLeakAmount * 0.70)) : 0,
+            lightLeakColor: style.accent,
+            lightLeakStart: seed.isMultiple(of: 2) ? .topLeading : .topTrailing,
+            lightLeakEnd: .center
+        )
+
+        switch film.id {
+        case "human-warm-400":
+            return base.reframed(scale: 1.09, offset: CGSize(width: 0.035, height: -0.035), rotation: -1.2)
+                .graded(saturation: 1.12, contrast: 1.10, brightness: 0.018, hueShift: 4, tintOpacity: 0.18)
+                .leak(opacity: 0.18, color: style.accent, start: .topLeading, end: .bottomTrailing)
+                .vignette(0.38, center: UnitPoint(x: 0.48, y: 0.50))
+        case "human-vignette-800":
+            return base.reframed(scale: 1.14, offset: CGSize(width: -0.025, height: 0.020), rotation: 0.8)
+                .graded(saturation: 0.86, contrast: 1.22, brightness: -0.025, hueShift: -2, tintOpacity: 0.10)
+                .vignette(0.82, center: UnitPoint(x: 0.50, y: 0.46))
+        case "muse-portrait-400":
+            return base.reframed(scale: 1.12, offset: CGSize(width: 0.012, height: -0.030), rotation: -0.6)
+                .graded(saturation: 1.06, contrast: 0.96, brightness: 0.035, hueShift: 3, tintOpacity: 0.22)
+                .leak(opacity: 0.13, color: style.paper, start: .top, end: .bottom)
+                .vignette(0.24, center: UnitPoint(x: 0.52, y: 0.42))
+        case "soft-portrait-400":
+            return base.reframed(scale: 1.08, offset: CGSize(width: -0.010, height: -0.018), rotation: 0.4)
+                .graded(saturation: 0.98, contrast: 0.90, brightness: 0.045, hueShift: 2, tintOpacity: 0.20)
+                .vignette(0.20, center: UnitPoint(x: 0.50, y: 0.45))
+        case "silver-hp5", "tri-x-street", "noir-soft":
+            return base.reframed(scale: film.id == "noir-soft" ? 1.16 : 1.10, offset: baseOffset, rotation: baseRotation)
+                .graded(saturation: 0.0, contrast: film.id == "tri-x-street" ? 1.30 : 1.16, brightness: film.id == "noir-soft" ? -0.030 : 0.0, hueShift: 0, tintOpacity: 0.05)
+                .vignette(film.id == "noir-soft" ? 0.78 : 0.46, center: UnitPoint(x: 0.48, y: 0.48))
+        case "tungsten-800", "cyber-ccd-blue":
+            return base.reframed(scale: 1.11, offset: CGSize(width: 0.020, height: 0.018), rotation: 1.0)
+                .graded(saturation: 1.18, contrast: 1.18, brightness: -0.010, hueShift: -7, tintOpacity: 0.18)
+                .leak(opacity: 0.26, color: style.accent, start: .trailing, end: .leading)
+                .vignette(0.54, center: UnitPoint(x: 0.48, y: 0.52))
+        case "ccd-2003", "pocket-flash":
+            return base.reframed(scale: 1.07, offset: CGSize(width: -0.018, height: 0.006), rotation: -1.4)
+                .graded(saturation: 1.28, contrast: 1.20, brightness: 0.030, hueShift: -4, tintOpacity: 0.16)
+                .leak(opacity: 0.30, color: style.paper, start: .topLeading, end: .bottom)
+                .vignette(0.36, center: UnitPoint(x: 0.50, y: 0.50))
+        case "instant-square", "instant-wide", "sx-fade":
+            return base.reframed(scale: 1.05, offset: CGSize(width: 0.0, height: -0.010), rotation: film.id == "sx-fade" ? -2.0 : 1.0)
+                .graded(saturation: 0.92, contrast: 0.92, brightness: 0.040, hueShift: 2, tintOpacity: 0.18)
+                .leak(opacity: 0.12, color: style.paper, start: .top, end: .center)
+                .vignette(0.24, center: UnitPoint(x: 0.50, y: 0.48))
+        case "hncs-natural", "medium-500c":
+            return base.reframed(scale: 1.10, offset: CGSize(width: 0.018, height: -0.026), rotation: -0.8)
+                .graded(saturation: 0.96, contrast: 1.02, brightness: 0.018, hueShift: -1, tintOpacity: 0.08)
+                .vignette(0.26, center: UnitPoint(x: 0.50, y: 0.47))
+        default:
+            return base
+        }
+    }
+
+    private func reframed(scale: CGFloat, offset: CGSize, rotation: Double) -> FilmSampleTreatment {
+        FilmSampleTreatment(
+            scale: scale,
+            offset: offset,
+            rotation: rotation,
+            saturation: saturation,
+            contrast: contrast,
+            brightness: brightness,
+            hueShift: hueShift,
+            tint: tint,
+            tintOpacity: tintOpacity,
+            tintBlendMode: tintBlendMode,
+            vignetteAmount: vignetteAmount,
+            vignetteColor: vignetteColor,
+            vignetteCenter: vignetteCenter,
+            lightLeakOpacity: lightLeakOpacity,
+            lightLeakColor: lightLeakColor,
+            lightLeakStart: lightLeakStart,
+            lightLeakEnd: lightLeakEnd
+        )
+    }
+
+    private func graded(saturation: Double, contrast: Double, brightness: Double, hueShift: Double, tintOpacity: Double) -> FilmSampleTreatment {
+        FilmSampleTreatment(
+            scale: scale,
+            offset: offset,
+            rotation: rotation,
+            saturation: saturation,
+            contrast: contrast,
+            brightness: brightness,
+            hueShift: hueShift,
+            tint: tint,
+            tintOpacity: tintOpacity,
+            tintBlendMode: tintBlendMode,
+            vignetteAmount: vignetteAmount,
+            vignetteColor: vignetteColor,
+            vignetteCenter: vignetteCenter,
+            lightLeakOpacity: lightLeakOpacity,
+            lightLeakColor: lightLeakColor,
+            lightLeakStart: lightLeakStart,
+            lightLeakEnd: lightLeakEnd
+        )
+    }
+
+    private func vignette(_ amount: Double, center: UnitPoint) -> FilmSampleTreatment {
+        FilmSampleTreatment(
+            scale: scale,
+            offset: offset,
+            rotation: rotation,
+            saturation: saturation,
+            contrast: contrast,
+            brightness: brightness,
+            hueShift: hueShift,
+            tint: tint,
+            tintOpacity: tintOpacity,
+            tintBlendMode: tintBlendMode,
+            vignetteAmount: amount,
+            vignetteColor: vignetteColor,
+            vignetteCenter: center,
+            lightLeakOpacity: lightLeakOpacity,
+            lightLeakColor: lightLeakColor,
+            lightLeakStart: lightLeakStart,
+            lightLeakEnd: lightLeakEnd
+        )
+    }
+
+    private func leak(opacity: Double, color: Color, start: UnitPoint, end: UnitPoint) -> FilmSampleTreatment {
+        FilmSampleTreatment(
+            scale: scale,
+            offset: offset,
+            rotation: rotation,
+            saturation: saturation,
+            contrast: contrast,
+            brightness: brightness,
+            hueShift: hueShift,
+            tint: tint,
+            tintOpacity: tintOpacity,
+            tintBlendMode: tintBlendMode,
+            vignetteAmount: vignetteAmount,
+            vignetteColor: vignetteColor,
+            vignetteCenter: vignetteCenter,
+            lightLeakOpacity: opacity,
+            lightLeakColor: color,
+            lightLeakStart: start,
+            lightLeakEnd: end
+        )
+    }
+
+    private static func checksum(for id: String) -> Int {
+        id.unicodeScalars.reduce(17) { partialResult, scalar in
+            (partialResult * 37 + Int(scalar.value)) % 10_000
+        }
+    }
+}
+
 private struct FilmSampleSceneView: View {
     let film: FilmPreset
     let style: FilmCoverStyle
@@ -3782,6 +3972,10 @@ private struct FilmSampleSceneView: View {
         FilmSamplePhotoFrame.frame(for: film)
     }
 
+    private var treatment: FilmSampleTreatment {
+        FilmSampleTreatment.treatment(for: film, style: style)
+    }
+
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
@@ -3789,7 +3983,22 @@ private struct FilmSampleSceneView: View {
 
             ZStack {
                 FilmContactSheetCrop(frame: photoFrame)
+                    .saturation(treatment.saturation)
+                    .contrast(treatment.contrast)
+                    .brightness(treatment.brightness)
+                    .hueRotation(.degrees(treatment.hueShift))
+                    .scaleEffect(treatment.scale)
+                    .rotationEffect(.degrees(treatment.rotation))
+                    .offset(x: treatment.offset.width * width, y: treatment.offset.height * height)
+
+                Rectangle()
+                    .fill(treatment.tint)
+                    .opacity(treatment.tintOpacity)
+                    .blendMode(treatment.tintBlendMode)
+
                 photoPrintFinish(width: width, height: height)
+                sampleLightLeak(width: width, height: height)
+                sampleVignette(width: width, height: height)
                 sceneTone(width: width, height: height)
                 sceneGrain(width: width, height: height)
             }
@@ -3835,6 +4044,37 @@ private struct FilmSampleSceneView: View {
                 endPoint: .bottom
             )
         }
+    }
+
+    @ViewBuilder
+    private func sampleLightLeak(width: CGFloat, height: CGFloat) -> some View {
+        if treatment.lightLeakOpacity > 0 {
+            LinearGradient(
+                colors: [
+                    treatment.lightLeakColor.opacity(treatment.lightLeakOpacity),
+                    treatment.lightLeakColor.opacity(treatment.lightLeakOpacity * 0.28),
+                    .clear
+                ],
+                startPoint: treatment.lightLeakStart,
+                endPoint: treatment.lightLeakEnd
+            )
+            .blendMode(.screen)
+            .blur(radius: min(width, height) * 0.015)
+        }
+    }
+
+    private func sampleVignette(width: CGFloat, height: CGFloat) -> some View {
+        RadialGradient(
+            colors: [
+                .clear,
+                treatment.vignetteColor.opacity(treatment.vignetteAmount * 0.52),
+                treatment.vignetteColor.opacity(treatment.vignetteAmount)
+            ],
+            center: treatment.vignetteCenter,
+            startRadius: min(width, height) * 0.26,
+            endRadius: max(width, height) * 0.72
+        )
+        .blendMode(.multiply)
     }
 
     @ViewBuilder

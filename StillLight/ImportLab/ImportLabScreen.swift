@@ -508,6 +508,7 @@ struct ImportLabScreen: View {
                                 jpegQuality: appState.effectiveJPEGQuality,
                                 processedFormat: appState.effectiveProcessedPhotoFormat,
                                 saveOriginal: appState.effectiveSaveOriginalPhoto,
+                                saveOriginalToPhotoLibrary: appState.effectiveSaveOriginalToPhotoLibrary,
                                 photoStore: appState.photoStore,
                                 successMessage: appState.t(.savedToRoll),
                                 photosSaveFailedPrefix: appState.t(.photosSaveFailed)
@@ -527,6 +528,7 @@ struct ImportLabScreen: View {
                                 jpegQuality: appState.effectiveJPEGQuality,
                                 processedFormat: appState.effectiveProcessedPhotoFormat,
                                 saveOriginal: appState.effectiveSaveOriginalPhoto,
+                                saveOriginalToPhotoLibrary: appState.effectiveSaveOriginalToPhotoLibrary,
                                 photoStore: appState.photoStore,
                                 successFormat: appState.t(.savedFrames),
                                 progressFormat: appState.t(.savingFrame),
@@ -899,6 +901,7 @@ private final class ImportLabViewModel: ObservableObject {
         jpegQuality: Double,
         processedFormat: ProcessedPhotoFormat,
         saveOriginal: Bool,
+        saveOriginalToPhotoLibrary: Bool,
         photoStore: PhotoStore,
         successMessage: String,
         photosSaveFailedPrefix: String
@@ -912,11 +915,12 @@ private final class ImportLabViewModel: ObservableObject {
             let frame = frames[selectedIndex]
             let exportResult = try await PhotoExporter.export(
                 processedImage: processedImage,
-                originalData: saveOriginal ? frame.originalData : nil,
+                originalData: saveOriginal || saveOriginalToPhotoLibrary ? frame.originalData : nil,
                 film: film,
                 aspectRatio: aspectRatio,
                 jpegQuality: jpegQuality,
                 processedFormat: processedFormat,
+                saveOriginalToPhotoLibrary: saveOriginalToPhotoLibrary,
                 photosSaveFailedPrefix: photosSaveFailedPrefix
             )
             updateFrame(at: selectedIndex) { editableFrame in
@@ -936,6 +940,7 @@ private final class ImportLabViewModel: ObservableObject {
         jpegQuality: Double,
         processedFormat: ProcessedPhotoFormat,
         saveOriginal: Bool,
+        saveOriginalToPhotoLibrary: Bool,
         photoStore: PhotoStore,
         successFormat: String,
         progressFormat: String,
@@ -956,11 +961,12 @@ private final class ImportLabViewModel: ObservableObject {
                 processingMessage = String(format: progressFormat, offset + 1, framesToSave.count)
                 let exportResult = try await PhotoExporter.export(
                     processedImage: processedImage,
-                    originalData: saveOriginal ? frame.originalData : nil,
+                    originalData: saveOriginal || saveOriginalToPhotoLibrary ? frame.originalData : nil,
                     film: film,
                     aspectRatio: aspectRatio,
                     jpegQuality: jpegQuality,
                     processedFormat: processedFormat,
+                    saveOriginalToPhotoLibrary: saveOriginalToPhotoLibrary,
                     photosSaveFailedPrefix: photosSaveFailedPrefix
                 )
                 if let index = frames.firstIndex(where: { $0.id == frame.id }) {

@@ -90,6 +90,7 @@ enum AppText {
         case settings
         case output
         case saveOriginalPhoto
+        case saveOriginalToPhotos
         case fidelityMode
         case fidelityModeDescription
         case outputFormat
@@ -191,6 +192,7 @@ enum AppText {
         .settings: "Settings",
         .output: "Output",
         .saveOriginalPhoto: "Save original photo",
+        .saveOriginalToPhotos: "Save original to Photos",
         .fidelityMode: "Fidelity mode",
         .fidelityModeDescription: "Preserves the original file and applies a gentler film mix by default.",
         .outputFormat: "Processed format",
@@ -292,6 +294,7 @@ enum AppText {
         .settings: "设置",
         .output: "输出",
         .saveOriginalPhoto: "保留原片",
+        .saveOriginalToPhotos: "原片也保存到照片",
         .fidelityMode: "保真模式",
         .fidelityModeDescription: "原始文件会完整保留，默认使用更轻的胶片强度，避免破坏原片观感。",
         .outputFormat: "处理图格式",

@@ -16,6 +16,7 @@ enum PhotoExporter {
         aspectRatio: CaptureAspectRatio,
         jpegQuality: Double,
         processedFormat: ProcessedPhotoFormat,
+        saveOriginalToPhotoLibrary: Bool,
         photosSaveFailedPrefix: String = "Saved to StillLight Roll. Photos save failed:"
     ) async throws -> PhotoExportResult {
         let id = UUID()
@@ -42,6 +43,9 @@ enum PhotoExporter {
         let warningMessage: String?
         do {
             try await saveToPhotoLibrary(processedURL)
+            if saveOriginalToPhotoLibrary, let originalURL {
+                try await saveToPhotoLibrary(originalURL)
+            }
             warningMessage = nil
         } catch {
             warningMessage = "\(photosSaveFailedPrefix) \(error.localizedDescription)"

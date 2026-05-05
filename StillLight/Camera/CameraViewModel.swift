@@ -267,6 +267,7 @@ final class CameraViewModel: ObservableObject {
         let film = appState.selectedFilm
         let aspectRatio = appState.selectedAspectRatio
         let saveOriginal = appState.effectiveSaveOriginalPhoto
+        let saveOriginalToPhotoLibrary = appState.effectiveSaveOriginalToPhotoLibrary
         let addTimestamp = appState.addTimestamp
         let quality = appState.effectiveJPEGQuality
         let processedFormat = appState.effectiveProcessedPhotoFormat
@@ -281,6 +282,7 @@ final class CameraViewModel: ObservableObject {
                     film: film,
                     aspectRatio: aspectRatio,
                     saveOriginal: saveOriginal,
+                    saveOriginalToPhotoLibrary: saveOriginalToPhotoLibrary,
                     addTimestamp: addTimestamp,
                     jpegQuality: quality,
                     processedFormat: processedFormat,
@@ -304,6 +306,7 @@ final class CameraViewModel: ObservableObject {
         let film = appState.selectedFilm
         let aspectRatio = appState.selectedAspectRatio
         let saveOriginal = appState.effectiveSaveOriginalPhoto
+        let saveOriginalToPhotoLibrary = appState.effectiveSaveOriginalToPhotoLibrary
         let addTimestamp = appState.addTimestamp
         let quality = appState.effectiveJPEGQuality
         let processedFormat = appState.effectiveProcessedPhotoFormat
@@ -319,6 +322,7 @@ final class CameraViewModel: ObservableObject {
                     film: film,
                     aspectRatio: aspectRatio,
                     saveOriginal: saveOriginal,
+                    saveOriginalToPhotoLibrary: saveOriginalToPhotoLibrary,
                     addTimestamp: addTimestamp,
                     jpegQuality: quality,
                     processedFormat: processedFormat,
@@ -343,6 +347,7 @@ final class CameraViewModel: ObservableObject {
         let film = appState.selectedFilm
         let aspectRatio = appState.selectedAspectRatio
         let saveOriginal = appState.effectiveSaveOriginalPhoto
+        let saveOriginalToPhotoLibrary = appState.effectiveSaveOriginalToPhotoLibrary
         let addTimestamp = appState.addTimestamp
         let quality = appState.effectiveJPEGQuality
         let processedFormat = appState.effectiveProcessedPhotoFormat
@@ -372,6 +377,7 @@ final class CameraViewModel: ObservableObject {
                         film: film,
                         aspectRatio: aspectRatio,
                         saveOriginal: saveOriginal,
+                        saveOriginalToPhotoLibrary: saveOriginalToPhotoLibrary,
                         addTimestamp: addTimestamp,
                         jpegQuality: quality,
                         processedFormat: processedFormat,
@@ -389,6 +395,7 @@ final class CameraViewModel: ObservableObject {
         film: FilmPreset,
         aspectRatio: CaptureAspectRatio,
         saveOriginal: Bool,
+        saveOriginalToPhotoLibrary: Bool,
         addTimestamp: Bool,
         jpegQuality: Double,
         processedFormat: ProcessedPhotoFormat,
@@ -423,11 +430,12 @@ final class CameraViewModel: ObservableObject {
 
             let exportResult = try await PhotoExporter.export(
                 processedImage: processedImage,
-                originalData: saveOriginal ? data : nil,
+                originalData: saveOriginal || saveOriginalToPhotoLibrary ? data : nil,
                 film: film,
                 aspectRatio: aspectRatio,
                 jpegQuality: jpegQuality,
                 processedFormat: processedFormat,
+                saveOriginalToPhotoLibrary: saveOriginalToPhotoLibrary,
                 photosSaveFailedPrefix: appState.t(.photosSaveFailed)
             )
 
@@ -453,6 +461,7 @@ final class CameraViewModel: ObservableObject {
         film: FilmPreset,
         aspectRatio: CaptureAspectRatio,
         saveOriginal: Bool,
+        saveOriginalToPhotoLibrary: Bool,
         addTimestamp: Bool,
         jpegQuality: Double,
         processedFormat: ProcessedPhotoFormat,
@@ -511,11 +520,12 @@ final class CameraViewModel: ObservableObject {
 
             let exportResult = try await PhotoExporter.export(
                 processedImage: compositeImage,
-                originalData: saveOriginal ? data : nil,
+                originalData: saveOriginal || saveOriginalToPhotoLibrary ? data : nil,
                 film: film,
                 aspectRatio: aspectRatio,
                 jpegQuality: jpegQuality,
                 processedFormat: processedFormat,
+                saveOriginalToPhotoLibrary: saveOriginalToPhotoLibrary,
                 photosSaveFailedPrefix: appState.t(.photosSaveFailed)
             )
 
@@ -542,6 +552,7 @@ final class CameraViewModel: ObservableObject {
         film: FilmPreset,
         aspectRatio: CaptureAspectRatio,
         saveOriginal: Bool,
+        saveOriginalToPhotoLibrary: Bool,
         addTimestamp: Bool,
         jpegQuality: Double,
         processedFormat: ProcessedPhotoFormat,
@@ -586,11 +597,12 @@ final class CameraViewModel: ObservableObject {
 
             let exportResult = try await PhotoExporter.export(
                 processedImage: compositeImage,
-                originalData: saveOriginal ? originalData : nil,
+                originalData: saveOriginal || saveOriginalToPhotoLibrary ? originalData : nil,
                 film: film,
                 aspectRatio: aspectRatio,
                 jpegQuality: jpegQuality,
                 processedFormat: processedFormat,
+                saveOriginalToPhotoLibrary: saveOriginalToPhotoLibrary,
                 photosSaveFailedPrefix: appState.t(.photosSaveFailed)
             )
 

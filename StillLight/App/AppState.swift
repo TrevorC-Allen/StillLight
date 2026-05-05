@@ -5,6 +5,11 @@ final class AppState: ObservableObject {
     @Published var selectedFilm: FilmPreset
     @Published var selectedAspectRatio: CaptureAspectRatio = .ratio3x2
     @Published var saveOriginalPhoto = true
+    @Published var saveOriginalToPhotoLibrary: Bool {
+        didSet {
+            UserDefaults.standard.set(saveOriginalToPhotoLibrary, forKey: Self.saveOriginalToPhotoLibraryKey)
+        }
+    }
     @Published var fidelityMode: Bool {
         didSet {
             UserDefaults.standard.set(fidelityMode, forKey: Self.fidelityModeKey)
@@ -38,6 +43,7 @@ final class AppState: ObservableObject {
     private static let languageKey = "StillLight.language"
     private static let favoriteFilmIdsKey = "StillLight.favoriteFilmIds"
     private static let fidelityModeKey = "StillLight.fidelityMode"
+    private static let saveOriginalToPhotoLibraryKey = "StillLight.saveOriginalToPhotoLibrary"
     private static let processedPhotoFormatKey = "StillLight.processedPhotoFormat"
     static let fidelityFilmIntensity = 0.62
 
@@ -48,6 +54,7 @@ final class AppState: ObservableObject {
         let storedLanguage = UserDefaults.standard.string(forKey: Self.languageKey)
         language = storedLanguage.flatMap(AppLanguage.init(rawValue:)) ?? Self.defaultLanguage
         fidelityMode = UserDefaults.standard.object(forKey: Self.fidelityModeKey) as? Bool ?? true
+        saveOriginalToPhotoLibrary = UserDefaults.standard.object(forKey: Self.saveOriginalToPhotoLibraryKey) as? Bool ?? true
         let storedFormat = UserDefaults.standard.string(forKey: Self.processedPhotoFormatKey)
         processedPhotoFormat = storedFormat.flatMap(ProcessedPhotoFormat.init(rawValue:)) ?? .pngLossless
         favoriteFilmIds = Self.loadFavoriteFilmIds(from: UserDefaults.standard, library: filmLibrary)
@@ -61,6 +68,10 @@ final class AppState: ObservableObject {
 
     var effectiveSaveOriginalPhoto: Bool {
         fidelityMode || saveOriginalPhoto
+    }
+
+    var effectiveSaveOriginalToPhotoLibrary: Bool {
+        fidelityMode || saveOriginalToPhotoLibrary
     }
 
     var effectiveJPEGQuality: Double {

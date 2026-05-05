@@ -233,6 +233,8 @@ struct CameraScreen: View {
                     step: 50
                 )
                     .tint(NativeCameraChrome.active)
+                    .disabled(!viewModel.whiteBalanceState.isSupported)
+                    .opacity(viewModel.whiteBalanceState.isSupported ? 1 : 0.42)
 
                 Button {
                     viewModel.resetWhiteBalance()
@@ -315,6 +317,8 @@ struct CameraScreen: View {
                         showsWhiteBalanceControl.toggle()
                     }
                 }
+                .disabled(!viewModel.whiteBalanceState.isSupported)
+                .opacity(viewModel.whiteBalanceState.isSupported ? 1 : 0.42)
 
                 CameraAccessoryButton(
                     iconName: "timer",

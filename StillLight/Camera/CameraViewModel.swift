@@ -153,6 +153,7 @@ final class CameraViewModel: ObservableObject {
     }
 
     func updateWhiteBalanceKelvin(_ kelvin: Double) {
+        guard whiteBalanceState.isSupported else { return }
         var nextState = whiteBalanceState
         nextState.kelvin = Float(kelvin).clamped(to: nextState.minKelvin...nextState.maxKelvin)
         nextState.isLocked = true

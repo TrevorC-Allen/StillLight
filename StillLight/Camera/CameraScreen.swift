@@ -8,6 +8,7 @@ struct CameraScreen: View {
     @StateObject private var levelMonitor = LevelMonitor()
     @State private var showsFilmPicker = false
     @State private var showsGallery = false
+    @State private var showsImportLab = false
     @State private var shutterFlash = false
     @State private var focusIndicator: FocusIndicator?
     @State private var pinchStartZoomFactor: CGFloat?
@@ -55,6 +56,9 @@ struct CameraScreen: View {
         }
         .sheet(isPresented: $showsGallery) {
             GalleryScreen()
+        }
+        .sheet(isPresented: $showsImportLab) {
+            ImportLabScreen()
         }
     }
 
@@ -485,7 +489,7 @@ struct CameraScreen: View {
                     statusText: nil,
                     accessibilityLabel: appState.t(.importPhoto)
                 ) {
-                    showsGallery = true
+                    showsImportLab = true
                 }
 
                 CameraAccessoryButton(

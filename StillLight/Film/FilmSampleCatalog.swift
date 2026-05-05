@@ -51,7 +51,11 @@ enum FilmSampleCatalog {
 }
 
 private enum FilmSampleImageProvider {
-    private static let cache = NSCache<NSString, UIImage>()
+    private static let cache: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.totalCostLimit = 48 * 1024 * 1024
+        return cache
+    }()
 
     static func image(relativePath: String, maxPixelSize: Int) -> UIImage? {
         let cacheKey = "\(relativePath)#\(maxPixelSize)" as NSString
@@ -59,8 +63,7 @@ private enum FilmSampleImageProvider {
             return cached
         }
 
-        guard let url = Bundle.main.resourceURL?.appendingPathComponent(relativePath),
-              FileManager.default.fileExists(atPath: url.path),
+        guard let url = resourceURL(for: relativePath),
               let source = CGImageSourceCreateWithURL(url as CFURL, nil)
         else {
             return nil
@@ -80,5 +83,21 @@ private enum FilmSampleImageProvider {
         let image = UIImage(cgImage: thumbnail)
         cache.setObject(image, forKey: cacheKey, cost: thumbnail.width * thumbnail.height * 4)
         return image
+    }
+
+    private static func resourceURL(for relativePath: String) -> URL? {
+        guard let resourceURL = Bundle.main.resourceURL else {
+            return nil
+        }
+
+        let candidates = [
+            relativePath,
+            relativePath.replacingOccurrences(of: "FilmSamples/", with: ""),
+            relativePath.replacingOccurrences(of: "FilmSamples/Samples/", with: "Samples/")
+        ]
+
+        return candidates
+            .map { resourceURL.appendingPathComponent($0) }
+            .first(where: { FileManager.default.fileExists(atPath: $0.path) })
     }
 }

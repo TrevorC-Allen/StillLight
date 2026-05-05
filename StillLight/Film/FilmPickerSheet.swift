@@ -3228,11 +3228,13 @@ private struct FilmPhysicalPackageView: View {
 
 private enum CameraPlateKind {
     case rangefinder
+    case slr
     case medium
     case compact
     case ccd
     case instant
     case toy
+    case cinema
 
     static func kind(for film: FilmPreset) -> CameraPlateKind {
         switch film.cameraProfile.bodyStyle {
@@ -3242,11 +3244,15 @@ private enum CameraPlateKind {
             return .ccd
         case .squareInstantBox, .wideInstantPlastic, .foldingInstant:
             return .instant
-        case .disposableFlashShell, .plasticToy120, .lomoCompact:
+        case .disposableFlashShell, .plasticToy120:
             return .toy
-        case .daylightPointAndShoot, .halfFrameDiary:
+        case .blackPocketCompact, .daylightPointAndShoot, .lomoCompact, .halfFrameDiary:
             return .compact
-        case .brassRangefinder, .blackPocketCompact, .leatheretteSLR, .studioPortraitSLR, .tungstenCinemaRig, .noirCinemaBody:
+        case .leatheretteSLR, .studioPortraitSLR:
+            return .slr
+        case .tungstenCinemaRig, .noirCinemaBody:
+            return .cinema
+        case .brassRangefinder:
             return .rangefinder
         }
     }
@@ -3263,6 +3269,10 @@ private struct CameraModelPlate: View {
         CameraPlateKind.kind(for: film)
     }
 
+    private var bodyStyle: CameraBodyStyle {
+        film.cameraProfile.bodyStyle
+    }
+
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
@@ -3271,6 +3281,8 @@ private struct CameraModelPlate: View {
                 switch kind {
                 case .rangefinder:
                     rangefinder(width: width, height: height)
+                case .slr:
+                    slrCamera(width: width, height: height)
                 case .medium:
                     mediumCamera(width: width, height: height)
                 case .compact:
@@ -3281,21 +3293,25 @@ private struct CameraModelPlate: View {
                     instantCamera(width: width, height: height)
                 case .toy:
                     toyCamera(width: width, height: height)
+                case .cinema:
+                    cinemaCamera(width: width, height: height)
                 }
             }
             .shadow(color: .black.opacity(0.28), radius: 18, x: 0, y: 10)
         }
     }
 
-    private func cameraShell(width: CGFloat, height: CGFloat, radius: CGFloat = 12) -> some View {
-        RoundedRectangle(cornerRadius: radius, style: .continuous)
+    private func cameraShell(width: CGFloat, height: CGFloat, radius: CGFloat = 12, colors: [Color]? = nil) -> some View {
+        let shellColors = colors ?? [
+            style.ink.opacity(0.92),
+            style.ink.opacity(0.72),
+            style.ink.opacity(0.54)
+        ]
+
+        return RoundedRectangle(cornerRadius: radius, style: .continuous)
             .fill(
                 LinearGradient(
-                    colors: [
-                        style.ink.opacity(0.92),
-                        style.ink.opacity(0.72),
-                        style.ink.opacity(0.54)
-                    ],
+                    colors: shellColors,
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -3391,108 +3407,373 @@ private struct CameraModelPlate: View {
         .frame(width: width * 0.17, height: height * 0.16)
     }
 
+    private func shutterButton(width: CGFloat, height: CGFloat) -> some View {
+        Capsule()
+            .fill(style.accent.opacity(0.78))
+            .frame(width: width * 0.13, height: height * 0.045)
+            .overlay {
+                Capsule()
+                    .fill(.white.opacity(0.20))
+                    .padding(.horizontal, width * 0.025)
+                    .padding(.vertical, height * 0.010)
+            }
+    }
+
+    private func screw(size: CGFloat) -> some View {
+        Circle()
+            .fill(style.paper.opacity(0.48))
+            .frame(width: size, height: size)
+            .overlay {
+                Rectangle()
+                    .fill(style.ink.opacity(0.34))
+                    .frame(width: size * 0.56, height: 1)
+            }
+    }
+
+    private func flashWindow(width: CGFloat, height: CGFloat, color: Color? = nil) -> some View {
+        RoundedRectangle(cornerRadius: 3, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        (color ?? style.paper).opacity(0.86),
+                        style.accent.opacity(0.46),
+                        style.ink.opacity(0.28)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: width * 0.20, height: height * 0.15)
+            .overlay {
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .stroke(.white.opacity(0.28), lineWidth: 1)
+                    .padding(2)
+            }
+    }
+
+    private func gripRidges(width: CGFloat, height: CGFloat, count: Int = 4) -> some View {
+        VStack(spacing: height * 0.035) {
+            ForEach(0..<count, id: \.self) { _ in
+                Capsule()
+                    .fill(style.paper.opacity(0.18))
+                    .frame(width: width * 0.10, height: 1)
+            }
+        }
+    }
+
+    private func leatherette(width: CGFloat, height: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 5, style: .continuous)
+            .fill(style.ink.opacity(0.42))
+            .frame(width: width * 0.68, height: height * 0.28)
+            .overlay {
+                ForEach(0..<5, id: \.self) { index in
+                    Rectangle()
+                        .fill(style.paper.opacity(0.07))
+                        .frame(height: 1)
+                        .offset(y: height * CGFloat(index - 2) * 0.035)
+                }
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .stroke(style.paper.opacity(0.11), lineWidth: 1)
+            }
+    }
+
+    private func modelSticker(_ text: String, width: CGFloat, height: CGFloat) -> some View {
+        Text(text)
+            .font(.system(size: Swift.max(5, width * 0.052), weight: .black, design: .monospaced))
+            .tracking(0.5)
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .foregroundStyle(style.ink.opacity(0.76))
+            .padding(.horizontal, width * 0.035)
+            .frame(height: height * 0.11)
+            .background(style.paper.opacity(0.76))
+            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .stroke(style.ink.opacity(0.12), lineWidth: 1)
+            }
+    }
+
     private func rangefinder(width: CGFloat, height: CGFloat) -> some View {
         ZStack {
-            cameraShell(width: width, height: height)
+            cameraShell(
+                width: width,
+                height: height,
+                radius: 10,
+                colors: [
+                    style.paper.opacity(0.88),
+                    style.swatches[1].opacity(0.66),
+                    style.ink.opacity(0.78)
+                ]
+            )
 
             RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(style.paper.opacity(0.20))
-                .frame(height: height * 0.30)
-                .padding(.horizontal, width * 0.08)
+                .fill(style.ink.opacity(0.44))
+                .frame(height: height * 0.31)
+                .padding(.horizontal, width * 0.09)
                 .frame(maxHeight: .infinity, alignment: .bottom)
+                .overlay {
+                    HStack(spacing: width * 0.04) {
+                        screw(size: height * 0.045)
+                        Spacer()
+                        screw(size: height * 0.045)
+                    }
+                    .padding(.horizontal, width * 0.14)
+                    .offset(y: height * 0.25)
+                }
 
             HStack {
                 viewfinder(width: width, height: height)
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(style.paper.opacity(0.62))
+                    .frame(width: width * 0.10, height: height * 0.11)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 1, style: .continuous)
+                            .fill(style.ink.opacity(0.34))
+                            .padding(2)
+                    }
                 Spacer()
-                Capsule()
-                    .fill(style.accent.opacity(0.72))
-                    .frame(width: width * 0.20, height: 4)
+                shutterButton(width: width, height: height)
             }
-            .padding(.horizontal, width * 0.10)
+            .padding(.horizontal, width * 0.09)
             .padding(.top, height * 0.14)
             .frame(maxHeight: .infinity, alignment: .top)
 
-            lens(width: width, height: height, diameter: min(width, height) * 0.48)
-                .offset(x: width * 0.06, y: height * 0.06)
-
             RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(style.paper.opacity(0.28))
-                .frame(width: width * 0.18, height: height * 0.05)
-                .offset(x: -width * 0.27, y: -height * 0.28)
+                .fill(style.ink.opacity(0.38))
+                .frame(width: width * 0.18, height: height * 0.045)
+                .offset(x: width * 0.20, y: -height * 0.28)
+
+            lens(width: width, height: height, diameter: min(width, height) * 0.49)
+                .offset(x: width * 0.06, y: height * 0.07)
+
+            modelSticker("RF", width: width, height: height)
+                .frame(width: width * 0.18)
+                .offset(x: -width * 0.24, y: height * 0.10)
+        }
+    }
+
+    private func slrCamera(width: CGFloat, height: CGFloat) -> some View {
+        let isStudioBody = bodyStyle == .studioPortraitSLR
+        let bodyColors = isStudioBody
+            ? [style.paper.opacity(0.78), style.swatches[1].opacity(0.62), style.ink.opacity(0.80)]
+            : [style.ink.opacity(0.94), style.ink.opacity(0.76), style.swatches[1].opacity(0.58)]
+
+        return ZStack {
+            cameraShell(width: width, height: height, radius: 10, colors: bodyColors)
+
+            Path { path in
+                path.move(to: CGPoint(x: width * 0.35, y: height * 0.26))
+                path.addLine(to: CGPoint(x: width * 0.46, y: height * 0.06))
+                path.addLine(to: CGPoint(x: width * 0.58, y: height * 0.06))
+                path.addLine(to: CGPoint(x: width * 0.70, y: height * 0.26))
+                path.closeSubpath()
+            }
+            .fill(style.ink.opacity(isStudioBody ? 0.58 : 0.86))
+            .overlay {
+                Path { path in
+                    path.move(to: CGPoint(x: width * 0.39, y: height * 0.24))
+                    path.addLine(to: CGPoint(x: width * 0.48, y: height * 0.10))
+                    path.addLine(to: CGPoint(x: width * 0.57, y: height * 0.10))
+                    path.addLine(to: CGPoint(x: width * 0.66, y: height * 0.24))
+                }
+                .stroke(style.paper.opacity(0.18), lineWidth: 1)
+            }
+
+            leatherette(width: width, height: height)
+                .offset(y: height * 0.16)
+
+            HStack {
+                shutterButton(width: width, height: height)
+                Spacer()
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(style.paper.opacity(0.30))
+                    .frame(width: width * 0.18, height: height * 0.045)
+            }
+            .padding(.horizontal, width * 0.11)
+            .padding(.top, height * 0.12)
+            .frame(maxHeight: .infinity, alignment: .top)
+
+            lens(width: width, height: height, diameter: min(width, height) * (isStudioBody ? 0.58 : 0.54))
+                .offset(y: height * 0.08)
+
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(style.paper.opacity(isStudioBody ? 0.62 : 0.42))
+                .frame(width: width * 0.12, height: height * 0.22)
+                .offset(x: width * 0.36, y: height * 0.08)
+
+            modelSticker(isStudioBody ? "85" : "SLR", width: width, height: height)
+                .frame(width: width * 0.21)
+                .offset(x: -width * 0.28, y: -height * 0.12)
         }
     }
 
     private func mediumCamera(width: CGFloat, height: CGFloat) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(style.ink.opacity(0.88))
-                .frame(width: width * 0.86, height: height * 0.82)
+        let isDigitalBack = bodyStyle == .hSystemBack
+
+        return ZStack {
+            RoundedRectangle(cornerRadius: isDigitalBack ? 12 : 8, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            style.ink.opacity(0.90),
+                            style.swatches[1].opacity(isDigitalBack ? 0.58 : 0.42),
+                            style.ink.opacity(0.76)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: width * (isDigitalBack ? 0.92 : 0.82), height: height * (isDigitalBack ? 0.72 : 0.84))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: isDigitalBack ? 10 : 7, style: .continuous)
                         .stroke(style.paper.opacity(0.20), lineWidth: 1)
                 }
 
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(style.paper.opacity(0.20))
-                .frame(width: width * 0.34, height: height * 0.27)
-                .offset(y: -height * 0.23)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .stroke(style.paper.opacity(0.28), lineWidth: 1)
-                        .padding(4)
-                        .offset(y: -height * 0.23)
+            if isDigitalBack {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(style.paper.opacity(0.20))
+                    .frame(width: width * 0.24, height: height * 0.48)
+                    .offset(x: -width * 0.25, y: height * 0.02)
+                    .overlay {
+                        VStack(spacing: height * 0.025) {
+                            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                .fill(style.ink.opacity(0.46))
+                                .frame(width: width * 0.15, height: height * 0.12)
+                            HStack(spacing: width * 0.015) {
+                                ForEach(0..<3, id: \.self) { _ in
+                                    Circle()
+                                        .fill(style.accent.opacity(0.46))
+                                        .frame(width: width * 0.022, height: width * 0.022)
+                                }
+                            }
+                        }
+                    }
+            } else {
+                Path { path in
+                    path.move(to: CGPoint(x: width * 0.35, y: height * 0.26))
+                    path.addLine(to: CGPoint(x: width * 0.42, y: height * 0.02))
+                    path.addLine(to: CGPoint(x: width * 0.61, y: height * 0.02))
+                    path.addLine(to: CGPoint(x: width * 0.69, y: height * 0.26))
+                    path.closeSubpath()
                 }
+                .fill(style.paper.opacity(0.22))
+                .overlay {
+                    Path { path in
+                        path.move(to: CGPoint(x: width * 0.40, y: height * 0.16))
+                        path.addLine(to: CGPoint(x: width * 0.62, y: height * 0.16))
+                    }
+                    .stroke(style.paper.opacity(0.28), lineWidth: 1)
+                }
+            }
 
-            lens(width: width, height: height, diameter: min(width, height) * 0.54)
-                .offset(y: height * 0.08)
+            lens(width: width, height: height, diameter: min(width, height) * (isDigitalBack ? 0.50 : 0.56))
+                .offset(x: isDigitalBack ? width * 0.09 : 0, y: height * 0.08)
 
             HStack {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(style.paper.opacity(0.42))
+                    .fill(style.paper.opacity(isDigitalBack ? 0.26 : 0.42))
                     .frame(width: width * 0.16, height: height * 0.10)
                 Spacer()
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(style.accent.opacity(0.40))
-                    .frame(width: width * 0.12, height: height * 0.10)
+                    .fill(style.accent.opacity(isDigitalBack ? 0.62 : 0.40))
+                    .frame(width: width * (isDigitalBack ? 0.18 : 0.12), height: height * 0.10)
             }
             .padding(.horizontal, width * 0.16)
-            .offset(y: -height * 0.12)
+            .offset(y: -height * 0.17)
+
+            modelSticker(isDigitalBack ? "H" : "500", width: width, height: height)
+                .frame(width: width * 0.20)
+                .offset(x: width * 0.26, y: height * 0.23)
         }
     }
 
     private func compactCamera(width: CGFloat, height: CGFloat) -> some View {
-        ZStack {
-            cameraShell(width: width, height: height, radius: 14)
+        let isHalfFrame = bodyStyle == .halfFrameDiary
+        let isDaylight = bodyStyle == .daylightPointAndShoot
+        let isLomo = bodyStyle == .lomoCompact
+        let shellWidth = isHalfFrame ? width * 0.76 : width
+        let shellColors = isDaylight
+            ? [style.paper.opacity(0.90), style.swatches[0].opacity(0.72), style.ink.opacity(0.62)]
+            : isLomo
+                ? [style.wash[0].opacity(0.92), style.wash[1].opacity(0.80), style.ink.opacity(0.84)]
+                : [style.ink.opacity(0.92), style.ink.opacity(0.76), style.swatches[1].opacity(0.54)]
+
+        return ZStack {
+            cameraShell(width: shellWidth, height: height, radius: isHalfFrame ? 10 : 14, colors: shellColors)
+                .frame(width: shellWidth, height: height)
 
             RoundedRectangle(cornerRadius: 5, style: .continuous)
-                .fill(style.paper.opacity(0.16))
-                .frame(width: width * 0.46, height: height * 0.48)
+                .fill(style.paper.opacity(isDaylight ? 0.30 : 0.16))
+                .frame(width: shellWidth * (isHalfFrame ? 0.28 : 0.42), height: height * (isHalfFrame ? 0.56 : 0.48))
                 .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.trailing, width * 0.08)
+                .padding(.trailing, width * (isHalfFrame ? 0.20 : 0.08))
 
-            lens(width: width, height: height, diameter: min(width, height) * 0.42)
-                .offset(x: width * 0.12, y: height * 0.06)
+            if isLomo {
+                Rectangle()
+                    .fill(style.accent.opacity(0.72))
+                    .frame(width: width * 0.92, height: height * 0.10)
+                    .rotationEffect(.degrees(-11))
+                    .offset(y: height * 0.19)
+                Rectangle()
+                    .fill(style.swatches[1].opacity(0.58))
+                    .frame(width: width * 0.78, height: height * 0.07)
+                    .rotationEffect(.degrees(9))
+                    .offset(y: -height * 0.16)
+            }
+
+            if isHalfFrame {
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(style.paper.opacity(0.24))
+                    .frame(width: shellWidth * 0.18, height: height * 0.58)
+                    .offset(x: -width * 0.15, y: height * 0.05)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 1, style: .continuous)
+                            .stroke(style.accent.opacity(0.36), lineWidth: 1)
+                            .padding(3)
+                    }
+            }
+
+            lens(width: width, height: height, diameter: min(width, height) * (isHalfFrame ? 0.37 : isDaylight ? 0.40 : 0.43))
+                .offset(x: width * (isHalfFrame ? 0.10 : isDaylight ? 0.16 : 0.08), y: height * 0.06)
 
             HStack {
                 viewfinder(width: width, height: height)
-                    .frame(width: width * 0.18, height: height * 0.13)
+                    .frame(width: width * (isHalfFrame ? 0.14 : 0.18), height: height * 0.13)
                 Spacer()
-                Circle()
-                    .fill(style.accent.opacity(0.72))
-                    .frame(width: height * 0.08, height: height * 0.08)
+                if isDaylight {
+                    flashWindow(width: width, height: height)
+                } else {
+                    Circle()
+                        .fill(style.accent.opacity(0.72))
+                        .frame(width: height * 0.08, height: height * 0.08)
+                }
             }
-            .padding(.horizontal, width * 0.11)
+            .padding(.horizontal, width * (isHalfFrame ? 0.21 : 0.11))
             .padding(.top, height * 0.14)
             .frame(maxHeight: .infinity, alignment: .top)
+
+            gripRidges(width: width, height: height, count: isHalfFrame ? 5 : 4)
+                .offset(x: width * (isHalfFrame ? 0.23 : 0.34), y: height * 0.20)
+
+            modelSticker(isHalfFrame ? "1/2" : isLomo ? "LC" : isDaylight ? "AF" : "35", width: width, height: height)
+                .frame(width: width * 0.20)
+                .offset(x: -width * (isHalfFrame ? 0.15 : 0.24), y: height * 0.19)
         }
     }
 
     private func ccdCamera(width: CGFloat, height: CGFloat) -> some View {
-        ZStack {
+        let isBlueCCD = bodyStyle == .blueCCDCard
+
+        return ZStack {
             RoundedRectangle(cornerRadius: 13, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [style.paper.opacity(0.94), style.swatches[1].opacity(0.76), style.ink.opacity(0.80)],
+                        colors: isBlueCCD
+                            ? [style.accent.opacity(0.86), style.swatches[1].opacity(0.82), style.ink.opacity(0.86)]
+                            : [style.paper.opacity(0.94), style.swatches[1].opacity(0.76), style.ink.opacity(0.80)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -3504,45 +3785,94 @@ private struct CameraModelPlate: View {
 
             RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .fill(style.ink.opacity(0.78))
-                .frame(width: width * 0.30, height: height * 0.34)
+                .frame(width: width * (isBlueCCD ? 0.22 : 0.30), height: height * (isBlueCCD ? 0.58 : 0.34))
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, width * 0.12)
+                .padding(.leading, width * (isBlueCCD ? 0.10 : 0.12))
                 .overlay {
                     Rectangle()
-                        .fill(style.accent.opacity(0.40))
-                        .frame(width: width * 0.18, height: height * 0.18)
+                        .fill((isBlueCCD ? style.paper : style.accent).opacity(0.40))
+                        .frame(width: width * (isBlueCCD ? 0.10 : 0.18), height: height * (isBlueCCD ? 0.30 : 0.18))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.leading, width * 0.18)
+                        .padding(.leading, width * (isBlueCCD ? 0.16 : 0.18))
                 }
 
-            lens(width: width, height: height, diameter: min(width, height) * 0.36)
-                .offset(x: width * 0.18)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(style.ink.opacity(0.42))
+                .frame(width: width * 0.22, height: height * 0.22)
+                .offset(x: width * 0.04, y: -height * 0.16)
+                .overlay {
+                    HStack(spacing: width * 0.018) {
+                        ForEach(0..<3, id: \.self) { index in
+                            Circle()
+                                .fill(style.paper.opacity(index == 0 ? 0.54 : 0.28))
+                                .frame(width: width * 0.022, height: width * 0.022)
+                        }
+                    }
+                }
+
+            lens(width: width, height: height, diameter: min(width, height) * (isBlueCCD ? 0.34 : 0.36))
+                .offset(x: width * (isBlueCCD ? 0.20 : 0.18), y: height * (isBlueCCD ? 0.03 : 0))
 
             Capsule()
                 .fill(style.ink.opacity(0.44))
-                .frame(width: width * 0.22, height: 4)
+                .frame(width: width * (isBlueCCD ? 0.34 : 0.22), height: 4)
                 .offset(y: -height * 0.30)
+
+            modelSticker(isBlueCCD ? "5MP" : "3MP", width: width, height: height)
+                .frame(width: width * 0.24)
+                .offset(x: width * 0.24, y: height * 0.23)
         }
     }
 
     private func instantCamera(width: CGFloat, height: CGFloat) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(style.paper.opacity(0.94))
+        let isWide = bodyStyle == .wideInstantPlastic
+        let isFolding = bodyStyle == .foldingInstant
+        let bodyWidth = isWide ? width : width * (isFolding ? 0.86 : 0.82)
+
+        return ZStack {
+            RoundedRectangle(cornerRadius: isFolding ? 8 : 14, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            style.paper.opacity(0.95),
+                            style.swatches[1].opacity(isFolding ? 0.58 : 0.42),
+                            style.paper.opacity(0.80)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: bodyWidth, height: height)
                 .overlay(alignment: .bottom) {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(style.ink.opacity(0.62))
-                        .frame(height: height * 0.26)
-                        .padding(.horizontal, width * 0.12)
+                        .frame(width: bodyWidth * (isWide ? 0.70 : 0.66), height: height * (isFolding ? 0.20 : 0.26))
                         .padding(.bottom, height * 0.09)
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: isFolding ? 8 : 14, style: .continuous)
                         .stroke(style.ink.opacity(0.13), lineWidth: 1)
                 }
 
-            lens(width: width, height: height, diameter: min(width, height) * 0.35)
-                .offset(x: width * 0.12, y: -height * 0.06)
+            if isFolding {
+                ForEach(0..<4, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .stroke(style.ink.opacity(0.18), lineWidth: 1)
+                        .frame(width: width * CGFloat(0.56 - Double(index) * 0.055), height: height * CGFloat(0.44 - Double(index) * 0.045))
+                        .offset(x: width * 0.05, y: height * 0.05)
+                }
+                Path { path in
+                    path.move(to: CGPoint(x: width * 0.23, y: height * 0.30))
+                    path.addLine(to: CGPoint(x: width * 0.38, y: height * 0.12))
+                    path.addLine(to: CGPoint(x: width * 0.67, y: height * 0.12))
+                    path.addLine(to: CGPoint(x: width * 0.76, y: height * 0.30))
+                    path.closeSubpath()
+                }
+                .fill(style.ink.opacity(0.28))
+            }
+
+            lens(width: width, height: height, diameter: min(width, height) * (isWide ? 0.33 : isFolding ? 0.32 : 0.36))
+                .offset(x: width * (isWide ? 0.18 : isFolding ? 0.06 : 0.12), y: height * (isFolding ? 0.04 : -0.06))
 
             HStack {
                 viewfinder(width: width, height: height, isRound: true)
@@ -3550,48 +3880,178 @@ private struct CameraModelPlate: View {
                 Spacer()
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .fill(style.accent.opacity(0.62))
-                    .frame(width: width * 0.20, height: height * 0.16)
+                    .frame(width: width * (isWide ? 0.24 : 0.20), height: height * (isWide ? 0.20 : 0.16))
             }
-            .padding(.horizontal, width * 0.14)
-            .offset(y: -height * 0.22)
+            .padding(.horizontal, width * (isWide ? 0.12 : 0.18))
+            .offset(y: -height * (isFolding ? 0.25 : 0.22))
+
+            if isWide {
+                Capsule()
+                    .fill(style.ink.opacity(0.20))
+                    .frame(width: width * 0.30, height: height * 0.07)
+                    .offset(x: -width * 0.22, y: height * 0.25)
+            }
+
+            modelSticker(isWide ? "WIDE" : isFolding ? "SX" : "640", width: width, height: height)
+                .frame(width: width * (isWide ? 0.26 : 0.22))
+                .offset(x: -width * (isWide ? 0.24 : 0.18), y: height * 0.20)
         }
     }
 
     private func toyCamera(width: CGFloat, height: CGFloat) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+        let isDisposable = bodyStyle == .disposableFlashShell
+
+        return ZStack {
+            RoundedRectangle(cornerRadius: isDisposable ? 8 : 12, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [style.wash[0].opacity(0.92), style.wash[1].opacity(0.86), style.ink.opacity(0.72)],
+                        colors: isDisposable
+                            ? [style.paper.opacity(0.94), style.wash[0].opacity(0.82), style.swatches[1].opacity(0.74)]
+                            : [style.wash[0].opacity(0.92), style.wash[1].opacity(0.86), style.ink.opacity(0.72)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
 
             RoundedRectangle(cornerRadius: 5, style: .continuous)
-                .fill(style.paper.opacity(0.22))
-                .frame(height: height * 0.32)
+                .fill((isDisposable ? style.ink : style.paper).opacity(isDisposable ? 0.20 : 0.22))
+                .frame(height: height * (isDisposable ? 0.36 : 0.32))
                 .frame(maxHeight: .infinity, alignment: .bottom)
 
-            lens(width: width, height: height, diameter: min(width, height) * 0.43)
-                .offset(y: height * 0.05)
+            if isDisposable {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(style.accent.opacity(0.70))
+                    .frame(width: width * 0.34, height: height * 0.24)
+                    .offset(x: -width * 0.18, y: -height * 0.13)
+                    .overlay {
+                        VStack(spacing: height * 0.025) {
+                            Rectangle()
+                                .fill(style.ink.opacity(0.24))
+                                .frame(width: width * 0.22, height: 1)
+                            Rectangle()
+                                .fill(style.ink.opacity(0.18))
+                                .frame(width: width * 0.16, height: 1)
+                        }
+                    }
+            } else {
+                HStack {
+                    Circle()
+                        .fill(style.paper.opacity(0.28))
+                        .frame(width: height * 0.16, height: height * 0.16)
+                    Spacer()
+                    Circle()
+                        .fill(style.paper.opacity(0.28))
+                        .frame(width: height * 0.16, height: height * 0.16)
+                }
+                .padding(.horizontal, width * 0.16)
+                .offset(y: -height * 0.24)
+            }
+
+            lens(width: width, height: height, diameter: min(width, height) * (isDisposable ? 0.34 : 0.45))
+                .offset(x: width * (isDisposable ? 0.17 : 0), y: height * 0.06)
 
             HStack {
                 viewfinder(width: width, height: height)
-                    .frame(width: width * 0.18, height: height * 0.14)
+                    .frame(width: width * (isDisposable ? 0.16 : 0.18), height: height * 0.14)
                 Spacer()
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .fill(style.accent.opacity(0.64))
-                    .frame(width: width * 0.22, height: height * 0.16)
+                    .frame(width: width * (isDisposable ? 0.26 : 0.22), height: height * (isDisposable ? 0.20 : 0.16))
             }
             .padding(.horizontal, width * 0.12)
             .padding(.top, height * 0.15)
             .frame(maxHeight: .infinity, alignment: .top)
+
+            modelSticker(isDisposable ? "27" : "120", width: width, height: height)
+                .frame(width: width * 0.20)
+                .offset(x: -width * 0.25, y: height * 0.22)
+
+            if !isDisposable {
+                Rectangle()
+                    .fill(style.accent.opacity(0.64))
+                    .frame(width: width * 0.74, height: height * 0.07)
+                    .rotationEffect(.degrees(-5))
+                    .offset(y: height * 0.20)
+            }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: isDisposable ? 8 : 12, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: isDisposable ? 8 : 12, style: .continuous)
                 .stroke(style.paper.opacity(0.16), lineWidth: 1)
+        }
+    }
+
+    private func cinemaCamera(width: CGFloat, height: CGFloat) -> some View {
+        let isNoir = bodyStyle == .noirCinemaBody
+
+        return ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            style.ink.opacity(isNoir ? 0.94 : 0.88),
+                            style.swatches[1].opacity(isNoir ? 0.42 : 0.64),
+                            style.ink.opacity(0.82)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: width * 0.78, height: height * 0.58)
+                .offset(x: -width * 0.06, y: height * 0.06)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .stroke(style.paper.opacity(0.16), lineWidth: 1)
+                        .frame(width: width * 0.70, height: height * 0.50)
+                }
+
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(style.paper.opacity(isNoir ? 0.18 : 0.26))
+                .frame(width: width * 0.42, height: height * 0.12)
+                .offset(x: -width * 0.13, y: -height * 0.26)
+                .overlay(alignment: .leading) {
+                    Circle()
+                        .fill(style.accent.opacity(0.70))
+                        .frame(width: height * 0.08, height: height * 0.08)
+                        .padding(.leading, width * 0.04)
+                }
+
+            Circle()
+                .fill(style.ink.opacity(0.86))
+                .frame(width: height * 0.30, height: height * 0.30)
+                .offset(x: -width * 0.30, y: -height * 0.16)
+                .overlay {
+                    Circle()
+                        .stroke(style.paper.opacity(0.18), lineWidth: 2)
+                        .frame(width: height * 0.22, height: height * 0.22)
+                }
+
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(style.ink.opacity(0.92))
+                .frame(width: width * 0.18, height: height * 0.34)
+                .offset(x: width * 0.26, y: height * 0.07)
+
+            lens(width: width, height: height, diameter: min(width, height) * (isNoir ? 0.39 : 0.43))
+                .offset(x: width * 0.18, y: height * 0.06)
+                .overlay(alignment: .trailing) {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(.black.opacity(0.72))
+                        .frame(width: width * 0.20, height: height * 0.25)
+                        .offset(x: width * 0.27, y: height * 0.06)
+                }
+
+            VStack(spacing: height * 0.035) {
+                ForEach(0..<2, id: \.self) { _ in
+                    Capsule()
+                        .fill(style.paper.opacity(0.24))
+                        .frame(width: width * 0.62, height: 2)
+                }
+            }
+            .offset(x: width * 0.04, y: height * 0.36)
+
+            modelSticker(isNoir ? "NOIR" : "S35", width: width, height: height)
+                .frame(width: width * 0.24)
+                .offset(x: -width * 0.14, y: height * 0.18)
         }
     }
 }

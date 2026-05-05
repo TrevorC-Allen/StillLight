@@ -66,6 +66,10 @@
 		000000000000000000000275 /* tungsten-800__thumb__neon-alley__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000279 /* tungsten-800__thumb__neon-alley__v001.jpg */; };
 		000000000000000000000276 /* tungsten-800__micro__neon-alley__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000280 /* tungsten-800__micro__neon-alley__v001.jpg */; };
 		000000000000000000000277 /* tungsten-800__blur__neon-alley__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000281 /* tungsten-800__blur__neon-alley__v001.jpg */; };
+		000000000000000000000282 /* ccd-2003__hero__campus-ccd__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000286 /* ccd-2003__hero__campus-ccd__v001.jpg */; };
+		000000000000000000000283 /* ccd-2003__thumb__campus-ccd__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000287 /* ccd-2003__thumb__campus-ccd__v001.jpg */; };
+		000000000000000000000284 /* ccd-2003__micro__campus-ccd__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000288 /* ccd-2003__micro__campus-ccd__v001.jpg */; };
+		000000000000000000000285 /* ccd-2003__blur__campus-ccd__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000289 /* ccd-2003__blur__campus-ccd__v001.jpg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -131,6 +135,10 @@
 		000000000000000000000279 /* tungsten-800__thumb__neon-alley__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/tungsten-800/tungsten-800__thumb__neon-alley__v001.jpg"; sourceTree = "<group>"; };
 		000000000000000000000280 /* tungsten-800__micro__neon-alley__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/tungsten-800/tungsten-800__micro__neon-alley__v001.jpg"; sourceTree = "<group>"; };
 		000000000000000000000281 /* tungsten-800__blur__neon-alley__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/tungsten-800/tungsten-800__blur__neon-alley__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000286 /* ccd-2003__hero__campus-ccd__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/ccd-2003/ccd-2003__hero__campus-ccd__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000287 /* ccd-2003__thumb__campus-ccd__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/ccd-2003/ccd-2003__thumb__campus-ccd__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000288 /* ccd-2003__micro__campus-ccd__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/ccd-2003/ccd-2003__micro__campus-ccd__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000289 /* ccd-2003__blur__campus-ccd__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/ccd-2003/ccd-2003__blur__campus-ccd__v001.jpg"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -312,6 +320,10 @@
 				000000000000000000000279 /* tungsten-800__thumb__neon-alley__v001.jpg */,
 				000000000000000000000280 /* tungsten-800__micro__neon-alley__v001.jpg */,
 				000000000000000000000281 /* tungsten-800__blur__neon-alley__v001.jpg */,
+				000000000000000000000286 /* ccd-2003__hero__campus-ccd__v001.jpg */,
+				000000000000000000000287 /* ccd-2003__thumb__campus-ccd__v001.jpg */,
+				000000000000000000000288 /* ccd-2003__micro__campus-ccd__v001.jpg */,
+				000000000000000000000289 /* ccd-2003__blur__campus-ccd__v001.jpg */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -413,6 +425,10 @@
 				000000000000000000000275 /* tungsten-800__thumb__neon-alley__v001.jpg in Resources */,
 				000000000000000000000276 /* tungsten-800__micro__neon-alley__v001.jpg in Resources */,
 				000000000000000000000277 /* tungsten-800__blur__neon-alley__v001.jpg in Resources */,
+				000000000000000000000282 /* ccd-2003__hero__campus-ccd__v001.jpg in Resources */,
+				000000000000000000000283 /* ccd-2003__thumb__campus-ccd__v001.jpg in Resources */,
+				000000000000000000000284 /* ccd-2003__micro__campus-ccd__v001.jpg in Resources */,
+				000000000000000000000285 /* ccd-2003__blur__campus-ccd__v001.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

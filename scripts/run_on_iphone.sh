@@ -7,6 +7,7 @@ BUNDLE_ID="${BUNDLE_ID:-com.trevorcui.StillLight}"
 BUILD_ROOT="${BUILD_ROOT:-/tmp/StillLightBuild}"
 OBJ_ROOT="${OBJ_ROOT:-/tmp/StillLightObj}"
 DEVICE_ID="${1:-}"
+DEVICECTL_RETRIES="${DEVICECTL_RETRIES:-3}"
 
 if [[ ! -d "$DEVELOPER_DIR" ]]; then
   echo "Xcode not found at $DEVELOPER_DIR"
@@ -45,10 +46,47 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 3
 fi
 
-xcrun devicectl device install app --device "$DEVICE_ID" "$APP_PATH"
+run_devicectl_with_retry() {
+  local label="$1"
+  shift
+
+  local attempt=1
+  local log_file
+  while [[ "$attempt" -le "$DEVICECTL_RETRIES" ]]; do
+    log_file="$(mktemp -t "stilllight-${label}.XXXXXX")"
+    if "$@" >"$log_file" 2>&1; then
+      cat "$log_file"
+      rm -f "$log_file"
+      return 0
+    fi
+
+    local status=$?
+    cat "$log_file"
+    if [[ "$attempt" -lt "$DEVICECTL_RETRIES" ]] && grep -Eqi "Connection reset|Connection was invalidated|No provider was found|Transport error" "$log_file"; then
+      echo
+      echo "devicectl $label failed because the device connection was reset. Retrying ($((attempt + 1))/$DEVICECTL_RETRIES)..."
+      echo "Keep the iPhone unlocked and connected."
+      rm -f "$log_file"
+      sleep 2
+      attempt=$((attempt + 1))
+      continue
+    fi
+
+    rm -f "$log_file"
+    return "$status"
+  done
+}
+
+if ! run_devicectl_with_retry install xcrun devicectl device install app --device "$DEVICE_ID" "$APP_PATH"; then
+  echo
+  echo "StillLight built successfully, but installation failed."
+  echo "Unlock the iPhone, keep it on the Home Screen, reconnect USB if needed, then run:"
+  echo "  scripts/run_on_iphone.sh $DEVICE_ID"
+  exit 4
+fi
 
 LAUNCH_LOG="$(mktemp -t stilllight-launch.XXXXXX)"
-if ! xcrun devicectl device process launch --device "$DEVICE_ID" "$BUNDLE_ID" >"$LAUNCH_LOG" 2>&1; then
+if ! run_devicectl_with_retry launch xcrun devicectl device process launch --device "$DEVICE_ID" "$BUNDLE_ID" >"$LAUNCH_LOG" 2>&1; then
   cat "$LAUNCH_LOG"
   if grep -qi "Locked" "$LAUNCH_LOG"; then
     echo

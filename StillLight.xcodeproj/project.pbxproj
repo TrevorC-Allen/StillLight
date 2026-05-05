@@ -54,6 +54,10 @@
 		000000000000000000000251 /* muse-portrait-400__thumb__window-portrait__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000255 /* muse-portrait-400__thumb__window-portrait__v001.jpg */; };
 		000000000000000000000252 /* muse-portrait-400__micro__window-portrait__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000256 /* muse-portrait-400__micro__window-portrait__v001.jpg */; };
 		000000000000000000000253 /* muse-portrait-400__blur__window-portrait__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000257 /* muse-portrait-400__blur__window-portrait__v001.jpg */; };
+		000000000000000000000258 /* human-vignette-800__hero__museum-corridor__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000262 /* human-vignette-800__hero__museum-corridor__v001.jpg */; };
+		000000000000000000000259 /* human-vignette-800__thumb__museum-corridor__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000263 /* human-vignette-800__thumb__museum-corridor__v001.jpg */; };
+		000000000000000000000260 /* human-vignette-800__micro__museum-corridor__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000264 /* human-vignette-800__micro__museum-corridor__v001.jpg */; };
+		000000000000000000000261 /* human-vignette-800__blur__museum-corridor__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000265 /* human-vignette-800__blur__museum-corridor__v001.jpg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -107,6 +111,10 @@
 		000000000000000000000255 /* muse-portrait-400__thumb__window-portrait__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/muse-portrait-400/muse-portrait-400__thumb__window-portrait__v001.jpg"; sourceTree = "<group>"; };
 		000000000000000000000256 /* muse-portrait-400__micro__window-portrait__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/muse-portrait-400/muse-portrait-400__micro__window-portrait__v001.jpg"; sourceTree = "<group>"; };
 		000000000000000000000257 /* muse-portrait-400__blur__window-portrait__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/muse-portrait-400/muse-portrait-400__blur__window-portrait__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000262 /* human-vignette-800__hero__museum-corridor__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/human-vignette-800/human-vignette-800__hero__museum-corridor__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000263 /* human-vignette-800__thumb__museum-corridor__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/human-vignette-800/human-vignette-800__thumb__museum-corridor__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000264 /* human-vignette-800__micro__museum-corridor__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/human-vignette-800/human-vignette-800__micro__museum-corridor__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000265 /* human-vignette-800__blur__museum-corridor__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/human-vignette-800/human-vignette-800__blur__museum-corridor__v001.jpg"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -276,6 +284,10 @@
 				000000000000000000000255 /* muse-portrait-400__thumb__window-portrait__v001.jpg */,
 				000000000000000000000256 /* muse-portrait-400__micro__window-portrait__v001.jpg */,
 				000000000000000000000257 /* muse-portrait-400__blur__window-portrait__v001.jpg */,
+				000000000000000000000262 /* human-vignette-800__hero__museum-corridor__v001.jpg */,
+				000000000000000000000263 /* human-vignette-800__thumb__museum-corridor__v001.jpg */,
+				000000000000000000000264 /* human-vignette-800__micro__museum-corridor__v001.jpg */,
+				000000000000000000000265 /* human-vignette-800__blur__museum-corridor__v001.jpg */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -365,6 +377,10 @@
 				000000000000000000000251 /* muse-portrait-400__thumb__window-portrait__v001.jpg in Resources */,
 				000000000000000000000252 /* muse-portrait-400__micro__window-portrait__v001.jpg in Resources */,
 				000000000000000000000253 /* muse-portrait-400__blur__window-portrait__v001.jpg in Resources */,
+				000000000000000000000258 /* human-vignette-800__hero__museum-corridor__v001.jpg in Resources */,
+				000000000000000000000259 /* human-vignette-800__thumb__museum-corridor__v001.jpg in Resources */,
+				000000000000000000000260 /* human-vignette-800__micro__museum-corridor__v001.jpg in Resources */,
+				000000000000000000000261 /* human-vignette-800__blur__museum-corridor__v001.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

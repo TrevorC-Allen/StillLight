@@ -87,6 +87,8 @@ struct FilmPickerSheet: View {
             HStack(spacing: 8) {
                 CategoryChip(
                     title: appState.t(.all),
+                    count: appState.filmLibrary.presets.count,
+                    iconName: "square.grid.2x2",
                     isSelected: selectedCategory == nil
                 ) {
                     selectedCategory = nil
@@ -95,6 +97,8 @@ struct FilmPickerSheet: View {
                 ForEach(FilmCategory.allCases) { category in
                     CategoryChip(
                         title: category.title(language: appState.language),
+                        count: appState.filmLibrary.presets(matching: category, favoriteIds: appState.favoriteFilmIds).count,
+                        iconName: category.drawerIconName,
                         isSelected: selectedCategory == category
                     ) {
                         selectedCategory = category
@@ -4693,19 +4697,61 @@ private enum FilmCoverKind {
 
 private struct CategoryChip: View {
     let title: String
+    let count: Int
+    let iconName: String
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(isSelected ? StillLightTheme.background : StillLightTheme.text)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 9)
-                .background(isSelected ? StillLightTheme.accent : StillLightTheme.panelElevated)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            HStack(spacing: 7) {
+                Image(systemName: iconName)
+                    .font(.system(size: 12, weight: .bold))
+                    .frame(width: 14)
+
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .lineLimit(1)
+
+                Text("\(count)")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(isSelected ? StillLightTheme.background.opacity(0.74) : StillLightTheme.secondaryText)
+                    .padding(.horizontal, 5)
+                    .frame(height: 17)
+                    .background(isSelected ? Color.black.opacity(0.12) : StillLightTheme.panel.opacity(0.72))
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            }
+            .foregroundStyle(isSelected ? StillLightTheme.background : StillLightTheme.text)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 9)
+            .background(isSelected ? StillLightTheme.accent : StillLightTheme.panelElevated)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+}
+
+private extension FilmCategory {
+    var drawerIconName: String {
+        switch self {
+        case .favorites:
+            return "pin.fill"
+        case .featured:
+            return "sparkle"
+        case .portrait:
+            return "person.crop.square"
+        case .negative:
+            return "film"
+        case .camera:
+            return "camera.viewfinder"
+        case .instant:
+            return "rectangle.stack"
+        case .blackWhite:
+            return "circle.lefthalf.filled"
+        case .digital:
+            return "memorychip"
+        case .experimental:
+            return "dial.low"
+        }
     }
 }

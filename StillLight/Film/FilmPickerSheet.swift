@@ -4028,7 +4028,7 @@ private struct FilmSampleSceneView: View {
             let height = proxy.size.height
 
             ZStack {
-                FilmContactSheetCrop(frame: resolvedPhotoFrame)
+                sampleImage(width: width, height: height)
                     .saturation(treatment.saturation)
                     .contrast(treatment.contrast)
                     .brightness(treatment.brightness)
@@ -4049,6 +4049,21 @@ private struct FilmSampleSceneView: View {
                 sceneGrain(width: width, height: height)
             }
             .clipShape(RoundedRectangle(cornerRadius: min(width, height) * 0.08, style: .continuous))
+        }
+    }
+
+    @ViewBuilder
+    private func sampleImage(width: CGFloat, height: CGFloat) -> some View {
+        let maxPixelSize = Int(max(width, height) * UIScreen.main.scale * 1.5)
+        if let image = FilmSampleCatalog.image(for: film, role: .micro, maxPixelSize: maxPixelSize) {
+            Image(uiImage: image)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFill()
+                .frame(width: width, height: height)
+                .clipped()
+        } else {
+            FilmContactSheetCrop(frame: resolvedPhotoFrame)
         }
     }
 

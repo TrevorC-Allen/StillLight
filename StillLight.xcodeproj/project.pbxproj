@@ -33,6 +33,7 @@
 		000000000000000000000224 /* FilmRollStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000124 /* FilmRollStore.swift */; };
 		000000000000000000000225 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000125 /* AppLanguage.swift */; };
 		000000000000000000000226 /* VideoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000126 /* VideoExporter.swift */; };
+		000000000000000000000239 /* FilmSampleCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000140 /* FilmSampleCatalog.swift */; };
 		000000000000000000000227 /* AppIcon20x20@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000127 /* AppIcon20x20@2x.png */; };
 		000000000000000000000228 /* AppIcon20x20@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000128 /* AppIcon20x20@3x.png */; };
 		000000000000000000000229 /* AppIcon29x29@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000129 /* AppIcon29x29@2x.png */; };
@@ -43,6 +44,7 @@
 		000000000000000000000234 /* AppIcon60x60@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000134 /* AppIcon60x60@3x.png */; };
 		000000000000000000000236 /* film_sample_contact_sheet.png in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000235 /* film_sample_contact_sheet.png */; };
 		000000000000000000000238 /* film_sample_contact_sheet_v2.png in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000237 /* film_sample_contact_sheet_v2.png */; };
+		000000000000000000000240 /* film_samples_manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000141 /* film_samples_manifest.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +77,7 @@
 		000000000000000000000124 /* FilmRollStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmRollStore.swift; sourceTree = "<group>"; };
 		000000000000000000000125 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		000000000000000000000126 /* VideoExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoExporter.swift; sourceTree = "<group>"; };
+		000000000000000000000140 /* FilmSampleCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmSampleCatalog.swift; sourceTree = "<group>"; };
 		000000000000000000000127 /* AppIcon20x20@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcons/AppIcon20x20@2x.png"; sourceTree = "<group>"; };
 		000000000000000000000128 /* AppIcon20x20@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcons/AppIcon20x20@3x.png"; sourceTree = "<group>"; };
 		000000000000000000000129 /* AppIcon29x29@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcons/AppIcon29x29@2x.png"; sourceTree = "<group>"; };
@@ -85,6 +88,7 @@
 		000000000000000000000134 /* AppIcon60x60@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcons/AppIcon60x60@3x.png"; sourceTree = "<group>"; };
 		000000000000000000000235 /* film_sample_contact_sheet.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = FilmSamples/film_sample_contact_sheet.png; sourceTree = "<group>"; };
 		000000000000000000000237 /* film_sample_contact_sheet_v2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = FilmSamples/film_sample_contact_sheet_v2.png; sourceTree = "<group>"; };
+		000000000000000000000141 /* film_samples_manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = FilmSamples/film_samples_manifest.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -164,6 +168,7 @@
 				000000000000000000000111 /* FilmPreset.swift */,
 				000000000000000000000123 /* FilmRoll.swift */,
 				000000000000000000000124 /* FilmRollStore.swift */,
+				000000000000000000000140 /* FilmSampleCatalog.swift */,
 			);
 			path = Film;
 			sourceTree = "<group>";
@@ -243,6 +248,7 @@
 				000000000000000000000134 /* AppIcon60x60@3x.png */,
 				000000000000000000000235 /* film_sample_contact_sheet.png */,
 				000000000000000000000237 /* film_sample_contact_sheet_v2.png */,
+				000000000000000000000141 /* film_samples_manifest.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -323,6 +329,7 @@
 				000000000000000000000234 /* AppIcon60x60@3x.png in Resources */,
 				000000000000000000000236 /* film_sample_contact_sheet.png in Resources */,
 				000000000000000000000238 /* film_sample_contact_sheet_v2.png in Resources */,
+				000000000000000000000240 /* film_samples_manifest.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -359,6 +366,7 @@
 				000000000000000000000224 /* FilmRollStore.swift in Sources */,
 				000000000000000000000225 /* AppLanguage.swift in Sources */,
 				000000000000000000000226 /* VideoExporter.swift in Sources */,
+				000000000000000000000239 /* FilmSampleCatalog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

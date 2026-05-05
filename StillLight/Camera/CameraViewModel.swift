@@ -446,7 +446,7 @@ final class CameraViewModel: ObservableObject {
                 doubleExposureState.phase = .waitingForSecondShot
                 doubleExposureState.firstShotPreview = processedImage
                 doubleExposureState.firstCapturedAt = captureDate
-                showTransientStatus("Double exposure: first shot buffered. Take the second shot.", durationNanoseconds: 4_000_000_000)
+                showTransientStatus(appState.t(.doubleExposureFirstBuffered), durationNanoseconds: 4_000_000_000)
                 isProcessing = false
                 return
             }
@@ -547,7 +547,7 @@ final class CameraViewModel: ObservableObject {
             if let warningMessage = exportResult.warningMessage {
                 showTransientStatus(warningMessage, durationNanoseconds: 4_000_000_000)
             } else if capture.isMultiFrameApproximation {
-                showTransientStatus("Long exposure approximation: \(capture.frameData.count) frames blended.")
+                showTransientStatus(String(format: appState.t(.longExposureFramesBlended), capture.frameData.count))
             }
         } catch {
             errorMessage = error.localizedDescription

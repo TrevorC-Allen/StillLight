@@ -116,6 +116,8 @@ enum AppText {
         case starFilter
         case whiteBalance
         case timer
+        case doubleExposureFirstBuffered
+        case longExposureFramesBlended
         case appName
     }
 
@@ -209,6 +211,8 @@ enum AppText {
         .starFilter: "Star",
         .whiteBalance: "WB",
         .timer: "Timer",
+        .doubleExposureFirstBuffered: "First frame loaded. Take the second shot.",
+        .longExposureFramesBlended: "Long exposure: %d frames blended",
         .appName: "StillLight"
     ]
 
@@ -302,6 +306,8 @@ enum AppText {
         .starFilter: "星芒",
         .whiteBalance: "色温",
         .timer: "计时",
+        .doubleExposureFirstBuffered: "第一张已装入，请拍第二张",
+        .longExposureFramesBlended: "长曝合成完成：%d 帧",
         .appName: "StillLight"
     ]
 }

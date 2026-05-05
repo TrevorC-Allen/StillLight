@@ -125,7 +125,7 @@ final class CameraViewModel: ObservableObject {
     }
 
     func switchCamera() {
-        guard !isRecording else { return }
+        guard !isRecording, !isProcessing else { return }
         cameraService.switchCamera { [weak self] state in
             DispatchQueue.main.async {
                 self?.permissionState = state

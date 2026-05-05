@@ -345,6 +345,7 @@ final class CameraService: NSObject, ObservableObject {
         sessionQueue.async { [weak self] in
             guard let self else { return }
             let settings = AVCapturePhotoSettings()
+            self.configureVideoConnection(self.photoOutput.connection(with: .video))
 
             if self.photoOutput.supportedFlashModes.contains(flashMode.avMode) {
                 settings.flashMode = flashMode.avMode
@@ -416,21 +417,7 @@ final class CameraService: NSObject, ObservableObject {
                         try FileManager.default.removeItem(at: outputURL)
                     }
 
-                    if let connection = self.movieOutput.connection(with: .video) {
-                        if #available(iOS 17.0, *) {
-                            if connection.isVideoRotationAngleSupported(90) {
-                                connection.videoRotationAngle = 90
-                            }
-                        } else if connection.isVideoOrientationSupported {
-                            connection.videoOrientation = .portrait
-                        }
-                        if connection.isVideoMirroringSupported {
-                            connection.isVideoMirrored = self.position == .front
-                        }
-                        if connection.isVideoStabilizationSupported {
-                            connection.preferredVideoStabilizationMode = .cinematic
-                        }
-                    }
+                    self.configureVideoConnection(self.movieOutput.connection(with: .video), enableStabilization: true)
 
                     let delegate = MovieCaptureDelegate { [weak self] result in
                         completion(result)
@@ -462,20 +449,23 @@ final class CameraService: NSObject, ObservableObject {
     }
 
     private func configureSession(position: AVCaptureDevice.Position) throws {
-        session.beginConfiguration()
-        session.sessionPreset = .high
-
-        if let videoInput {
-            session.removeInput(videoInput)
-        }
-
         guard let device = Self.bestDevice(for: position) else {
-            session.commitConfiguration()
             throw CameraError.deviceUnavailable
         }
 
         let input = try AVCaptureDeviceInput(device: device)
+        let previousInput = videoInput
+
+        session.beginConfiguration()
+        session.sessionPreset = .high
+
+        if let previousInput {
+            session.removeInput(previousInput)
+        }
         guard session.canAddInput(input) else {
+            if let previousInput, session.canAddInput(previousInput) {
+                session.addInput(previousInput)
+            }
             session.commitConfiguration()
             throw CameraError.cannotAddInput
         }
@@ -491,6 +481,8 @@ final class CameraService: NSObject, ObservableObject {
         }
 
         session.commitConfiguration()
+        configureVideoConnection(photoOutput.connection(with: .video))
+        configureVideoConnection(movieOutput.connection(with: .video), enableStabilization: true)
         setInitialZoom(on: device)
         if let preferredWhiteBalanceKelvin {
             applyWhiteBalance(kelvin: preferredWhiteBalanceKelvin, tint: preferredWhiteBalanceTint, on: device)
@@ -591,6 +583,30 @@ final class CameraService: NSObject, ObservableObject {
         }
 
         return options
+    }
+
+    private func configureVideoConnection(
+        _ connection: AVCaptureConnection?,
+        enableStabilization: Bool = false
+    ) {
+        guard let connection else { return }
+
+        if #available(iOS 17.0, *) {
+            if connection.isVideoRotationAngleSupported(90) {
+                connection.videoRotationAngle = 90
+            }
+        } else if connection.isVideoOrientationSupported {
+            connection.videoOrientation = .portrait
+        }
+
+        if connection.isVideoMirroringSupported {
+            connection.automaticallyAdjustsVideoMirroring = false
+            connection.isVideoMirrored = position == .front
+        }
+
+        if enableStabilization, connection.isVideoStabilizationSupported {
+            connection.preferredVideoStabilizationMode = .cinematic
+        }
     }
 
     private func whiteBalanceState(for device: AVCaptureDevice) -> CameraWhiteBalanceState {

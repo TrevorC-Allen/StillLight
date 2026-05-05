@@ -328,6 +328,8 @@ struct CameraScreen: View {
                 ) {
                     viewModel.switchCamera()
                 }
+                .disabled(viewModel.isProcessing || viewModel.isRecording)
+                .opacity(viewModel.isProcessing || viewModel.isRecording ? 0.42 : 1)
 
                 CameraAccessoryButton(
                     iconName: viewModel.flashMode.iconName,

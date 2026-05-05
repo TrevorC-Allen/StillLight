@@ -351,17 +351,7 @@ private struct FilmObjectShelf: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(alignment: .bottom, spacing: 16) {
                             ForEach(films) { film in
-                                FilmObjectCard(
-                                    film: film,
-                                    isFocused: film.id == focusedFilmId,
-                                    isLoaded: film.id == selectedFilmId,
-                                    isFavorite: favoriteIds.contains(film.id),
-                                    language: language
-                                ) {
-                                    focusAction(film)
-                                    centeredFilmId = film.id
-                                }
-                                .id(film.id)
+                                objectCard(for: film)
                             }
                         }
                         .padding(.top, 24)
@@ -398,6 +388,26 @@ private struct FilmObjectShelf: View {
                 selectionFeedback.prepare()
             }
             focusAction(film)
+        }
+    }
+
+    private func objectCard(for film: FilmPreset) -> some View {
+        FilmObjectCard(
+            film: film,
+            isFocused: film.id == focusedFilmId,
+            isLoaded: film.id == selectedFilmId,
+            isFavorite: favoriteIds.contains(film.id),
+            language: language
+        ) {
+            focusAction(film)
+            centeredFilmId = film.id
+        }
+        .id(film.id)
+        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+            content
+                .scaleEffect(phase.isIdentity ? 1.0 : 0.90)
+                .opacity(phase.isIdentity ? 1.0 : 0.70)
+                .offset(y: phase.isIdentity ? 0 : 12)
         }
     }
 

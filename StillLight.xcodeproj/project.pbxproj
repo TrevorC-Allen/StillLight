@@ -50,6 +50,10 @@
 		000000000000000000000243 /* human-warm-400__thumb__cafe-table__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000247 /* human-warm-400__thumb__cafe-table__v001.jpg */; };
 		000000000000000000000244 /* human-warm-400__micro__cafe-table__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000248 /* human-warm-400__micro__cafe-table__v001.jpg */; };
 		000000000000000000000245 /* human-warm-400__blur__cafe-table__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000249 /* human-warm-400__blur__cafe-table__v001.jpg */; };
+		000000000000000000000250 /* muse-portrait-400__hero__window-portrait__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000254 /* muse-portrait-400__hero__window-portrait__v001.jpg */; };
+		000000000000000000000251 /* muse-portrait-400__thumb__window-portrait__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000255 /* muse-portrait-400__thumb__window-portrait__v001.jpg */; };
+		000000000000000000000252 /* muse-portrait-400__micro__window-portrait__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000256 /* muse-portrait-400__micro__window-portrait__v001.jpg */; };
+		000000000000000000000253 /* muse-portrait-400__blur__window-portrait__v001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000257 /* muse-portrait-400__blur__window-portrait__v001.jpg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -99,6 +103,10 @@
 		000000000000000000000247 /* human-warm-400__thumb__cafe-table__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/human-warm-400/human-warm-400__thumb__cafe-table__v001.jpg"; sourceTree = "<group>"; };
 		000000000000000000000248 /* human-warm-400__micro__cafe-table__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/human-warm-400/human-warm-400__micro__cafe-table__v001.jpg"; sourceTree = "<group>"; };
 		000000000000000000000249 /* human-warm-400__blur__cafe-table__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/human-warm-400/human-warm-400__blur__cafe-table__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000254 /* muse-portrait-400__hero__window-portrait__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/muse-portrait-400/muse-portrait-400__hero__window-portrait__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000255 /* muse-portrait-400__thumb__window-portrait__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/muse-portrait-400/muse-portrait-400__thumb__window-portrait__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000256 /* muse-portrait-400__micro__window-portrait__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/muse-portrait-400/muse-portrait-400__micro__window-portrait__v001.jpg"; sourceTree = "<group>"; };
+		000000000000000000000257 /* muse-portrait-400__blur__window-portrait__v001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "FilmSamples/Samples/muse-portrait-400/muse-portrait-400__blur__window-portrait__v001.jpg"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -264,6 +272,10 @@
 				000000000000000000000247 /* human-warm-400__thumb__cafe-table__v001.jpg */,
 				000000000000000000000248 /* human-warm-400__micro__cafe-table__v001.jpg */,
 				000000000000000000000249 /* human-warm-400__blur__cafe-table__v001.jpg */,
+				000000000000000000000254 /* muse-portrait-400__hero__window-portrait__v001.jpg */,
+				000000000000000000000255 /* muse-portrait-400__thumb__window-portrait__v001.jpg */,
+				000000000000000000000256 /* muse-portrait-400__micro__window-portrait__v001.jpg */,
+				000000000000000000000257 /* muse-portrait-400__blur__window-portrait__v001.jpg */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -349,6 +361,10 @@
 				000000000000000000000243 /* human-warm-400__thumb__cafe-table__v001.jpg in Resources */,
 				000000000000000000000244 /* human-warm-400__micro__cafe-table__v001.jpg in Resources */,
 				000000000000000000000245 /* human-warm-400__blur__cafe-table__v001.jpg in Resources */,
+				000000000000000000000250 /* muse-portrait-400__hero__window-portrait__v001.jpg in Resources */,
+				000000000000000000000251 /* muse-portrait-400__thumb__window-portrait__v001.jpg in Resources */,
+				000000000000000000000252 /* muse-portrait-400__micro__window-portrait__v001.jpg in Resources */,
+				000000000000000000000253 /* muse-portrait-400__blur__window-portrait__v001.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

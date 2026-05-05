@@ -45,21 +45,28 @@ struct FilmPickerSheet: View {
                             isFavorite: appState.isFavorite(focusedFilm),
                             currentRoll: focusedFilm.id == appState.currentRoll.filmPresetId ? appState.currentRoll : nil,
                             language: appState.language,
+                            showsActions: false,
                             favoriteAction: {
                                 appState.toggleFavorite(focusedFilm)
                             },
-                            loadAction: {
-                                if focusedFilm.id == appState.selectedFilm.id {
-                                    dismiss()
-                                } else {
-                                    appState.selectFilm(focusedFilm)
-                                    dismiss()
-                                }
-                            }
+                            loadAction: { loadFilm(focusedFilm) }
                         )
                     }
                 }
                 .padding(18)
+                .padding(.bottom, 78)
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if let focusedFilm {
+                FilmPickerActionBar(
+                    film: focusedFilm,
+                    isLoaded: focusedFilm.id == appState.selectedFilm.id,
+                    isFavorite: appState.isFavorite(focusedFilm),
+                    language: appState.language,
+                    favoriteAction: { appState.toggleFavorite(focusedFilm) },
+                    loadAction: { loadFilm(focusedFilm) }
+                )
             }
         }
         .onAppear {
@@ -137,6 +144,13 @@ struct FilmPickerSheet: View {
             return
         }
         focusedFilmId = filteredPresets.first(where: { $0.id == appState.selectedFilm.id })?.id ?? filteredPresets[0].id
+    }
+
+    private func loadFilm(_ film: FilmPreset) {
+        if film.id != appState.selectedFilm.id {
+            appState.selectFilm(film)
+        }
+        dismiss()
     }
 
     private var favoriteEmptyState: some View {
@@ -556,6 +570,7 @@ private struct FilmSelectionDetailPanel: View {
     let isFavorite: Bool
     let currentRoll: FilmRoll?
     let language: AppLanguage
+    let showsActions: Bool
     let favoriteAction: () -> Void
     let loadAction: () -> Void
 
@@ -591,81 +606,74 @@ private struct FilmSelectionDetailPanel: View {
             FilmDetailPreviewStrip(film: film, language: language)
             FilmProcessPassport(film: film, language: language, style: style)
 
-            HStack(spacing: 10) {
-                Button(action: favoriteAction) {
-                    HStack(spacing: 7) {
-                        Image(systemName: isFavorite ? "pin.fill" : "pin")
-                            .font(.system(size: 12, weight: .bold))
-                        Text(isFavorite ? favoriteOnText : favoriteOffText)
+            if showsActions {
+                HStack(spacing: 10) {
+                    Button(action: favoriteAction) {
+                        HStack(spacing: 7) {
+                            Image(systemName: isFavorite ? "pin.fill" : "pin")
+                                .font(.system(size: 12, weight: .bold))
+                            Text(isFavorite ? favoriteOnText : favoriteOffText)
+                        }
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(isFavorite ? StillLightTheme.background : StillLightTheme.text)
+                        .frame(height: 44)
+                        .frame(maxWidth: .infinity)
+                        .background(isFavorite ? style.accent : StillLightTheme.panelElevated.opacity(0.86))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(isFavorite ? StillLightTheme.background : StillLightTheme.text)
-                    .frame(height: 44)
-                    .frame(maxWidth: .infinity)
-                    .background(isFavorite ? style.accent : StillLightTheme.panelElevated.opacity(0.86))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-                .buttonStyle(.plain)
+                    .buttonStyle(.plain)
 
-                Button(action: loadAction) {
-                    HStack(spacing: 7) {
-                        Image(systemName: isLoaded ? "camera.viewfinder" : "arrow.down.to.line.compact")
-                            .font(.system(size: 12, weight: .bold))
-                        Text(loadButtonText)
+                    Button(action: loadAction) {
+                        HStack(spacing: 7) {
+                            Image(systemName: isLoaded ? "camera.viewfinder" : "arrow.down.to.line.compact")
+                                .font(.system(size: 12, weight: .bold))
+                            Text(loadButtonText)
+                        }
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(StillLightTheme.background)
+                        .frame(height: 44)
+                        .frame(maxWidth: .infinity)
+                        .background(StillLightTheme.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(StillLightTheme.background)
-                    .frame(height: 44)
-                    .frame(maxWidth: .infinity)
-                    .background(StillLightTheme.accent)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
-        .padding(16)
-        .background(StillLightTheme.panel.opacity(0.86))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(14)
+        .background(StillLightTheme.panel.opacity(0.78))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(StillLightTheme.text.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(.white.opacity(0.08), lineWidth: 1)
         }
+    }
+
+    private var sceneTags: some View {
+        HStack(spacing: 7) {
+            Label(film.category.title(language: language), systemImage: film.category.drawerIconName)
+            Text(primaryScene)
+            Text("\(film.defaultShotCount) EXP")
+        }
+        .font(.system(size: 11, weight: .bold, design: .monospaced))
+        .foregroundStyle(StillLightTheme.secondaryText.opacity(0.86))
+        .lineLimit(1)
+        .minimumScaleFactor(0.70)
     }
 
     private var style: FilmCoverStyle {
         FilmCoverStyle.style(for: film)
     }
 
-    private var sceneTags: some View {
+    private var primaryScene: String {
         let scenes = language == .chinese && !film.localizedSuitableScenes.isEmpty
             ? film.localizedSuitableScenes
             : film.suitableScenes
-
-        return HStack(spacing: 7) {
-            ForEach(Array(scenes.prefix(3)), id: \.self) { scene in
-                Text(scene)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(StillLightTheme.text.opacity(0.86))
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 6)
-                    .background(style.accent.opacity(0.16))
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            }
-        }
+        return scenes.first ?? (language == .chinese ? "日常" : "Daily")
     }
 
     private var exposureText: String {
-        if let currentRoll {
-            return language == .chinese ? "剩余 \(currentRoll.remainingShots) 张" : "\(currentRoll.remainingShots) LEFT"
-        }
-        switch film.category {
-        case .instant:
-            return "10 SHOTS"
-        case .digital:
-            return "99 FILES"
-        default:
-            return "\(film.defaultShotCount) EXP"
-        }
+        String(format: "%+.1f EV", film.exposureBias)
     }
 
     private var loadButtonText: String {
@@ -683,6 +691,84 @@ private struct FilmSelectionDetailPanel: View {
         language == .chinese ? "收藏" : "Pin"
     }
 
+}
+
+private struct FilmPickerActionBar: View {
+    let film: FilmPreset
+    let isLoaded: Bool
+    let isFavorite: Bool
+    let language: AppLanguage
+    let favoriteAction: () -> Void
+    let loadAction: () -> Void
+
+    private var style: FilmCoverStyle {
+        FilmCoverStyle.style(for: film)
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Button(action: favoriteAction) {
+                Image(systemName: isFavorite ? "pin.fill" : "pin")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(isFavorite ? StillLightTheme.background : StillLightTheme.text)
+                    .frame(width: 48, height: 48)
+                    .background(isFavorite ? style.accent : StillLightTheme.panelElevated.opacity(0.92))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isFavorite ? favoriteOnText : favoriteOffText)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(film.displayShortName(language: language))
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(StillLightTheme.text)
+                    .lineLimit(1)
+                Text("ISO \(film.iso) / \(film.defaultShotCount) EXP")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(StillLightTheme.secondaryText)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(action: loadAction) {
+                HStack(spacing: 7) {
+                    Image(systemName: isLoaded ? "camera.viewfinder" : "arrow.down.to.line.compact")
+                        .font(.system(size: 13, weight: .bold))
+                    Text(loadButtonText)
+                }
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(StillLightTheme.background)
+                .padding(.horizontal, 15)
+                .frame(height: 48)
+                .background(StillLightTheme.accent)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 10)
+        .padding(.bottom, 10)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(.white.opacity(0.08))
+                .frame(height: 1)
+        }
+    }
+
+    private var loadButtonText: String {
+        if isLoaded {
+            return language == .chinese ? "继续拍" : "Keep Shooting"
+        }
+        return language == .chinese ? "装入" : "Load"
+    }
+
+    private var favoriteOnText: String {
+        language == .chinese ? "已收藏" : "Pinned"
+    }
+
+    private var favoriteOffText: String {
+        language == .chinese ? "收藏" : "Pin"
+    }
 }
 
 private struct FilmDetailPreviewStrip: View {
@@ -882,6 +968,7 @@ private struct FilmPassportStamp: View {
                 .stroke(style.ink.opacity(0.08), lineWidth: 1)
         }
     }
+
 }
 
 private struct FilmMiniStat: View {

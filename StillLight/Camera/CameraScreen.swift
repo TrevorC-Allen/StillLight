@@ -49,7 +49,7 @@ struct CameraScreen: View {
         }
         .sheet(isPresented: $showsFilmPicker) {
             FilmPickerSheet()
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showsGallery) {

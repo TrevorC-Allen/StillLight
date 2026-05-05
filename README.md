@@ -19,9 +19,9 @@ Choose a film roll
 
 - A quiet native camera experience: live preview, tap focus/metering, exposure
   compensation, flash, lens zoom buttons, haptics, grid, horizon and frame guide.
-- A Dazz-like film library with 27 original film/camera presets rendered as
-  physical objects: paper boxes, canisters, instant packs, sleeves, disposable
-  cameras, half-frame tickets and camera bodies.
+- A Dazz-like camera library with 27 original film/camera presets presented as
+  independent camera profiles: each style has its own camera name, body style,
+  lens era, accessory tags, sample direction and rendering parameters.
 - Three flagship directions for the current build:
   - `Human Warm 400`: humanistic cafes, interiors and street life.
   - `Shadow Walk 800`: moody street, museum and architecture frames with heavier
@@ -80,6 +80,9 @@ The key portfolio talking points are:
 
 - AVFoundation photo capture and native video recording with audio, timer and
   film-rendered export.
+- Camera accessory controls for double exposure with first-frame preview and
+  blend modes, multi-frame long exposure with progress, starburst intensity,
+  Kelvin white balance, flash, timer, import lab entry and front/back switching.
 - Front/back camera switch, flash off/on/auto, exposure compensation, tap
   focus/metering and animated reticle.
 - Pinch zoom plus available lens buttons such as 0.5x / 1x / 3x on multi-camera

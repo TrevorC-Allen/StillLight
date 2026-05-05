@@ -64,6 +64,12 @@ If the install step says **Developer Mode is disabled**, enable it on the iPhone
 
 The run script builds into `/tmp/StillLightBuild` so code signing avoids Desktop/iCloud extended attributes that can make `codesign` reject the app bundle.
 
+If the install step reports `kAMDMobileImageMounterDeviceLocked` or says the
+developer disk image could not be mounted, the build and signing usually
+succeeded but iOS refused device services because the phone was locked. Keep the
+iPhone unlocked on the Home Screen, then rerun the same command. The script
+retries transient CoreDevice connection resets automatically.
+
 ## 5. Current MVP Smoke Test
 
 On the phone:
@@ -71,10 +77,15 @@ On the phone:
 1. Open StillLight.
 2. Choose a film roll.
 3. Take a photo.
-4. Confirm the developed preview appears.
-5. Save to Photos.
-6. Open the Gallery tab and confirm the local photo record appears.
-7. Open Import Lab, import an existing photo, apply a film, and share/save the result.
+4. Confirm the lower-left recent-frame thumbnail updates without an automatic
+   result sheet.
+5. Open Gallery and confirm the local photo record appears.
+6. Swipe between Gallery detail pages and long-press briefly to compare the
+   original if one was saved.
+7. Switch to video mode, record a short clip, and confirm the saved status clears
+   after a moment.
+8. Open Import Lab, import multiple photos, develop all, and save/share the
+   selected result.
 
 ## Known Local Blockers
 
@@ -84,9 +95,11 @@ The repo can compile without signing using:
 scripts/build_unsigned.sh
 ```
 
-Actual device installation requires both:
+Actual device installation requires:
 
 - a connected and trusted iPhone
+- an unlocked iPhone while Xcode mounts developer disk image services
+- Developer Mode enabled on the iPhone
 - an Apple Development signing identity from Xcode Accounts
 
 The repo includes a prepared 1024px app icon in the asset catalog. It is kept non-critical for the current MVP build because this Mac's Xcode install reports no available iOS simulator runtime while compiling asset catalogs. Install an iOS runtime from **Xcode > Settings > Components** before enabling the asset catalog in the target Resources phase.

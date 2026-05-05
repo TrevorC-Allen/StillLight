@@ -63,6 +63,10 @@ scripts/run_on_iphone.sh YOUR_DEVICE_ID
 5. 重启后解锁并确认开发者模式。
 6. 再运行 `scripts/run_on_iphone.sh`。
 
+如果安装阶段出现 `kAMDMobileImageMounterDeviceLocked`，或提示 developer disk
+image 无法挂载，通常说明编译和签名已经通过，但 iOS 因为手机锁屏拒绝设备服务。保持
+iPhone 解锁并停留在主屏幕，再运行同一条命令。脚本会自动重试临时的 CoreDevice 连接重置。
+
 ## 5. 当前冒烟测试
 
 在手机上依次检查：
@@ -95,7 +99,7 @@ scripts/build_unsigned.sh
 
 ### 设备锁屏导致启动失败
 
-解锁 iPhone，再重新运行：
+解锁 iPhone，保持在主屏幕，再重新运行：
 
 ```sh
 scripts/run_on_iphone.sh

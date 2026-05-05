@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct FilmPickerSheet: View {
     @EnvironmentObject private var appState: AppState
@@ -2461,17 +2462,28 @@ private struct FilmContactSheetCrop: View {
             let width = proxy.size.width
             let height = proxy.size.height
 
-            Image("film_sample_contact_sheet")
-                .resizable()
-                .interpolation(.high)
-                .scaledToFill()
-                .frame(width: width * 2.08, height: height * 2.08)
-                .offset(
-                    x: quadrant.offsetX * width,
-                    y: quadrant.offsetY * height
+            if let contactSheet = UIImage(named: "film_sample_contact_sheet") {
+                Image(uiImage: contactSheet)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFill()
+                    .frame(width: width * 2.08, height: height * 2.08)
+                    .offset(
+                        x: quadrant.offsetX * width,
+                        y: quadrant.offsetY * height
+                    )
+                    .frame(width: width, height: height)
+                    .clipped()
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.24, green: 0.20, blue: 0.14),
+                        Color(red: 0.08, green: 0.10, blue: 0.10)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
-                .frame(width: width, height: height)
-                .clipped()
+            }
         }
     }
 }

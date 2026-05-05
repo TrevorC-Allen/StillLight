@@ -181,6 +181,24 @@ private struct FilmPickerHero: View {
                     )
                 )
 
+            FilmSampleSceneView(film: film, style: style)
+                .scaleEffect(1.18)
+                .blur(radius: 10)
+                .opacity(0.22)
+                .saturation(0.82)
+                .allowsHitTesting(false)
+
+            LinearGradient(
+                colors: [
+                    StillLightTheme.background.opacity(0.44),
+                    StillLightTheme.panel.opacity(0.30),
+                    StillLightTheme.background.opacity(0.70)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .allowsHitTesting(false)
+
             shelfGlow
             heroStage
 

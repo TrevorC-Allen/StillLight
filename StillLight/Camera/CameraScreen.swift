@@ -8,7 +8,6 @@ struct CameraScreen: View {
     @StateObject private var levelMonitor = LevelMonitor()
     @State private var showsFilmPicker = false
     @State private var showsGallery = false
-    @State private var reviewResult: CaptureResult?
     @State private var shutterFlash = false
     @State private var focusIndicator: FocusIndicator?
     @State private var pinchStartZoomFactor: CGFloat?
@@ -57,9 +56,6 @@ struct CameraScreen: View {
         .sheet(isPresented: $showsGallery) {
             GalleryScreen()
         }
-        .sheet(item: $reviewResult) { result in
-            ResultView(result: result)
-        }
     }
 
     private var cameraExperience: some View {
@@ -106,7 +102,6 @@ struct CameraScreen: View {
                 topBar
                 Spacer()
                 zoomControl
-                creativeMeterBar
                 whiteBalanceControl
                 exposureControl
                 accessoryDock
@@ -170,24 +165,24 @@ struct CameraScreen: View {
     }
 
     private var cameraAccessoryStatus: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 6) {
             AccessoryStatusDot(isOn: viewModel.creativeCaptureMode == .doubleExposure, iconName: "square.on.square")
             AccessoryStatusDot(isOn: viewModel.creativeCaptureMode == .longExposure, iconName: "timer")
             AccessoryStatusDot(isOn: viewModel.starburstIntensity > 0.01, iconName: "sparkles")
         }
-        .padding(.horizontal, 10)
-        .frame(height: 44)
-        .background(StillLightTheme.panel.opacity(0.82))
+        .padding(.horizontal, 8)
+        .frame(height: 38)
+        .background(Color.black.opacity(0.32))
         .clipShape(Capsule())
         .overlay {
             Capsule()
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(Color.white.opacity(0.07), lineWidth: 1)
         }
     }
 
     private var exposureControl: some View {
         VStack(spacing: 8) {
-            HStack {
+            HStack(spacing: 10) {
                 Text("EV")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(StillLightTheme.secondaryText)
@@ -195,19 +190,23 @@ struct CameraScreen: View {
                     get: { viewModel.exposureBias },
                     set: { viewModel.updateExposureBias($0) }
                 ), in: -2...2, step: 0.1)
-                .tint(StillLightTheme.accent)
+                .tint(NativeCameraChrome.active)
                 Text(String(format: "%+.1f", viewModel.exposureBias))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(StillLightTheme.secondaryText)
                     .frame(width: 42, alignment: .trailing)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(StillLightTheme.panel.opacity(0.74))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.black.opacity(0.38))
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.white.opacity(0.07), lineWidth: 1)
+            }
         }
-        .padding(.horizontal, 18)
-        .padding(.bottom, 10)
+        .padding(.horizontal, 22)
+        .padding(.bottom, 8)
         .opacity(viewModel.isRecording ? 0.52 : 1)
     }
 
@@ -216,8 +215,8 @@ struct CameraScreen: View {
         if showsWhiteBalanceControl {
             HStack(spacing: 10) {
                 Image(systemName: "thermometer.medium")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(StillLightTheme.secondaryText)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(NativeCameraChrome.active.opacity(0.88))
                     .frame(width: 22)
 
                 Slider(
@@ -228,115 +227,128 @@ struct CameraScreen: View {
                     in: Double(viewModel.whiteBalanceState.minKelvin)...Double(viewModel.whiteBalanceState.maxKelvin),
                     step: 50
                 )
-                    .tint(Color(red: 1.0, green: 0.79, blue: 0.42))
+                    .tint(NativeCameraChrome.active)
 
                 Button {
                     viewModel.resetWhiteBalance()
                 } label: {
                     Text(whiteBalanceLabel)
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(StillLightTheme.secondaryText)
-                        .frame(width: 58, alignment: .trailing)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.66)
+                        .foregroundStyle(NativeCameraChrome.active)
+                        .frame(width: 58, height: 26)
+                        .background(Color.white.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .stroke(Color.white.opacity(0.07), lineWidth: 1)
+                        }
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(StillLightTheme.panel.opacity(0.74))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.black.opacity(0.46))
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .padding(.horizontal, 18)
-            .padding(.bottom, 10)
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.white.opacity(0.07), lineWidth: 1)
+            }
+            .padding(.horizontal, 22)
+            .padding(.bottom, 8)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
 
-    private var creativeMeterBar: some View {
-        HStack(spacing: 8) {
-            CreativeMeterPill(
-                iconName: "thermometer.medium",
-                value: whiteBalanceLabel,
-                isOn: showsWhiteBalanceControl || viewModel.whiteBalanceState.isLocked
-            ) {
-                withAnimation(.easeOut(duration: 0.16)) {
-                    showsWhiteBalanceControl.toggle()
+    private var accessoryDock: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 7) {
+                CameraAccessoryButton(
+                    iconName: "photo.badge.plus",
+                    isOn: false,
+                    statusText: nil,
+                    accessibilityLabel: appState.t(.importPhoto)
+                ) {
+                    showsGallery = true
+                }
+
+                CameraAccessoryButton(
+                    iconName: "square.on.square",
+                    isOn: viewModel.creativeCaptureMode == .doubleExposure,
+                    statusText: nil,
+                    accessibilityLabel: appState.t(.doubleExposure)
+                ) {
+                    viewModel.setCreativeCaptureMode(viewModel.creativeCaptureMode == .doubleExposure ? .standard : .doubleExposure)
+                }
+
+                CameraAccessoryButton(
+                    iconName: "camera.aperture",
+                    isOn: viewModel.creativeCaptureMode == .longExposure,
+                    statusText: nil,
+                    accessibilityLabel: appState.t(.longExposure)
+                ) {
+                    viewModel.setCreativeCaptureMode(viewModel.creativeCaptureMode == .longExposure ? .standard : .longExposure)
+                }
+
+                CameraAccessoryButton(
+                    iconName: "sparkles",
+                    isOn: viewModel.starburstIntensity > 0.01,
+                    statusText: viewModel.starburstIntensity > 0.01 ? "ON" : nil,
+                    accessibilityLabel: appState.t(.starFilter)
+                ) {
+                    viewModel.updateStarburstIntensity(viewModel.starburstIntensity > 0.01 ? 0 : 0.70)
+                }
+
+                CameraAccessoryButton(
+                    iconName: "thermometer.medium",
+                    isOn: showsWhiteBalanceControl || viewModel.whiteBalanceState.isLocked,
+                    statusText: whiteBalanceDockText,
+                    accessibilityLabel: appState.t(.whiteBalance)
+                ) {
+                    withAnimation(.easeOut(duration: 0.16)) {
+                        showsWhiteBalanceControl.toggle()
+                    }
+                }
+
+                CameraAccessoryButton(
+                    iconName: "timer",
+                    isOn: selfTimerSeconds > 0,
+                    statusText: selfTimerSeconds == 0 ? nil : "\(selfTimerSeconds)s",
+                    accessibilityLabel: appState.t(.timer)
+                ) {
+                    cycleSelfTimer()
+                }
+
+                CameraAccessoryButton(
+                    iconName: "arrow.triangle.2.circlepath.camera",
+                    isOn: false,
+                    statusText: nil,
+                    accessibilityLabel: appState.t(.camera)
+                ) {
+                    viewModel.switchCamera()
+                }
+
+                CameraAccessoryButton(
+                    iconName: viewModel.flashMode.iconName,
+                    isOn: viewModel.flashMode != .off,
+                    statusText: flashDockText,
+                    accessibilityLabel: "Flash"
+                ) {
+                    viewModel.toggleFlash()
                 }
             }
-
-            CreativeMeterPill(
-                iconName: "sparkles",
-                value: viewModel.starburstIntensity > 0.01 ? "ON" : "OFF",
-                isOn: viewModel.starburstIntensity > 0.01
-            ) {
-                viewModel.updateStarburstIntensity(viewModel.starburstIntensity > 0.01 ? 0 : 0.70)
-            }
-
-            CreativeMeterPill(
-                iconName: "timer",
-                value: selfTimerSeconds == 0 ? "0" : "\(selfTimerSeconds)",
-                isOn: selfTimerSeconds > 0
-            ) {
-                cycleSelfTimer()
-            }
+            .padding(.horizontal, 14)
         }
-        .padding(.bottom, 10)
-        .opacity(viewModel.isRecording ? 0.55 : 1)
-    }
-
-    private var accessoryDock: some View {
-        HStack(spacing: 30) {
-            CameraAccessoryButton(
-                iconName: "photo.badge.plus",
-                isOn: false,
-                accessibilityLabel: appState.t(.importPhoto)
-            ) {
-                showsGallery = true
-            }
-
-            CameraAccessoryButton(
-                iconName: "square.on.square",
-                isOn: viewModel.creativeCaptureMode == .doubleExposure,
-                accessibilityLabel: appState.t(.doubleExposure)
-            ) {
-                viewModel.setCreativeCaptureMode(viewModel.creativeCaptureMode == .doubleExposure ? .standard : .doubleExposure)
-            }
-
-            CameraAccessoryButton(
-                iconName: "camera.aperture",
-                isOn: viewModel.creativeCaptureMode == .longExposure,
-                accessibilityLabel: appState.t(.longExposure)
-            ) {
-                viewModel.setCreativeCaptureMode(viewModel.creativeCaptureMode == .longExposure ? .standard : .longExposure)
-            }
-
-            CameraAccessoryButton(
-                iconName: viewModel.flashMode.iconName,
-                isOn: viewModel.flashMode != .off,
-                accessibilityLabel: "Flash"
-            ) {
-                viewModel.toggleFlash()
-            }
-
-            CameraAccessoryButton(
-                iconName: "arrow.triangle.2.circlepath.camera",
-                isOn: false,
-                accessibilityLabel: appState.t(.camera)
-            ) {
-                viewModel.switchCamera()
-            }
-        }
-        .padding(.horizontal, 18)
-        .padding(.bottom, 18)
+        .frame(height: 54)
+        .padding(.bottom, 12)
         .opacity(viewModel.isRecording ? 0.45 : 1)
     }
 
     private var bottomControls: some View {
         HStack(alignment: .center) {
             Button {
-                if let latestResult = viewModel.latestResult {
-                    reviewResult = latestResult
-                } else {
-                    showsGallery = true
-                }
+                showsGallery = true
             } label: {
                 recentCaptureThumbnail
             }
@@ -417,6 +429,22 @@ struct CameraScreen: View {
         return viewModel.whiteBalanceState.kelvinText
     }
 
+    private var whiteBalanceDockText: String? {
+        guard showsWhiteBalanceControl || viewModel.whiteBalanceState.isLocked else { return nil }
+        return whiteBalanceLabel
+    }
+
+    private var flashDockText: String? {
+        switch viewModel.flashMode {
+        case .off:
+            return nil
+        case .on:
+            return "ON"
+        case .auto:
+            return "A"
+        }
+    }
+
     private var recentCaptureThumbnail: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -471,19 +499,23 @@ struct CameraScreen: View {
                     .simultaneousGesture(zoomControlDragGesture)
             }
         }
-        .padding(5)
-        .background(StillLightTheme.panel.opacity(0.70))
+        .padding(4)
+        .background(Color.black.opacity(0.42))
         .clipShape(Capsule())
         .contentShape(Capsule())
+        .overlay {
+            Capsule()
+                .stroke(Color.white.opacity(0.07), lineWidth: 1)
+        }
         .overlay(alignment: .top) {
             if isDraggingZoomControl {
                 ZoomScrubRuler(state: viewModel.zoomState)
-                    .offset(y: -52)
+                    .offset(y: -48)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .simultaneousGesture(zoomControlDragGesture)
-        .padding(.bottom, 12)
+        .padding(.bottom, 10)
         .opacity(viewModel.isRecording ? 0.72 : 1)
         .animation(.easeOut(duration: 0.14), value: isDraggingZoomControl)
     }
@@ -804,71 +836,66 @@ private struct AccessoryStatusDot: View {
 
     var body: some View {
         Image(systemName: iconName)
-            .font(.system(size: 11, weight: .bold))
-            .foregroundStyle(isOn ? StillLightTheme.background : StillLightTheme.secondaryText)
-            .frame(width: 25, height: 25)
-            .background(isOn ? StillLightTheme.accent : StillLightTheme.panelElevated.opacity(0.78))
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(isOn ? NativeCameraChrome.active : StillLightTheme.secondaryText.opacity(0.72))
+            .frame(width: 22, height: 22)
+            .background(Color.white.opacity(isOn ? 0.10 : 0.04))
             .clipShape(Circle())
             .overlay {
                 Circle()
-                    .stroke(Color.white.opacity(isOn ? 0.24 : 0.08), lineWidth: 1)
+                    .stroke(isOn ? NativeCameraChrome.active.opacity(0.40) : Color.white.opacity(0.06), lineWidth: 1)
             }
-    }
-}
-
-private struct CreativeMeterPill: View {
-    let iconName: String
-    let value: String
-    let isOn: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: iconName)
-                    .font(.system(size: 13, weight: .bold))
-                Text(value)
-                    .font(.system(size: 13, weight: .bold, design: .rounded).monospacedDigit())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-            }
-            .foregroundStyle(isOn ? StillLightTheme.background : StillLightTheme.text)
-            .frame(minWidth: 58, minHeight: 34)
-            .padding(.horizontal, 10)
-            .background(isOn ? StillLightTheme.accent : StillLightTheme.panel.opacity(0.76))
-            .clipShape(Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(Color.white.opacity(isOn ? 0.20 : 0.08), lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
     }
 }
 
 private struct CameraAccessoryButton: View {
     let iconName: String
     let isOn: Bool
+    let statusText: String?
     let accessibilityLabel: String
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: iconName)
-                .font(.system(size: 24, weight: .medium))
-                .foregroundStyle(isOn ? StillLightTheme.background : StillLightTheme.text)
-                .frame(width: 48, height: 48)
-                .background(isOn ? StillLightTheme.accent : Color.black.opacity(0.36))
-                .clipShape(Circle())
-                .overlay {
-                    Circle()
-                        .stroke(Color.white.opacity(isOn ? 0.24 : 0.12), lineWidth: 1)
+            VStack(spacing: 3) {
+                ZStack(alignment: .bottomTrailing) {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(Color.black.opacity(isOn ? 0.50 : 0.32))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .stroke(isOn ? NativeCameraChrome.active.opacity(0.44) : Color.white.opacity(0.09), lineWidth: 1)
+                        }
+
+                    Image(systemName: iconName)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(isOn ? NativeCameraChrome.active : StillLightTheme.text.opacity(0.86))
+
+                    if isOn {
+                        Circle()
+                            .fill(NativeCameraChrome.active)
+                            .frame(width: 5, height: 5)
+                            .padding(5)
+                    }
                 }
-                .shadow(color: .black.opacity(0.24), radius: 10, y: 6)
+                .frame(width: 38, height: 36)
+
+                Text(statusText ?? " ")
+                    .font(.system(size: 9, weight: .semibold, design: .rounded).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.58)
+                    .foregroundStyle(NativeCameraChrome.active.opacity(0.92))
+                    .frame(width: 39, height: 10)
+                    .opacity(statusText == nil ? 0 : 1)
+            }
+            .frame(width: 39, height: 50)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
     }
+}
+
+private enum NativeCameraChrome {
+    static let active = Color(red: 1.0, green: 0.80, blue: 0.38)
 }
 
 private struct ZoomLensButton: View {
@@ -880,18 +907,18 @@ private struct ZoomLensButton: View {
         Button(action: action) {
             HStack(alignment: .firstTextBaseline, spacing: 1) {
                 Text(option.label)
-                    .font(.system(size: isSelected ? 14 : 12, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(.system(size: isSelected ? 13 : 12, weight: .bold, design: .rounded).monospacedDigit())
                 Text("x")
-                    .font(.system(size: isSelected ? 9 : 8, weight: .bold, design: .rounded))
+                    .font(.system(size: 8, weight: .bold, design: .rounded))
                     .baselineOffset(1)
             }
-            .foregroundStyle(isSelected ? Color.black.opacity(0.86) : StillLightTheme.text.opacity(0.92))
-            .frame(width: isSelected ? 42 : 34, height: isSelected ? 34 : 30)
-            .background(isSelected ? NativeCameraZoomColors.selected : StillLightTheme.panelElevated.opacity(0.78))
+            .foregroundStyle(isSelected ? NativeCameraZoomColors.selected : StillLightTheme.text.opacity(0.76))
+            .frame(width: 36, height: 30)
+            .background(isSelected ? Color.white.opacity(0.08) : Color.clear)
             .clipShape(Capsule())
             .overlay {
                 Capsule()
-                    .stroke(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(isSelected ? NativeCameraZoomColors.selected.opacity(0.48) : Color.white.opacity(0.06), lineWidth: 1)
             }
         }
         .buttonStyle(.plain)
@@ -909,20 +936,20 @@ private struct ZoomDisplayChip: View {
                 .font(.system(size: 9, weight: .bold, design: .rounded))
                 .baselineOffset(1)
         }
-        .foregroundStyle(Color.black.opacity(0.86))
-        .frame(minWidth: 42, minHeight: 34)
+        .foregroundStyle(NativeCameraZoomColors.selected)
+        .frame(minWidth: 36, minHeight: 30)
         .padding(.horizontal, 2)
-        .background(NativeCameraZoomColors.selected)
+        .background(Color.white.opacity(0.08))
         .clipShape(Capsule())
         .overlay {
             Capsule()
-                .stroke(Color.white.opacity(0.22), lineWidth: 1)
+                .stroke(NativeCameraZoomColors.selected.opacity(0.48), lineWidth: 1)
         }
     }
 }
 
 private enum NativeCameraZoomColors {
-    static let selected = Color(red: 1.0, green: 0.84, blue: 0.36)
+    static let selected = NativeCameraChrome.active
 }
 
 private struct ZoomScrubRuler: View {
@@ -932,7 +959,7 @@ private struct ZoomScrubRuler: View {
         VStack(spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 1) {
                 Text(state.displayFactorText)
-                    .font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(.system(size: 14, weight: .bold, design: .rounded).monospacedDigit())
                 Text("x")
                     .font(.system(size: 9, weight: .bold, design: .rounded))
                     .baselineOffset(1)
@@ -950,20 +977,20 @@ private struct ZoomScrubRuler: View {
 
                 Capsule()
                     .fill(NativeCameraZoomColors.selected)
-                    .frame(width: 2, height: 22)
-                    .shadow(color: NativeCameraZoomColors.selected.opacity(0.32), radius: 5, y: 1)
+                    .frame(width: 2, height: 20)
+                    .shadow(color: NativeCameraZoomColors.selected.opacity(0.24), radius: 4, y: 1)
             }
             .frame(height: 24)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(Color.black.opacity(0.52))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(Color.black.opacity(0.46))
         .clipShape(Capsule())
         .overlay {
             Capsule()
-                .stroke(Color.white.opacity(0.09), lineWidth: 1)
+                .stroke(Color.white.opacity(0.07), lineWidth: 1)
         }
-        .shadow(color: .black.opacity(0.30), radius: 14, y: 8)
+        .shadow(color: .black.opacity(0.24), radius: 10, y: 6)
         .allowsHitTesting(false)
     }
 

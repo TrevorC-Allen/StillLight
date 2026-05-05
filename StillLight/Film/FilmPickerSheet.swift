@@ -6,6 +6,7 @@ struct FilmPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedCategory: FilmCategory?
     @State private var focusedFilmId: String?
+    @State private var loadingFilmId: String?
 
     var body: some View {
         ZStack {
@@ -63,6 +64,7 @@ struct FilmPickerSheet: View {
                     film: focusedFilm,
                     isLoaded: focusedFilm.id == appState.selectedFilm.id,
                     isFavorite: appState.isFavorite(focusedFilm),
+                    isLoading: loadingFilmId == focusedFilm.id,
                     language: appState.language,
                     favoriteAction: { appState.toggleFavorite(focusedFilm) },
                     loadAction: { loadFilm(focusedFilm) }
@@ -147,10 +149,21 @@ struct FilmPickerSheet: View {
     }
 
     private func loadFilm(_ film: FilmPreset) {
-        if film.id != appState.selectedFilm.id {
-            appState.selectFilm(film)
+        guard loadingFilmId == nil else { return }
+        if film.id == appState.selectedFilm.id {
+            dismiss()
+            return
         }
-        dismiss()
+
+        loadingFilmId = film.id
+        appState.selectFilm(film)
+        if appState.enableHaptics {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.38) {
+            guard loadingFilmId == film.id else { return }
+            dismiss()
+        }
     }
 
     private var favoriteEmptyState: some View {
@@ -697,6 +710,7 @@ private struct FilmPickerActionBar: View {
     let film: FilmPreset
     let isLoaded: Bool
     let isFavorite: Bool
+    let isLoading: Bool
     let language: AppLanguage
     let favoriteAction: () -> Void
     let loadAction: () -> Void
@@ -731,8 +745,14 @@ private struct FilmPickerActionBar: View {
 
             Button(action: loadAction) {
                 HStack(spacing: 7) {
-                    Image(systemName: isLoaded ? "camera.viewfinder" : "arrow.down.to.line.compact")
-                        .font(.system(size: 13, weight: .bold))
+                    if isLoading {
+                        ProgressView()
+                            .tint(StillLightTheme.background)
+                            .scaleEffect(0.72)
+                    } else {
+                        Image(systemName: isLoaded ? "camera.viewfinder" : "arrow.down.to.line.compact")
+                            .font(.system(size: 13, weight: .bold))
+                    }
                     Text(loadButtonText)
                 }
                 .font(.system(size: 14, weight: .bold, design: .rounded))
@@ -743,6 +763,7 @@ private struct FilmPickerActionBar: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(.plain)
+            .disabled(isLoading)
         }
         .padding(.horizontal, 14)
         .padding(.top, 10)
@@ -756,6 +777,9 @@ private struct FilmPickerActionBar: View {
     }
 
     private var loadButtonText: String {
+        if isLoading {
+            return language == .chinese ? "装卷中" : "Loading"
+        }
         if isLoaded {
             return language == .chinese ? "继续拍" : "Keep Shooting"
         }

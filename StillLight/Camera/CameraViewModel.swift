@@ -23,6 +23,7 @@ final class CameraViewModel: ObservableObject {
     private var recordingStartedAt: Date?
     private var recordingTimer: Timer?
     private var statusClearTask: Task<Void, Never>?
+    private var statusToken = UUID()
 
     deinit {
         recordingTimer?.invalidate()
@@ -269,6 +270,7 @@ final class CameraViewModel: ObservableObject {
     private func clearStatus() {
         statusClearTask?.cancel()
         statusClearTask = nil
+        statusToken = UUID()
         statusMessage = nil
         errorMessage = nil
     }
@@ -277,6 +279,8 @@ final class CameraViewModel: ObservableObject {
         _ message: String,
         durationNanoseconds: UInt64 = 2_200_000_000
     ) {
+        let token = UUID()
+        statusToken = token
         statusMessage = message
         statusClearTask?.cancel()
         statusClearTask = Task { [weak self] in
@@ -288,7 +292,7 @@ final class CameraViewModel: ObservableObject {
 
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                guard self?.statusMessage == message else { return }
+                guard self?.statusToken == token else { return }
                 self?.statusMessage = nil
                 self?.statusClearTask = nil
             }

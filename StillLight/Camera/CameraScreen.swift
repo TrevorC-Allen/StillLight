@@ -133,6 +133,7 @@ struct CameraScreen: View {
     private var topBar: some View {
         HStack(spacing: 12) {
             Button {
+                guard !isCaptureContextLocked else { return }
                 showsFilmPicker = true
             } label: {
                 FilmRollBadge(
@@ -141,6 +142,8 @@ struct CameraScreen: View {
                 )
             }
             .buttonStyle(.plain)
+            .disabled(isCaptureContextLocked)
+            .opacity(isCaptureContextLocked ? 0.54 : 1)
             .accessibilityLabel("\(appState.selectedFilm.displayShortName(language: appState.language)), \(appState.currentRoll.remainingShots)")
 
             Spacer()
@@ -157,6 +160,8 @@ struct CameraScreen: View {
                     .foregroundStyle(StillLightTheme.text)
                     .stillLightPanel()
             }
+            .disabled(isCaptureContextLocked)
+            .opacity(isCaptureContextLocked ? 0.54 : 1)
 
             cameraAccessoryStatus
         }
@@ -547,7 +552,8 @@ struct CameraScreen: View {
         .background(StillLightTheme.panel.opacity(0.74))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .padding(.bottom, 16)
-        .opacity(viewModel.isRecording ? 0.45 : 1)
+        .disabled(isCaptureContextLocked)
+        .opacity(viewModel.isRecording || isCaptureContextLocked ? 0.45 : 1)
     }
 
     private var shutterButton: some View {
@@ -570,6 +576,10 @@ struct CameraScreen: View {
 
     private var shutterColor: Color {
         viewModel.captureMode == .video ? Color(red: 0.88, green: 0.16, blue: 0.13) : StillLightTheme.text
+    }
+
+    private var isCaptureContextLocked: Bool {
+        viewModel.doubleExposureState.phase == .waitingForSecondShot
     }
 
     private var recordingBadge: some View {

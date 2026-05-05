@@ -521,33 +521,36 @@ private struct FilmSelectionDetailPanel: View {
 
             sceneTags
             FilmDetailPreviewStrip(film: film, language: language)
-
-            HStack(spacing: 10) {
-                FilmMiniStat(title: language == .chinese ? "颗粒" : "Grain", value: normalized(film.grainAmount, upperBound: 0.46), accent: style.accent)
-                FilmMiniStat(title: language == .chinese ? "反差" : "Contrast", value: normalized(film.contrast - 0.86, upperBound: 0.34), accent: style.accent)
-                FilmMiniStat(title: language == .chinese ? "暖度" : "Warmth", value: normalized(film.temperatureShift + 700, upperBound: 1200), accent: style.accent)
-            }
+            FilmProcessPassport(film: film, language: language, style: style)
 
             HStack(spacing: 10) {
                 Button(action: favoriteAction) {
-                    Text(isFavorite ? favoriteOnText : favoriteOffText)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(isFavorite ? StillLightTheme.background : StillLightTheme.text)
-                        .frame(height: 44)
-                        .frame(maxWidth: .infinity)
-                        .background(isFavorite ? style.accent : StillLightTheme.panelElevated.opacity(0.86))
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    HStack(spacing: 7) {
+                        Image(systemName: isFavorite ? "pin.fill" : "pin")
+                            .font(.system(size: 12, weight: .bold))
+                        Text(isFavorite ? favoriteOnText : favoriteOffText)
+                    }
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(isFavorite ? StillLightTheme.background : StillLightTheme.text)
+                    .frame(height: 44)
+                    .frame(maxWidth: .infinity)
+                    .background(isFavorite ? style.accent : StillLightTheme.panelElevated.opacity(0.86))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
 
                 Button(action: loadAction) {
-                    Text(loadButtonText)
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(StillLightTheme.background)
-                        .frame(height: 44)
-                        .frame(maxWidth: .infinity)
-                        .background(StillLightTheme.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    HStack(spacing: 7) {
+                        Image(systemName: isLoaded ? "camera.viewfinder" : "arrow.down.to.line.compact")
+                            .font(.system(size: 12, weight: .bold))
+                        Text(loadButtonText)
+                    }
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(StillLightTheme.background)
+                    .frame(height: 44)
+                    .frame(maxWidth: .infinity)
+                    .background(StillLightTheme.accent)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
@@ -612,9 +615,6 @@ private struct FilmSelectionDetailPanel: View {
         language == .chinese ? "收藏" : "Pin"
     }
 
-    private func normalized(_ value: Double, upperBound: Double) -> Double {
-        min(1.0, Swift.max(0.0, value / upperBound))
-    }
 }
 
 private struct FilmDetailPreviewStrip: View {
@@ -690,6 +690,121 @@ private struct FilmDetailPreviewStrip: View {
             return film.displayCameraName(language: language)
         }
         return sceneText
+    }
+}
+
+private struct FilmProcessPassport: View {
+    let film: FilmPreset
+    let language: AppLanguage
+    let style: FilmCoverStyle
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(style.accent.opacity(0.92))
+                    .frame(width: 7, height: 7)
+                Text(language == .chinese ? "冲扫标签" : "DARKROOM TAG")
+                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(style.ink.opacity(0.72))
+                Spacer()
+                Text(batchCode)
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(style.ink.opacity(0.45))
+            }
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 7), count: 2), spacing: 7) {
+                FilmPassportStamp(title: "ISO", value: "\(film.iso)", style: style)
+                FilmPassportStamp(title: language == .chinese ? "颗粒" : "GRAIN", value: grainLabel, style: style)
+                FilmPassportStamp(title: "WB", value: temperatureLabel, style: style)
+                FilmPassportStamp(title: "EV", value: exposureLabel, style: style)
+            }
+        }
+        .padding(11)
+        .background(
+            LinearGradient(
+                colors: [
+                    style.paper.opacity(0.82),
+                    style.wash[0].opacity(0.18),
+                    style.paper.opacity(0.70)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(style.ink.opacity(0.10), lineWidth: 1)
+        }
+        .overlay(alignment: .topTrailing) {
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(style.accent.opacity(0.36))
+                .frame(width: 42, height: 8)
+                .rotationEffect(.degrees(3))
+                .offset(x: -14, y: -3)
+        }
+    }
+
+    private var grainLabel: String {
+        switch film.grainAmount {
+        case ..<0.12:
+            return language == .chinese ? "细" : "FINE"
+        case ..<0.28:
+            return language == .chinese ? "中" : "MID"
+        default:
+            return language == .chinese ? "粗" : "COARSE"
+        }
+    }
+
+    private var temperatureLabel: String {
+        if abs(film.temperatureShift) < 10 {
+            return "0K"
+        }
+        return String(format: "%+.0fK", film.temperatureShift)
+    }
+
+    private var exposureLabel: String {
+        String(format: "%+.1f", film.exposureBias)
+    }
+
+    private var batchCode: String {
+        let suffix = abs(film.id.hashValue) % 900 + 100
+        return "SL-\(suffix)"
+    }
+}
+
+private struct FilmPassportStamp: View {
+    let title: String
+    let value: String
+    let style: FilmCoverStyle
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title.uppercased())
+                .font(.system(size: 9, weight: .black, design: .monospaced))
+                .tracking(0.4)
+                .foregroundStyle(style.ink.opacity(0.46))
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+
+            Spacer(minLength: 4)
+
+            Text(value)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundStyle(style.ink.opacity(0.78))
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 30)
+        .background(style.ink.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .stroke(style.ink.opacity(0.08), lineWidth: 1)
+        }
     }
 }
 

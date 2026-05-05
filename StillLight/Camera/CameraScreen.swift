@@ -14,6 +14,12 @@ struct CameraScreen: View {
     @State private var pinchStartZoomFactor: CGFloat?
     @State private var zoomControlDragStartFactor: CGFloat?
     @State private var isDraggingZoomControl = false
+    @State private var doubleExposureArmed = false
+    @State private var longExposureArmed = false
+    @State private var starFilterEnabled = false
+    @State private var showsWhiteBalanceControl = false
+    @State private var whiteBalanceShift: Double = 0
+    @State private var selfTimerSeconds = 0
 
     var body: some View {
         ZStack {
@@ -104,7 +110,10 @@ struct CameraScreen: View {
                 topBar
                 Spacer()
                 zoomControl
+                creativeMeterBar
+                whiteBalanceControl
                 exposureControl
+                accessoryDock
                 captureModeControl
                 bottomControls
             }
@@ -158,30 +167,26 @@ struct CameraScreen: View {
                     .stillLightPanel()
             }
 
-            Button {
-                viewModel.toggleFlash()
-            } label: {
-                Image(systemName: viewModel.flashMode.iconName)
-                    .font(.system(size: 15, weight: .semibold))
-                    .frame(width: 44, height: 44)
-                    .background(StillLightTheme.panel.opacity(0.92))
-                    .clipShape(Circle())
-                    .foregroundStyle(StillLightTheme.text)
-            }
-
-            Button {
-                viewModel.switchCamera()
-            } label: {
-                Image(systemName: "arrow.triangle.2.circlepath.camera")
-                    .font(.system(size: 15, weight: .semibold))
-                    .frame(width: 44, height: 44)
-                    .background(StillLightTheme.panel.opacity(0.92))
-                    .clipShape(Circle())
-                    .foregroundStyle(StillLightTheme.text)
-            }
+            cameraAccessoryStatus
         }
         .padding(.horizontal, 18)
         .padding(.top, 14)
+    }
+
+    private var cameraAccessoryStatus: some View {
+        HStack(spacing: 7) {
+            AccessoryStatusDot(isOn: doubleExposureArmed, iconName: "square.on.square")
+            AccessoryStatusDot(isOn: longExposureArmed, iconName: "timer")
+            AccessoryStatusDot(isOn: starFilterEnabled, iconName: "sparkles")
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 44)
+        .background(StillLightTheme.panel.opacity(0.82))
+        .clipShape(Capsule())
+        .overlay {
+            Capsule()
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        }
     }
 
     private var exposureControl: some View {
@@ -206,7 +211,114 @@ struct CameraScreen: View {
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .padding(.horizontal, 18)
-        .padding(.bottom, 20)
+        .padding(.bottom, 10)
+        .opacity(viewModel.isRecording ? 0.52 : 1)
+    }
+
+    @ViewBuilder
+    private var whiteBalanceControl: some View {
+        if showsWhiteBalanceControl {
+            HStack(spacing: 10) {
+                Image(systemName: "thermometer.medium")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(StillLightTheme.secondaryText)
+                    .frame(width: 22)
+
+                Slider(value: $whiteBalanceShift, in: -1200...1200, step: 50)
+                    .tint(Color(red: 1.0, green: 0.79, blue: 0.42))
+
+                Text(whiteBalanceLabel)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(StillLightTheme.secondaryText)
+                    .frame(width: 58, alignment: .trailing)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(StillLightTheme.panel.opacity(0.74))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .padding(.horizontal, 18)
+            .padding(.bottom, 10)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    private var creativeMeterBar: some View {
+        HStack(spacing: 8) {
+            CreativeMeterPill(
+                iconName: "thermometer.medium",
+                value: whiteBalanceLabel,
+                isOn: showsWhiteBalanceControl || whiteBalanceShift != 0
+            ) {
+                withAnimation(.easeOut(duration: 0.16)) {
+                    showsWhiteBalanceControl.toggle()
+                }
+            }
+
+            CreativeMeterPill(
+                iconName: "sparkles",
+                value: starFilterEnabled ? "ON" : "OFF",
+                isOn: starFilterEnabled
+            ) {
+                starFilterEnabled.toggle()
+            }
+
+            CreativeMeterPill(
+                iconName: "timer",
+                value: selfTimerSeconds == 0 ? "0" : "\(selfTimerSeconds)",
+                isOn: selfTimerSeconds > 0
+            ) {
+                cycleSelfTimer()
+            }
+        }
+        .padding(.bottom, 10)
+        .opacity(viewModel.isRecording ? 0.55 : 1)
+    }
+
+    private var accessoryDock: some View {
+        HStack(spacing: 30) {
+            CameraAccessoryButton(
+                iconName: "photo.badge.plus",
+                isOn: false,
+                accessibilityLabel: appState.t(.importPhoto)
+            ) {
+                showsGallery = true
+            }
+
+            CameraAccessoryButton(
+                iconName: "square.on.square",
+                isOn: doubleExposureArmed,
+                accessibilityLabel: appState.t(.doubleExposure)
+            ) {
+                doubleExposureArmed.toggle()
+            }
+
+            CameraAccessoryButton(
+                iconName: "camera.aperture",
+                isOn: longExposureArmed,
+                accessibilityLabel: appState.t(.longExposure)
+            ) {
+                longExposureArmed.toggle()
+            }
+
+            CameraAccessoryButton(
+                iconName: viewModel.flashMode.iconName,
+                isOn: viewModel.flashMode != .off,
+                accessibilityLabel: "Flash"
+            ) {
+                viewModel.toggleFlash()
+            }
+
+            CameraAccessoryButton(
+                iconName: "arrow.triangle.2.circlepath.camera",
+                isOn: false,
+                accessibilityLabel: appState.t(.camera)
+            ) {
+                viewModel.switchCamera()
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 18)
+        .opacity(viewModel.isRecording ? 0.45 : 1)
     }
 
     private var bottomControls: some View {
@@ -225,17 +337,9 @@ struct CameraScreen: View {
             Spacer()
 
             Button {
-                if viewModel.captureMode == .photo {
-                    withAnimation(.easeOut(duration: 0.10)) {
-                        shutterFlash = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                        withAnimation(.easeOut(duration: 0.16)) {
-                            shutterFlash = false
-                        }
-                    }
+                runSelfTimerIfNeeded {
+                    capturePrimaryAction()
                 }
-                viewModel.primaryAction(appState: appState)
             } label: {
                 shutterButton
             }
@@ -259,6 +363,50 @@ struct CameraScreen: View {
         }
         .padding(.horizontal, 28)
         .padding(.bottom, 20)
+    }
+
+    private func capturePrimaryAction() {
+        if viewModel.captureMode == .photo {
+            withAnimation(.easeOut(duration: 0.10)) {
+                shutterFlash = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                withAnimation(.easeOut(duration: 0.16)) {
+                    shutterFlash = false
+                }
+            }
+        }
+        viewModel.primaryAction(appState: appState)
+    }
+
+    private func runSelfTimerIfNeeded(_ action: @escaping () -> Void) {
+        guard viewModel.captureMode == .photo, selfTimerSeconds > 0 else {
+            action()
+            return
+        }
+
+        let delay = DispatchTime.now() + .seconds(selfTimerSeconds)
+        DispatchQueue.main.asyncAfter(deadline: delay) {
+            action()
+        }
+    }
+
+    private func cycleSelfTimer() {
+        switch selfTimerSeconds {
+        case 0:
+            selfTimerSeconds = 3
+        case 3:
+            selfTimerSeconds = 10
+        default:
+            selfTimerSeconds = 0
+        }
+    }
+
+    private var whiteBalanceLabel: String {
+        if abs(whiteBalanceShift) < 1 {
+            return "AUTO"
+        }
+        return String(format: "%+.0fK", whiteBalanceShift)
     }
 
     private var recentCaptureThumbnail: some View {
@@ -639,6 +787,79 @@ private struct CameraModeButton: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct AccessoryStatusDot: View {
+    let isOn: Bool
+    let iconName: String
+
+    var body: some View {
+        Image(systemName: iconName)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(isOn ? StillLightTheme.background : StillLightTheme.secondaryText)
+            .frame(width: 25, height: 25)
+            .background(isOn ? StillLightTheme.accent : StillLightTheme.panelElevated.opacity(0.78))
+            .clipShape(Circle())
+            .overlay {
+                Circle()
+                    .stroke(Color.white.opacity(isOn ? 0.24 : 0.08), lineWidth: 1)
+            }
+    }
+}
+
+private struct CreativeMeterPill: View {
+    let iconName: String
+    let value: String
+    let isOn: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: iconName)
+                    .font(.system(size: 13, weight: .bold))
+                Text(value)
+                    .font(.system(size: 13, weight: .bold, design: .rounded).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            .foregroundStyle(isOn ? StillLightTheme.background : StillLightTheme.text)
+            .frame(minWidth: 58, minHeight: 34)
+            .padding(.horizontal, 10)
+            .background(isOn ? StillLightTheme.accent : StillLightTheme.panel.opacity(0.76))
+            .clipShape(Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(Color.white.opacity(isOn ? 0.20 : 0.08), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct CameraAccessoryButton: View {
+    let iconName: String
+    let isOn: Bool
+    let accessibilityLabel: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: iconName)
+                .font(.system(size: 24, weight: .medium))
+                .foregroundStyle(isOn ? StillLightTheme.background : StillLightTheme.text)
+                .frame(width: 48, height: 48)
+                .background(isOn ? StillLightTheme.accent : Color.black.opacity(0.36))
+                .clipShape(Circle())
+                .overlay {
+                    Circle()
+                        .stroke(Color.white.opacity(isOn ? 0.24 : 0.12), lineWidth: 1)
+                }
+                .shadow(color: .black.opacity(0.24), radius: 10, y: 6)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
     }
 }
 

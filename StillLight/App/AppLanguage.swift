@@ -111,6 +111,11 @@ enum AppText {
         case recording
         case videoSaved
         case videoSaveFailed
+        case doubleExposure
+        case longExposure
+        case starFilter
+        case whiteBalance
+        case timer
         case appName
     }
 
@@ -199,6 +204,11 @@ enum AppText {
         .recording: "REC",
         .videoSaved: "Video saved to Photos",
         .videoSaveFailed: "Video saved locally. Photos save failed:",
+        .doubleExposure: "Double",
+        .longExposure: "Long",
+        .starFilter: "Star",
+        .whiteBalance: "WB",
+        .timer: "Timer",
         .appName: "StillLight"
     ]
 
@@ -287,6 +297,11 @@ enum AppText {
         .recording: "录制中",
         .videoSaved: "视频已保存到照片",
         .videoSaveFailed: "视频已保存在本地。系统照片保存失败：",
+        .doubleExposure: "双曝",
+        .longExposure: "长曝",
+        .starFilter: "星芒",
+        .whiteBalance: "色温",
+        .timer: "计时",
         .appName: "StillLight"
     ]
 }

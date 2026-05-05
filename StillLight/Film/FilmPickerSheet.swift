@@ -3627,7 +3627,6 @@ private struct FilmContactSheetCrop: View {
                 Image(uiImage: contactSheet)
                     .resizable()
                     .interpolation(.high)
-                    .scaledToFill()
                     .frame(width: width * CGFloat(frame.columns) * 1.04, height: height * CGFloat(frame.rows) * 1.04)
                     .offset(
                         x: frame.offsetX * width,

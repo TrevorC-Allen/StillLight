@@ -142,7 +142,8 @@ struct CameraScreen: View {
                 showsFilmPicker = true
             } label: {
                 FilmRollBadge(
-                    title: appState.selectedFilm.displayShortName(language: appState.language),
+                    title: appState.selectedFilm.displayCameraName(language: appState.language),
+                    subtitle: appState.selectedFilm.displayShortName(language: appState.language),
                     remainingShots: appState.currentRoll.remainingShots
                 )
             }
@@ -998,20 +999,29 @@ private struct FocusIndicator: Identifiable {
 
 private struct FilmRollBadge: View {
     let title: String
+    let subtitle: String
     let remainingShots: Int
 
     var body: some View {
         HStack(spacing: 9) {
-            MiniFilmPackIcon()
+            MiniCameraIcon()
 
-            Text(title)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-                .truncationMode(.tail)
-                .foregroundStyle(StillLightTheme.text)
-                .frame(maxWidth: 76, alignment: .leading)
-                .layoutPriority(1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.68)
+                    .truncationMode(.tail)
+                    .foregroundStyle(StillLightTheme.text)
+                Text(subtitle.uppercased())
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .tracking(0.5)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.70)
+                    .foregroundStyle(StillLightTheme.secondaryText.opacity(0.82))
+            }
+            .frame(maxWidth: 92, alignment: .leading)
+            .layoutPriority(1)
 
             Text("\(remainingShots)")
                 .font(.system(size: 12, weight: .bold, design: .rounded).monospacedDigit())
@@ -1040,9 +1050,9 @@ private struct FilmRollBadge: View {
     }
 }
 
-private struct MiniFilmPackIcon: View {
+private struct MiniCameraIcon: View {
     var body: some View {
-        ZStack(alignment: .leading) {
+        ZStack {
             RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .fill(
                     LinearGradient(
@@ -1054,36 +1064,19 @@ private struct MiniFilmPackIcon: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .overlay(alignment: .top) {
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(StillLightTheme.accent.opacity(0.92))
-                        .frame(height: 7)
-                        .padding(.horizontal, 5)
-                        .padding(.top, 4)
-                }
-                .overlay(alignment: .bottomTrailing) {
-                    HStack(spacing: 2) {
-                        ForEach(0..<3, id: \.self) { _ in
-                            RoundedRectangle(cornerRadius: 1, style: .continuous)
-                                .fill(StillLightTheme.text.opacity(0.34))
-                                .frame(width: 3, height: 4)
-                        }
-                    }
-                    .padding(.trailing, 5)
-                    .padding(.bottom, 4)
-                }
                 .overlay {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
                         .stroke(Color.white.opacity(0.18), lineWidth: 1)
                 }
 
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(Color.black.opacity(0.42))
-                .frame(width: 8)
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(StillLightTheme.accent.opacity(0.94))
+                .frame(width: 15, height: 4)
+                .offset(x: -5, y: -13)
 
             Circle()
                 .fill(StillLightTheme.panelElevated)
-                .frame(width: 14, height: 14)
+                .frame(width: 17, height: 17)
                 .overlay {
                     Circle()
                         .stroke(StillLightTheme.accent.opacity(0.72), lineWidth: 2)
@@ -1093,7 +1086,11 @@ private struct MiniFilmPackIcon: View {
                         .fill(StillLightTheme.text.opacity(0.58))
                         .frame(width: 3, height: 3)
                 }
-                .offset(x: 7)
+
+            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                .fill(StillLightTheme.text.opacity(0.38))
+                .frame(width: 7, height: 4)
+                .offset(x: 11, y: -9)
         }
         .frame(width: 36, height: 28)
         .shadow(color: .black.opacity(0.22), radius: 6, y: 3)

@@ -53,7 +53,8 @@ enum FilmImagePipeline {
         aspectRatio: CaptureAspectRatio,
         date: Date,
         addTimestamp: Bool,
-        intensity: Double = 1.0
+        intensity: Double = 1.0,
+        includeDecoration: Bool = true
     ) throws -> UIImage {
         try processWithTiming(
             photoData: photoData,
@@ -61,7 +62,8 @@ enum FilmImagePipeline {
             aspectRatio: aspectRatio,
             date: date,
             addTimestamp: addTimestamp,
-            intensity: intensity
+            intensity: intensity,
+            includeDecoration: includeDecoration
         ).image
     }
 
@@ -71,7 +73,8 @@ enum FilmImagePipeline {
         aspectRatio: CaptureAspectRatio,
         date: Date,
         addTimestamp: Bool,
-        intensity: Double = 1.0
+        intensity: Double = 1.0,
+        includeDecoration: Bool = true
     ) throws -> ProcessingResult {
         var timing = ProcessingTiming(maxInputPixelSize: processingMaxPixelSize)
         let baseImage = try measureStage("downsample") {
@@ -85,6 +88,7 @@ enum FilmImagePipeline {
             date: date,
             addTimestamp: addTimestamp,
             intensity: intensity,
+            includeDecoration: includeDecoration,
             timing: timing
         )
     }
@@ -95,7 +99,8 @@ enum FilmImagePipeline {
         aspectRatio: CaptureAspectRatio,
         date: Date,
         addTimestamp: Bool,
-        intensity: Double = 1.0
+        intensity: Double = 1.0,
+        includeDecoration: Bool = true
     ) throws -> UIImage {
         try processWithTiming(
             image: image,
@@ -103,7 +108,8 @@ enum FilmImagePipeline {
             aspectRatio: aspectRatio,
             date: date,
             addTimestamp: addTimestamp,
-            intensity: intensity
+            intensity: intensity,
+            includeDecoration: includeDecoration
         ).image
     }
 
@@ -113,7 +119,8 @@ enum FilmImagePipeline {
         aspectRatio: CaptureAspectRatio,
         date: Date,
         addTimestamp: Bool,
-        intensity: Double = 1.0
+        intensity: Double = 1.0,
+        includeDecoration: Bool = true
     ) throws -> ProcessingResult {
         var timing = ProcessingTiming(maxInputPixelSize: processingMaxPixelSize)
         let baseImage = measureStage("normalize") {
@@ -127,7 +134,22 @@ enum FilmImagePipeline {
             date: date,
             addTimestamp: addTimestamp,
             intensity: intensity,
+            includeDecoration: includeDecoration,
             timing: timing
+        )
+    }
+
+    static func decorateProcessedImage(
+        _ image: UIImage,
+        film: FilmPreset,
+        date: Date,
+        addTimestamp: Bool
+    ) -> UIImage {
+        decorate(
+            image: image,
+            film: film,
+            date: date,
+            addTimestamp: addTimestamp
         )
     }
 
@@ -161,6 +183,7 @@ enum FilmImagePipeline {
         date: Date,
         addTimestamp: Bool,
         intensity: Double,
+        includeDecoration: Bool,
         timing: ProcessingTiming
     ) throws -> ProcessingResult {
         var timing = timing
@@ -199,14 +222,19 @@ enum FilmImagePipeline {
             applyFinishingTexture(to: rendered, film: film)
         } record: { timing.record($0, milliseconds: $1) }
 
-        let decorated = measureStage("decorate") {
-            decorate(
-                image: UIImage(cgImage: grained),
-                film: film,
-                date: date,
-                addTimestamp: addTimestamp
-            )
-        } record: { timing.record($0, milliseconds: $1) }
+        let finishedImage = UIImage(cgImage: grained)
+        let decorated = if includeDecoration {
+            measureStage("decorate") {
+                decorate(
+                    image: finishedImage,
+                    film: film,
+                    date: date,
+                    addTimestamp: addTimestamp
+                )
+            } record: { timing.record($0, milliseconds: $1) }
+        } else {
+            finishedImage
+        }
         timing.setOutputPixelSize(decorated.pixelSize)
 
         return ProcessingResult(image: decorated, timing: timing)

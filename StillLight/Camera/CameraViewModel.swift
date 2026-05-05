@@ -373,17 +373,25 @@ final class CameraViewModel: ObservableObject {
     ) async {
         do {
             let data = try captureResult.get()
+            let captureDate = Date()
             let processedImage = try await Task.detached(priority: .userInitiated) {
                 let image = try FilmImagePipeline.process(
                     photoData: data,
                     film: film,
                     aspectRatio: aspectRatio,
-                    date: Date(),
-                    addTimestamp: addTimestamp
+                    date: captureDate,
+                    addTimestamp: false,
+                    includeDecoration: false
                 )
-                return try CameraCreativeImageComposer.applyStarburst(
+                let creativeImage = try CameraCreativeImageComposer.applyStarburst(
                     to: image,
                     intensity: starburstIntensity
+                )
+                return FilmImagePipeline.decorateProcessedImage(
+                    creativeImage,
+                    film: film,
+                    date: captureDate,
+                    addTimestamp: addTimestamp
                 )
             }.value
 
@@ -433,7 +441,8 @@ final class CameraViewModel: ObservableObject {
                     film: film,
                     aspectRatio: aspectRatio,
                     date: captureDate,
-                    addTimestamp: addTimestamp
+                    addTimestamp: false,
+                    includeDecoration: false
                 )
             }.value
 
@@ -458,9 +467,15 @@ final class CameraViewModel: ObservableObject {
                     processedImage,
                     mode: blendMode
                 )
-                return try CameraCreativeImageComposer.applyStarburst(
+                let creativeImage = try CameraCreativeImageComposer.applyStarburst(
                     to: image,
                     intensity: starburstIntensity
+                )
+                return FilmImagePipeline.decorateProcessedImage(
+                    creativeImage,
+                    film: film,
+                    date: captureDate,
+                    addTimestamp: addTimestamp
                 )
             }.value
 
@@ -508,22 +523,30 @@ final class CameraViewModel: ObservableObject {
             }
 
             longExposureState.phase = .processingFrames
+            let outputDate = Date()
             let processedImages = try await Task.detached(priority: .userInitiated) {
                 try capture.frameData.map { data in
                     try FilmImagePipeline.process(
                         photoData: data,
                         film: film,
                         aspectRatio: aspectRatio,
-                        date: Date(),
-                        addTimestamp: addTimestamp
+                        date: outputDate,
+                        addTimestamp: false,
+                        includeDecoration: false
                     )
                 }
             }.value
             let compositeImage = try await Task.detached(priority: .userInitiated) {
                 let image = try CameraCreativeImageComposer.longExposureComposite(processedImages)
-                return try CameraCreativeImageComposer.applyStarburst(
+                let creativeImage = try CameraCreativeImageComposer.applyStarburst(
                     to: image,
                     intensity: starburstIntensity
+                )
+                return FilmImagePipeline.decorateProcessedImage(
+                    creativeImage,
+                    film: film,
+                    date: outputDate,
+                    addTimestamp: addTimestamp
                 )
             }.value
 

@@ -3649,19 +3649,12 @@ private struct FilmContactSheetCrop: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let width = proxy.size.width
-            let height = proxy.size.height
-
-            if let contactSheet = UIImage(named: frame.assetName) {
-                Image(uiImage: contactSheet)
+            if let sampleImage = FilmSampleImageCache.image(for: frame) {
+                Image(uiImage: sampleImage)
                     .resizable()
                     .interpolation(.high)
-                    .frame(width: width * CGFloat(frame.columns) * 1.04, height: height * CGFloat(frame.rows) * 1.04)
-                    .offset(
-                        x: frame.offsetX * width,
-                        y: frame.offsetY * height
-                    )
-                    .frame(width: width, height: height)
+                    .scaledToFill()
+                    .frame(width: proxy.size.width, height: proxy.size.height)
                     .clipped()
             } else {
                 LinearGradient(
@@ -3677,7 +3670,7 @@ private struct FilmContactSheetCrop: View {
     }
 }
 
-private enum FilmSamplePhotoFrame {
+private enum FilmSamplePhotoFrame: CaseIterable, Hashable {
     case warmCafe
     case shadowInterior
     case windowPortrait
@@ -3695,7 +3688,7 @@ private enum FilmSamplePhotoFrame {
     var columns: Int { 3 }
     var rows: Int { 3 }
 
-    private var gridPosition: (column: Int, row: Int) {
+    var gridPosition: (column: Int, row: Int) {
         switch self {
         case .warmCafe:
             return (0, 0)
@@ -3718,14 +3711,15 @@ private enum FilmSamplePhotoFrame {
         }
     }
 
-    var offsetX: CGFloat {
-        let centerColumn = CGFloat(columns - 1) / 2
-        return (centerColumn - CGFloat(gridPosition.column)) * 1.04
-    }
-
-    var offsetY: CGFloat {
-        let centerRow = CGFloat(rows - 1) / 2
-        return (centerRow - CGFloat(gridPosition.row)) * 1.04
+    func cropRect(in imageSize: CGSize) -> CGRect {
+        let cellWidth = imageSize.width / CGFloat(columns)
+        let cellHeight = imageSize.height / CGFloat(rows)
+        return CGRect(
+            x: CGFloat(gridPosition.column) * cellWidth,
+            y: CGFloat(gridPosition.row) * cellHeight,
+            width: cellWidth,
+            height: cellHeight
+        ).integral
     }
 
     static func frame(for film: FilmPreset) -> FilmSamplePhotoFrame {
@@ -3751,6 +3745,28 @@ private enum FilmSamplePhotoFrame {
         default:
             return .streetMarket
         }
+    }
+}
+
+private enum FilmSampleImageCache {
+    private static let images: [FilmSamplePhotoFrame: UIImage] = {
+        guard let contactSheet = UIImage(named: "film_sample_contact_sheet_v2"),
+              let sourceImage = contactSheet.cgImage
+        else {
+            return [:]
+        }
+
+        let imageSize = CGSize(width: sourceImage.width, height: sourceImage.height)
+        return Dictionary(uniqueKeysWithValues: FilmSamplePhotoFrame.allCases.compactMap { frame in
+            guard let cropped = sourceImage.cropping(to: frame.cropRect(in: imageSize)) else {
+                return nil
+            }
+            return (frame, UIImage(cgImage: cropped, scale: contactSheet.scale, orientation: contactSheet.imageOrientation))
+        })
+    }()
+
+    static func image(for frame: FilmSamplePhotoFrame) -> UIImage? {
+        images[frame]
     }
 }
 

@@ -52,19 +52,28 @@ run_devicectl_with_retry() {
 
   local attempt=1
   local log_file
+  local status
   while [[ "$attempt" -le "$DEVICECTL_RETRIES" ]]; do
     log_file="$(mktemp -t "stilllight-${label}.XXXXXX")"
     if "$@" >"$log_file" 2>&1; then
-      cat "$log_file"
-      rm -f "$log_file"
-      return 0
+      if ! grep -Eqi "ERROR:|DeviceLocked|device is locked|could not be mounted" "$log_file"; then
+        cat "$log_file"
+        rm -f "$log_file"
+        return 0
+      fi
+      status=1
+    else
+      status=$?
     fi
 
-    local status=$?
     cat "$log_file"
-    if [[ "$attempt" -lt "$DEVICECTL_RETRIES" ]] && grep -Eqi "Connection reset|Connection was invalidated|No provider was found|Transport error" "$log_file"; then
+    if [[ "$attempt" -lt "$DEVICECTL_RETRIES" ]] && grep -Eqi "Connection reset|Connection was invalidated|No provider was found|Transport error|DeviceLocked|device is locked|could not be mounted" "$log_file"; then
       echo
-      echo "devicectl $label failed because the device connection was reset. Retrying ($((attempt + 1))/$DEVICECTL_RETRIES)..."
+      if grep -Eqi "DeviceLocked|device is locked|could not be mounted" "$log_file"; then
+        echo "devicectl $label failed because the iPhone is locked. Retrying ($((attempt + 1))/$DEVICECTL_RETRIES)..."
+      else
+        echo "devicectl $label failed because the device connection was reset. Retrying ($((attempt + 1))/$DEVICECTL_RETRIES)..."
+      fi
       echo "Keep the iPhone unlocked and connected."
       rm -f "$log_file"
       sleep 2

@@ -31,7 +31,8 @@ struct FilmPickerSheet: View {
                             focusedFilmId: focusedFilm.id,
                             selectedFilmId: appState.selectedFilm.id,
                             favoriteIds: appState.favoriteFilmIds,
-                            language: appState.language
+                            language: appState.language,
+                            enableHaptics: appState.enableHaptics
                         ) { film in
                             withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
                                 focusedFilmId = film.id
@@ -322,8 +323,10 @@ private struct FilmObjectShelf: View {
     let selectedFilmId: String
     let favoriteIds: Set<String>
     let language: AppLanguage
+    let enableHaptics: Bool
     let focusAction: (FilmPreset) -> Void
     @State private var centeredFilmId: FilmPreset.ID?
+    @State private var selectionFeedback = UISelectionFeedbackGenerator()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -338,39 +341,44 @@ private struct FilmObjectShelf: View {
                     .frame(height: 1)
             }
 
-            ZStack(alignment: .bottom) {
-                shelfSurface
-                shelfBackRail
+            GeometryReader { proxy in
+                let sideInset = max((proxy.size.width - 124) / 2, 8)
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .bottom, spacing: 16) {
-                        ForEach(films) { film in
-                            FilmObjectCard(
-                                film: film,
-                                isFocused: film.id == focusedFilmId,
-                                isLoaded: film.id == selectedFilmId,
-                                isFavorite: favoriteIds.contains(film.id),
-                                language: language
-                            ) {
-                                focusAction(film)
-                                centeredFilmId = film.id
+                ZStack(alignment: .bottom) {
+                    shelfSurface
+                    shelfBackRail
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(alignment: .bottom, spacing: 16) {
+                            ForEach(films) { film in
+                                FilmObjectCard(
+                                    film: film,
+                                    isFocused: film.id == focusedFilmId,
+                                    isLoaded: film.id == selectedFilmId,
+                                    isFavorite: favoriteIds.contains(film.id),
+                                    language: language
+                                ) {
+                                    focusAction(film)
+                                    centeredFilmId = film.id
+                                }
+                                .id(film.id)
                             }
-                            .id(film.id)
                         }
+                        .padding(.top, 24)
+                        .padding(.bottom, 14)
+                        .scrollTargetLayout()
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.top, 24)
-                    .padding(.bottom, 14)
-                    .scrollTargetLayout()
+                    .contentMargins(.horizontal, sideInset, for: .scrollContent)
+                    .scrollTargetBehavior(.viewAligned)
+                    .scrollPosition(id: $centeredFilmId, anchor: .center)
                 }
-                .scrollTargetBehavior(.viewAligned)
-                .scrollPosition(id: $centeredFilmId, anchor: .center)
             }
             .frame(height: 206)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .onAppear {
             centeredFilmId = focusedFilmId
+            selectionFeedback.prepare()
         }
         .onChange(of: focusedFilmId) { _, newValue in
             guard centeredFilmId != newValue else { return }
@@ -385,7 +393,10 @@ private struct FilmObjectShelf: View {
             else {
                 return
             }
-            UISelectionFeedbackGenerator().selectionChanged()
+            if enableHaptics {
+                selectionFeedback.selectionChanged()
+                selectionFeedback.prepare()
+            }
             focusAction(film)
         }
     }
@@ -4753,6 +4764,9 @@ private struct CategoryChip: View {
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title), \(count)")
+        .accessibilityValue(isSelected ? "Selected" : "")
     }
 }
 

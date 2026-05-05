@@ -120,8 +120,8 @@ enum AppText {
     }
 
     private static let english: [Key: String] = [
-        .filmRoll: "Film Drawer",
-        .filmRollSubtitle: "Load a roll before shooting. Color, grain, frame, and camera label travel together.",
+        .filmRoll: "Camera Library",
+        .filmRollSubtitle: "Choose a camera before shooting. Color, grain, frame, and camera behavior travel together.",
         .all: "All",
         .favorites: "Favorites",
         .favoriteFilm: "Add to Favorites",
@@ -213,8 +213,8 @@ enum AppText {
     ]
 
     private static let chinese: [Key: String] = [
-        .filmRoll: "胶卷抽屉",
-        .filmRollSubtitle: "选择一卷装入相机。色彩、颗粒、边框和机型标注会一起生效。",
+        .filmRoll: "相机库",
+        .filmRollSubtitle: "选择一台相机开始拍摄。色彩、颗粒、边框和相机行为会一起生效。",
         .all: "全部",
         .favorites: "收藏",
         .favoriteFilm: "加入收藏",

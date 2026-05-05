@@ -76,6 +76,68 @@ struct CameraZoomState: Equatable {
     }
 }
 
+struct CameraWhiteBalanceState: Equatable {
+    static let auto = CameraWhiteBalanceState(
+        kelvin: 6500,
+        tint: 0,
+        minKelvin: 2500,
+        maxKelvin: 9000,
+        isLocked: false,
+        isSupported: true
+    )
+
+    var kelvin: Float
+    var tint: Float
+    let minKelvin: Float
+    let maxKelvin: Float
+    var isLocked: Bool
+    var isSupported: Bool
+
+    var kelvinText: String {
+        "\(Int(kelvin.rounded()))K"
+    }
+}
+
+struct CameraLongExposureRequest: Equatable {
+    var duration: TimeInterval
+    var frameCount: Int
+
+    static let standard = CameraLongExposureRequest(duration: 1.2, frameCount: 4)
+
+    var normalized: CameraLongExposureRequest {
+        CameraLongExposureRequest(
+            duration: duration.clamped(to: 0.3...8.0),
+            frameCount: frameCount.clamped(to: 1...12)
+        )
+    }
+
+    var frameInterval: TimeInterval {
+        let request = normalized
+        guard request.frameCount > 1 else { return 0 }
+        return request.duration / TimeInterval(request.frameCount - 1)
+    }
+}
+
+struct CameraLongExposureFrameProgress: Equatable {
+    let capturedFrameCount: Int
+    let totalFrameCount: Int
+
+    var fractionCompleted: Double {
+        guard totalFrameCount > 0 else { return 0 }
+        return Double(capturedFrameCount) / Double(totalFrameCount)
+    }
+}
+
+struct CameraLongExposureCapture {
+    let frameData: [Data]
+    let requestedDuration: TimeInterval
+    let actualDuration: TimeInterval
+
+    var isMultiFrameApproximation: Bool {
+        frameData.count > 1
+    }
+}
+
 final class CameraService: NSObject, ObservableObject {
     let session = AVCaptureSession()
 
@@ -87,6 +149,8 @@ final class CameraService: NSObject, ObservableObject {
     private var photoDelegate: PhotoCaptureDelegate?
     private var movieDelegate: MovieCaptureDelegate?
     private var zoomDisplayScale: CGFloat = 1
+    private var preferredWhiteBalanceKelvin: Float?
+    private var preferredWhiteBalanceTint: Float = 0
     private(set) var position: AVCaptureDevice.Position = .back
 
     func checkPermission(_ completion: @escaping (CameraPermissionState) -> Void) {
@@ -200,6 +264,63 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
 
+    func currentWhiteBalanceState(completion: @escaping (CameraWhiteBalanceState) -> Void) {
+        sessionQueue.async { [weak self] in
+            guard let self, let device = self.videoInput?.device else {
+                completion(.auto)
+                return
+            }
+
+            completion(self.whiteBalanceState(for: device))
+        }
+    }
+
+    func setWhiteBalanceKelvin(
+        _ kelvin: Float,
+        tint: Float = 0,
+        completion: ((CameraWhiteBalanceState) -> Void)? = nil
+    ) {
+        sessionQueue.async { [weak self] in
+            guard let self, let device = self.videoInput?.device else {
+                completion?(.auto)
+                return
+            }
+
+            let clampedKelvin = kelvin.clamped(to: CameraWhiteBalanceState.auto.minKelvin...CameraWhiteBalanceState.auto.maxKelvin)
+            self.preferredWhiteBalanceKelvin = clampedKelvin
+            self.preferredWhiteBalanceTint = tint
+            self.applyWhiteBalance(kelvin: clampedKelvin, tint: tint, on: device)
+            completion?(self.whiteBalanceState(for: device))
+        }
+    }
+
+    func resetWhiteBalanceToAuto(completion: ((CameraWhiteBalanceState) -> Void)? = nil) {
+        sessionQueue.async { [weak self] in
+            guard let self, let device = self.videoInput?.device else {
+                completion?(.auto)
+                return
+            }
+
+            self.preferredWhiteBalanceKelvin = nil
+            self.preferredWhiteBalanceTint = 0
+
+            do {
+                try device.lockForConfiguration()
+                if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                    device.whiteBalanceMode = .continuousAutoWhiteBalance
+                } else if device.isWhiteBalanceModeSupported(.autoWhiteBalance) {
+                    device.whiteBalanceMode = .autoWhiteBalance
+                }
+                device.unlockForConfiguration()
+            } catch {
+                completion?(self.whiteBalanceState(for: device))
+                return
+            }
+
+            completion?(self.whiteBalanceState(for: device))
+        }
+    }
+
     func focus(at point: CGPoint) {
         sessionQueue.async { [weak self] in
             guard let device = self?.videoInput?.device else { return }
@@ -239,6 +360,49 @@ final class CameraService: NSObject, ObservableObject {
             self.photoDelegate = delegate
             self.photoOutput.capturePhoto(with: settings, delegate: delegate)
         }
+    }
+
+    func captureLongExposure(
+        request: CameraLongExposureRequest,
+        flashMode: CameraFlashMode,
+        progress: @escaping (CameraLongExposureFrameProgress) -> Void,
+        completion: @escaping (Result<CameraLongExposureCapture, Error>) -> Void
+    ) {
+        let safeRequest = request.normalized
+        let startedAt = Date()
+        var frames: [Data] = []
+
+        func captureFrame(at index: Int) {
+            guard index < safeRequest.frameCount else {
+                completion(.success(CameraLongExposureCapture(
+                    frameData: frames,
+                    requestedDuration: safeRequest.duration,
+                    actualDuration: Date().timeIntervalSince(startedAt)
+                )))
+                return
+            }
+
+            let delay = index == 0 ? 0 : safeRequest.frameInterval
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self else { return }
+                let captureFlash = safeRequest.frameCount == 1 ? flashMode : .off
+                self.capturePhoto(flashMode: captureFlash) { result in
+                    switch result {
+                    case .success(let data):
+                        frames.append(data)
+                        progress(CameraLongExposureFrameProgress(
+                            capturedFrameCount: frames.count,
+                            totalFrameCount: safeRequest.frameCount
+                        ))
+                        captureFrame(at: index + 1)
+                    case .failure(let error):
+                        completion(.failure(error))
+                    }
+                }
+            }
+        }
+
+        captureFrame(at: 0)
     }
 
     func startVideoRecording(completion: @escaping (Result<URL, Error>) -> Void) {
@@ -328,6 +492,9 @@ final class CameraService: NSObject, ObservableObject {
 
         session.commitConfiguration()
         setInitialZoom(on: device)
+        if let preferredWhiteBalanceKelvin {
+            applyWhiteBalance(kelvin: preferredWhiteBalanceKelvin, tint: preferredWhiteBalanceTint, on: device)
+        }
     }
 
     private static func bestDevice(for position: AVCaptureDevice.Position) -> AVCaptureDevice? {
@@ -424,6 +591,52 @@ final class CameraService: NSObject, ObservableObject {
         }
 
         return options
+    }
+
+    private func whiteBalanceState(for device: AVCaptureDevice) -> CameraWhiteBalanceState {
+        let values = device.temperatureAndTintValues(for: device.deviceWhiteBalanceGains)
+        return CameraWhiteBalanceState(
+            kelvin: values.temperature.clamped(to: CameraWhiteBalanceState.auto.minKelvin...CameraWhiteBalanceState.auto.maxKelvin),
+            tint: values.tint,
+            minKelvin: CameraWhiteBalanceState.auto.minKelvin,
+            maxKelvin: CameraWhiteBalanceState.auto.maxKelvin,
+            isLocked: device.whiteBalanceMode == .locked,
+            isSupported: device.isLockingWhiteBalanceWithCustomDeviceGainsSupported
+        )
+    }
+
+    private func applyWhiteBalance(kelvin: Float, tint: Float, on device: AVCaptureDevice) {
+        do {
+            try device.lockForConfiguration()
+            defer { device.unlockForConfiguration() }
+
+            guard device.isLockingWhiteBalanceWithCustomDeviceGainsSupported else {
+                if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                    device.whiteBalanceMode = .continuousAutoWhiteBalance
+                }
+                return
+            }
+
+            let values = AVCaptureDevice.WhiteBalanceTemperatureAndTintValues(
+                temperature: kelvin,
+                tint: tint
+            )
+            let gains = normalizedWhiteBalanceGains(device.deviceWhiteBalanceGains(for: values), maxGain: device.maxWhiteBalanceGain)
+            device.setWhiteBalanceModeLocked(with: gains, completionHandler: nil)
+        } catch {
+            return
+        }
+    }
+
+    private func normalizedWhiteBalanceGains(
+        _ gains: AVCaptureDevice.WhiteBalanceGains,
+        maxGain: Float
+    ) -> AVCaptureDevice.WhiteBalanceGains {
+        AVCaptureDevice.WhiteBalanceGains(
+            redGain: gains.redGain.clamped(to: 1...maxGain),
+            greenGain: gains.greenGain.clamped(to: 1...maxGain),
+            blueGain: gains.blueGain.clamped(to: 1...maxGain)
+        )
     }
 
     private func configureAudioInputIfAllowed() throws {

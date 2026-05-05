@@ -953,6 +953,14 @@ struct FilmLibrary {
         Set(presets.map(\.id))
     }
 
+    var cameraProfiles: [FilmCameraProfile] {
+        presets.map(\.cameraProfile)
+    }
+
+    var missingCameraProfileIds: Set<String> {
+        FilmCameraProfileCatalog.missingProfileIds(in: presets)
+    }
+
     func presets(matching category: FilmCategory, favoriteIds: Set<String>) -> [FilmPreset] {
         switch category {
         case .favorites:

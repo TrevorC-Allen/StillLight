@@ -237,7 +237,7 @@ private struct FilmPickerHero: View {
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .tracking(0.9)
                             .foregroundStyle(style.accent.opacity(0.86))
-                        Text(film.displayName(language: language))
+                        Text(film.displayCameraName(language: language))
                             .font(.system(size: 24, weight: .semibold, design: .rounded))
                             .foregroundStyle(StillLightTheme.text)
                             .lineLimit(1)
@@ -262,7 +262,7 @@ private struct FilmPickerHero: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                Text(film.displayCameraName(language: language))
+                Text(film.displayName(language: language))
                     .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(StillLightTheme.secondaryText)
                     .lineLimit(1)
@@ -340,7 +340,7 @@ private struct FilmPickerHero: View {
     }
 
     private var drawerText: String {
-        language == .chinese ? "胶卷抽屉" : "FILM DRAWER"
+        language == .chinese ? "相机库" : "CAMERA LIBRARY"
     }
 }
 
@@ -358,7 +358,7 @@ private struct FilmObjectShelf: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Text(language == .chinese ? "选择一卷" : "Choose a roll")
+                Text(language == .chinese ? "选择相机" : "Choose a camera")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .tracking(0.8)
                     .foregroundStyle(StillLightTheme.secondaryText.opacity(0.72))
@@ -516,7 +516,8 @@ private struct FilmObjectCard: View {
                         .offset(y: isFocused ? 5 : 8)
 
                     ZStack(alignment: .topTrailing) {
-                        FilmPhysicalPackageView(film: film, scale: .shelf)
+                        CameraModelPlate(film: film)
+                            .frame(width: isFocused ? 118 : 105, height: isFocused ? 92 : 82)
                             .shadow(color: FilmCoverStyle.style(for: film).accent.opacity(isFocused ? 0.18 : 0.08), radius: isFocused ? 12 : 7, x: -5, y: 5)
                             .shadow(color: .black.opacity(isFocused ? 0.38 : 0.24), radius: isFocused ? 18 : 11, x: 0, y: isFocused ? 13 : 8)
 
@@ -534,10 +535,11 @@ private struct FilmObjectCard: View {
                 }
                 .frame(width: 124, height: 132)
 
-                Text(film.displayShortName(language: language))
+                Text(film.displayCameraName(language: language))
                     .font(.system(size: 12, weight: isFocused ? .semibold : .medium, design: .rounded))
                     .foregroundStyle(isFocused ? StillLightTheme.text : StillLightTheme.secondaryText)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.72)
                     .frame(width: 118)
 
                 Rectangle()
@@ -549,7 +551,7 @@ private struct FilmObjectCard: View {
         }
         .buttonStyle(.plain)
         .animation(.spring(response: 0.34, dampingFraction: 0.82), value: isFocused)
-        .accessibilityLabel(film.displayName(language: language))
+        .accessibilityLabel(film.displayCameraName(language: language))
     }
 
     private var cardPlinth: some View {
@@ -591,11 +593,15 @@ private struct FilmSelectionDetailPanel: View {
         VStack(alignment: .leading, spacing: 15) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(film.displayName(language: language))
+                    Text(film.displayCameraName(language: language))
                         .font(.system(size: 20, weight: .semibold, design: .rounded))
                         .foregroundStyle(StillLightTheme.text)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
+                    Text(film.displayName(language: language))
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(style.accent.opacity(0.86))
+                        .lineLimit(1)
                     Text(film.displayDescription(language: language))
                         .font(.system(size: 13, weight: .regular, design: .rounded))
                         .foregroundStyle(StillLightTheme.secondaryText)
@@ -666,7 +672,7 @@ private struct FilmSelectionDetailPanel: View {
         HStack(spacing: 7) {
             Label(film.category.title(language: language), systemImage: film.category.drawerIconName)
             Text(primaryScene)
-            Text("\(film.defaultShotCount) EXP")
+            Text(language == .chinese ? "\(film.defaultShotCount) 张" : "\(film.defaultShotCount) EXP")
         }
         .font(.system(size: 11, weight: .bold, design: .monospaced))
         .foregroundStyle(StillLightTheme.secondaryText.opacity(0.86))
@@ -693,7 +699,7 @@ private struct FilmSelectionDetailPanel: View {
         if isLoaded {
             return language == .chinese ? "继续拍" : "Keep Shooting"
         }
-        return language == .chinese ? "装入相机" : "Load Camera"
+        return language == .chinese ? "使用相机" : "Use Camera"
     }
 
     private var favoriteOnText: String {
@@ -733,11 +739,12 @@ private struct FilmPickerActionBar: View {
             .accessibilityLabel(isFavorite ? favoriteOnText : favoriteOffText)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(film.displayShortName(language: language))
+                Text(film.displayCameraName(language: language))
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(StillLightTheme.text)
                     .lineLimit(1)
-                Text("ISO \(film.iso) / \(film.defaultShotCount) EXP")
+                    .minimumScaleFactor(0.74)
+                Text(actionBarSubtitle)
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
                     .foregroundStyle(StillLightTheme.secondaryText)
             }
@@ -778,12 +785,19 @@ private struct FilmPickerActionBar: View {
 
     private var loadButtonText: String {
         if isLoading {
-            return language == .chinese ? "装卷中" : "Loading"
+            return language == .chinese ? "启用中" : "Loading"
         }
         if isLoaded {
             return language == .chinese ? "继续拍" : "Keep Shooting"
         }
-        return language == .chinese ? "装入" : "Load"
+        return language == .chinese ? "使用" : "Use"
+    }
+
+    private var actionBarSubtitle: String {
+        if language == .chinese {
+            return "ISO \(film.iso) / \(film.defaultShotCount) 张"
+        }
+        return "ISO \(film.iso) / \(film.defaultShotCount) EXP"
     }
 
     private var favoriteOnText: String {
@@ -3486,7 +3500,7 @@ private struct LoadedSeal: View {
     let language: AppLanguage
 
     var body: some View {
-        Text(language == .chinese ? "已装卷" : "LOADED")
+        Text(language == .chinese ? "当前相机" : "ACTIVE")
             .font(.system(size: 10, weight: .bold, design: .monospaced))
             .tracking(0.8)
             .foregroundStyle(StillLightTheme.background)
@@ -3501,7 +3515,7 @@ private struct LoadedTab: View {
     let language: AppLanguage
 
     var body: some View {
-        Text(language == .chinese ? "装入" : "IN")
+        Text(language == .chinese ? "使用中" : "IN USE")
             .font(.system(size: 8, weight: .black, design: .monospaced))
             .foregroundStyle(StillLightTheme.background)
             .padding(.horizontal, 6)

@@ -34,6 +34,7 @@
 		000000000000000000000225 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000125 /* AppLanguage.swift */; };
 		000000000000000000000226 /* VideoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000126 /* VideoExporter.swift */; };
 		000000000000000000000239 /* FilmSampleCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000140 /* FilmSampleCatalog.swift */; };
+		000000000000000000000241 /* CameraModelPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000142 /* CameraModelPresentation.swift */; };
 		000000000000000000000227 /* AppIcon20x20@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000127 /* AppIcon20x20@2x.png */; };
 		000000000000000000000228 /* AppIcon20x20@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000128 /* AppIcon20x20@3x.png */; };
 		000000000000000000000229 /* AppIcon29x29@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000129 /* AppIcon29x29@2x.png */; };
@@ -78,6 +79,7 @@
 		000000000000000000000125 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		000000000000000000000126 /* VideoExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoExporter.swift; sourceTree = "<group>"; };
 		000000000000000000000140 /* FilmSampleCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmSampleCatalog.swift; sourceTree = "<group>"; };
+		000000000000000000000142 /* CameraModelPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraModelPresentation.swift; sourceTree = "<group>"; };
 		000000000000000000000127 /* AppIcon20x20@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcons/AppIcon20x20@2x.png"; sourceTree = "<group>"; };
 		000000000000000000000128 /* AppIcon20x20@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcons/AppIcon20x20@3x.png"; sourceTree = "<group>"; };
 		000000000000000000000129 /* AppIcon29x29@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcons/AppIcon29x29@2x.png"; sourceTree = "<group>"; };
@@ -164,6 +166,7 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000109 /* FilmLibrary.swift */,
+				000000000000000000000142 /* CameraModelPresentation.swift */,
 				000000000000000000000110 /* FilmPickerSheet.swift */,
 				000000000000000000000111 /* FilmPreset.swift */,
 				000000000000000000000123 /* FilmRoll.swift */,
@@ -367,6 +370,7 @@
 				000000000000000000000225 /* AppLanguage.swift in Sources */,
 				000000000000000000000226 /* VideoExporter.swift in Sources */,
 				000000000000000000000239 /* FilmSampleCatalog.swift in Sources */,
+				000000000000000000000241 /* CameraModelPresentation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

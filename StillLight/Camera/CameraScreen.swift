@@ -14,11 +14,7 @@ struct CameraScreen: View {
     @State private var pinchStartZoomFactor: CGFloat?
     @State private var zoomControlDragStartFactor: CGFloat?
     @State private var isDraggingZoomControl = false
-    @State private var doubleExposureArmed = false
-    @State private var longExposureArmed = false
-    @State private var starFilterEnabled = false
     @State private var showsWhiteBalanceControl = false
-    @State private var whiteBalanceShift: Double = 0
     @State private var selfTimerSeconds = 0
 
     var body: some View {
@@ -175,9 +171,9 @@ struct CameraScreen: View {
 
     private var cameraAccessoryStatus: some View {
         HStack(spacing: 7) {
-            AccessoryStatusDot(isOn: doubleExposureArmed, iconName: "square.on.square")
-            AccessoryStatusDot(isOn: longExposureArmed, iconName: "timer")
-            AccessoryStatusDot(isOn: starFilterEnabled, iconName: "sparkles")
+            AccessoryStatusDot(isOn: viewModel.creativeCaptureMode == .doubleExposure, iconName: "square.on.square")
+            AccessoryStatusDot(isOn: viewModel.creativeCaptureMode == .longExposure, iconName: "timer")
+            AccessoryStatusDot(isOn: viewModel.starburstIntensity > 0.01, iconName: "sparkles")
         }
         .padding(.horizontal, 10)
         .frame(height: 44)
@@ -224,13 +220,25 @@ struct CameraScreen: View {
                     .foregroundStyle(StillLightTheme.secondaryText)
                     .frame(width: 22)
 
-                Slider(value: $whiteBalanceShift, in: -1200...1200, step: 50)
+                Slider(
+                    value: Binding(
+                        get: { Double(viewModel.whiteBalanceState.kelvin) },
+                        set: { viewModel.updateWhiteBalanceKelvin($0) }
+                    ),
+                    in: Double(viewModel.whiteBalanceState.minKelvin)...Double(viewModel.whiteBalanceState.maxKelvin),
+                    step: 50
+                )
                     .tint(Color(red: 1.0, green: 0.79, blue: 0.42))
 
-                Text(whiteBalanceLabel)
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(StillLightTheme.secondaryText)
-                    .frame(width: 58, alignment: .trailing)
+                Button {
+                    viewModel.resetWhiteBalance()
+                } label: {
+                    Text(whiteBalanceLabel)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(StillLightTheme.secondaryText)
+                        .frame(width: 58, alignment: .trailing)
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -247,7 +255,7 @@ struct CameraScreen: View {
             CreativeMeterPill(
                 iconName: "thermometer.medium",
                 value: whiteBalanceLabel,
-                isOn: showsWhiteBalanceControl || whiteBalanceShift != 0
+                isOn: showsWhiteBalanceControl || viewModel.whiteBalanceState.isLocked
             ) {
                 withAnimation(.easeOut(duration: 0.16)) {
                     showsWhiteBalanceControl.toggle()
@@ -256,10 +264,10 @@ struct CameraScreen: View {
 
             CreativeMeterPill(
                 iconName: "sparkles",
-                value: starFilterEnabled ? "ON" : "OFF",
-                isOn: starFilterEnabled
+                value: viewModel.starburstIntensity > 0.01 ? "ON" : "OFF",
+                isOn: viewModel.starburstIntensity > 0.01
             ) {
-                starFilterEnabled.toggle()
+                viewModel.updateStarburstIntensity(viewModel.starburstIntensity > 0.01 ? 0 : 0.70)
             }
 
             CreativeMeterPill(
@@ -286,18 +294,18 @@ struct CameraScreen: View {
 
             CameraAccessoryButton(
                 iconName: "square.on.square",
-                isOn: doubleExposureArmed,
+                isOn: viewModel.creativeCaptureMode == .doubleExposure,
                 accessibilityLabel: appState.t(.doubleExposure)
             ) {
-                doubleExposureArmed.toggle()
+                viewModel.setCreativeCaptureMode(viewModel.creativeCaptureMode == .doubleExposure ? .standard : .doubleExposure)
             }
 
             CameraAccessoryButton(
                 iconName: "camera.aperture",
-                isOn: longExposureArmed,
+                isOn: viewModel.creativeCaptureMode == .longExposure,
                 accessibilityLabel: appState.t(.longExposure)
             ) {
-                longExposureArmed.toggle()
+                viewModel.setCreativeCaptureMode(viewModel.creativeCaptureMode == .longExposure ? .standard : .longExposure)
             }
 
             CameraAccessoryButton(
@@ -403,10 +411,10 @@ struct CameraScreen: View {
     }
 
     private var whiteBalanceLabel: String {
-        if abs(whiteBalanceShift) < 1 {
+        if !viewModel.whiteBalanceState.isLocked {
             return "AUTO"
         }
-        return String(format: "%+.0fK", whiteBalanceShift)
+        return viewModel.whiteBalanceState.kelvinText
     }
 
     private var recentCaptureThumbnail: some View {

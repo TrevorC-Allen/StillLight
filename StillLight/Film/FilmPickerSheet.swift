@@ -799,7 +799,10 @@ private struct FilmProcessPassport: View {
     }
 
     private var batchCode: String {
-        let suffix = abs(film.id.hashValue) % 900 + 100
+        let checksum = film.id.unicodeScalars.reduce(0) { partialResult, scalar in
+            (partialResult * 31 + Int(scalar.value)) % 900
+        }
+        let suffix = checksum + 100
         return "SL-\(suffix)"
     }
 }

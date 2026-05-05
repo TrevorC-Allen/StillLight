@@ -301,6 +301,7 @@ private struct FilmObjectShelf: View {
     let favoriteIds: Set<String>
     let language: AppLanguage
     let focusAction: (FilmPreset) -> Void
+    @State private var centeredFilmId: FilmPreset.ID?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -330,16 +331,40 @@ private struct FilmObjectShelf: View {
                                 language: language
                             ) {
                                 focusAction(film)
+                                centeredFilmId = film.id
                             }
+                            .id(film.id)
                         }
                     }
                     .padding(.horizontal, 8)
                     .padding(.top, 24)
                     .padding(.bottom, 14)
+                    .scrollTargetLayout()
                 }
+                .scrollTargetBehavior(.viewAligned)
+                .scrollPosition(id: $centeredFilmId, anchor: .center)
             }
             .frame(height: 206)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .onAppear {
+            centeredFilmId = focusedFilmId
+        }
+        .onChange(of: focusedFilmId) { _, newValue in
+            guard centeredFilmId != newValue else { return }
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.84)) {
+                centeredFilmId = newValue
+            }
+        }
+        .onChange(of: centeredFilmId) { _, newValue in
+            guard let newValue,
+                  newValue != focusedFilmId,
+                  let film = films.first(where: { $0.id == newValue })
+            else {
+                return
+            }
+            UISelectionFeedbackGenerator().selectionChanged()
+            focusAction(film)
         }
     }
 

@@ -194,6 +194,10 @@ private struct FilmPickerHero: View {
         FilmCoverStyle.style(for: film)
     }
 
+    private var profile: FilmCameraProfile {
+        film.cameraProfile
+    }
+
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -230,18 +234,23 @@ private struct FilmPickerHero: View {
             shelfGlow
             heroStage
 
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 5) {
                         Text(isLoaded ? loadedText : drawerText)
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .tracking(0.9)
                             .foregroundStyle(style.accent.opacity(0.86))
-                        Text(film.displayCameraName(language: language))
+                        Text(profile.displayName(language: language))
                             .font(.system(size: 24, weight: .semibold, design: .rounded))
                             .foregroundStyle(StillLightTheme.text)
                             .lineLimit(1)
                             .minimumScaleFactor(0.76)
+                        Text(profile.displayLensAndEra(language: language))
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .foregroundStyle(StillLightTheme.secondaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.70)
                     }
 
                     Spacer()
@@ -249,23 +258,61 @@ private struct FilmPickerHero: View {
                     ExposureCounter(film: film, currentRoll: currentRoll, language: language)
                 }
 
-                ZStack(alignment: .bottomTrailing) {
-                    CameraModelPlate(film: film)
-                        .frame(height: 142)
-                        .padding(.trailing, 22)
-                        .offset(y: 2)
+                HStack(alignment: .bottom, spacing: 12) {
+                    ZStack(alignment: .bottomLeading) {
+                        FilmSampleSceneView(film: film, style: style, sampleRole: .thumb)
+                            .frame(width: 112, height: 142)
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(.white.opacity(0.12), lineWidth: 1)
+                            }
+                            .shadow(color: .black.opacity(0.34), radius: 16, x: 0, y: 12)
 
-                    FilmPhysicalPackageView(film: film, scale: .hero)
-                        .shadow(color: style.accent.opacity(0.18), radius: 18, x: -8, y: 8)
-                        .shadow(color: .black.opacity(0.36), radius: 20, x: 0, y: 18)
-                        .offset(x: 2, y: 8)
+                        Text(language == .chinese ? "样张" : "SAMPLE")
+                            .font(.system(size: 9, weight: .black, design: .monospaced))
+                            .tracking(0.7)
+                            .foregroundStyle(StillLightTheme.background.opacity(0.86))
+                            .padding(.horizontal, 6)
+                            .frame(height: 18)
+                            .background(style.accent.opacity(0.92))
+                            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                            .padding(7)
+                    }
+                    .rotationEffect(.degrees(-1.2))
+
+                    Spacer(minLength: 0)
+
+                    VStack(alignment: .trailing, spacing: 8) {
+                        CameraModelPlate(film: film)
+                            .frame(height: 136)
+                            .shadow(color: style.accent.opacity(0.18), radius: 18, x: -7, y: 8)
+                            .shadow(color: .black.opacity(0.40), radius: 20, x: 0, y: 16)
+
+                        Text(profile.displayModelName(language: language))
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .tracking(0.4)
+                            .foregroundStyle(StillLightTheme.secondaryText.opacity(0.86))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.68)
+                            .padding(.trailing, 6)
+                    }
                 }
                 .frame(maxWidth: .infinity)
+                .frame(height: 154)
 
-                Text(film.displayName(language: language))
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(StillLightTheme.secondaryText)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    CameraCapabilityPill(text: profile.category.title(language: language), style: style)
+                    ForEach(Array(profile.accessoryLabels(language: language).prefix(3)), id: \.self) { label in
+                        CameraCapabilityPill(text: label, style: style)
+                    }
+                    Spacer(minLength: 0)
+                    Text(film.displayName(language: language))
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(StillLightTheme.secondaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                }
             }
             .padding(18)
 

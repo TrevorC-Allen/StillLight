@@ -685,13 +685,18 @@ private struct FilmDetailPreviewStrip: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            FilmSampleSceneView(film: film, style: style)
-                .frame(width: 76, height: 54)
-                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .stroke(.white.opacity(0.12), lineWidth: 1)
+            HStack(spacing: 4) {
+                ForEach(Array(FilmSamplePhotoFrame.sequence(for: film).enumerated()), id: \.offset) { index, frame in
+                    FilmSampleSceneView(film: film, style: style, photoFrame: frame)
+                        .frame(width: index == 0 ? 42 : 25, height: 54)
+                        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .stroke(.white.opacity(0.12), lineWidth: 1)
+                        }
                 }
+            }
+            .frame(width: 100, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(toneTitle)
@@ -1402,14 +1407,16 @@ private struct FilmIdentityArtworkView: View {
     }
 
     private func contactGrid(columns: Int, rows: Int, width: CGFloat, height: CGFloat) -> some View {
-        VStack(spacing: height * 0.035) {
-            ForEach(0..<rows, id: \.self) { _ in
+        let frames = FilmSamplePhotoFrame.sequence(for: film)
+        return VStack(spacing: height * 0.035) {
+            ForEach(0..<rows, id: \.self) { row in
                 HStack(spacing: width * 0.035) {
-                    ForEach(0..<columns, id: \.self) { _ in
+                    ForEach(0..<columns, id: \.self) { column in
+                        let index = row * columns + column
                         RoundedRectangle(cornerRadius: width * 0.02, style: .continuous)
                             .fill(style.ink.opacity(0.62))
                             .overlay {
-                                FilmSampleSceneView(film: film, style: style)
+                                FilmSampleSceneView(film: film, style: style, photoFrame: frames[index % frames.count])
                                     .padding(width * 0.018)
                                     .opacity(0.72)
                             }
@@ -1427,12 +1434,13 @@ private struct FilmIdentityArtworkView: View {
     }
 
     private func proofStrip(count: Int, width: CGFloat, height: CGFloat) -> some View {
-        HStack(spacing: width * 0.03) {
+        let frames = FilmSamplePhotoFrame.sequence(for: film)
+        return HStack(spacing: width * 0.03) {
             ForEach(0..<count, id: \.self) { index in
                 RoundedRectangle(cornerRadius: width * 0.018, style: .continuous)
                     .fill(style.swatches[index % style.swatches.count].opacity(0.72))
                     .overlay {
-                        FilmSampleSceneView(film: film, style: style)
+                        FilmSampleSceneView(film: film, style: style, photoFrame: frames[index % frames.count])
                             .padding(width * 0.014)
                             .opacity(index.isMultiple(of: 2) ? 0.68 : 0.52)
                     }
@@ -3746,6 +3754,37 @@ private enum FilmSamplePhotoFrame: CaseIterable, Hashable {
             return .streetMarket
         }
     }
+
+    static func sequence(for film: FilmPreset) -> [FilmSamplePhotoFrame] {
+        switch film.id {
+        case "human-warm-400":
+            return [.shadowInterior, .warmCafe, .streetMarket]
+        case "human-vignette-800":
+            return [.shadowInterior, .noirWindow, .warmCafe]
+        case "muse-portrait-400":
+            return [.windowPortrait, .warmCafe, .instantDesk]
+        case "soft-portrait-400":
+            return [.windowPortrait, .naturalProduct, .warmCafe]
+        case "sunlit-gold-200", "t-compact-gold":
+            return [.warmCafe, .streetMarket, .naturalProduct]
+        case "green-street-400", "gr-street-snap":
+            return [.shadowInterior, .streetMarket, .noirWindow]
+        case "superia-green", "classic-chrome-x", "lca-vivid":
+            return [.streetMarket, .warmCafe, .naturalProduct]
+        case "tungsten-800", "cyber-ccd-blue":
+            return [.tungstenNight, .ccdParty, .shadowInterior]
+        case "ccd-2003", "pocket-flash":
+            return [.ccdParty, .tungstenNight, .instantDesk]
+        case "instant-square", "instant-wide", "sx-fade", "holga-120-dream":
+            return [.instantDesk, .windowPortrait, .warmCafe]
+        case "hncs-natural", "medium-500c", "ektar-vivid-100":
+            return [.naturalProduct, .streetMarket, .warmCafe]
+        case "silver-hp5", "tri-x-street", "noir-soft":
+            return [.noirWindow, .shadowInterior, .streetMarket]
+        default:
+            return [frame(for: film), .warmCafe, .streetMarket]
+        }
+    }
 }
 
 private enum FilmSampleImageCache {
@@ -3963,13 +4002,20 @@ private struct FilmSampleTreatment {
 private struct FilmSampleSceneView: View {
     let film: FilmPreset
     let style: FilmCoverStyle
+    let photoFrame: FilmSamplePhotoFrame?
+
+    init(film: FilmPreset, style: FilmCoverStyle, photoFrame: FilmSamplePhotoFrame? = nil) {
+        self.film = film
+        self.style = style
+        self.photoFrame = photoFrame
+    }
 
     private var scene: FilmSampleSceneKind {
         FilmSampleSceneKind.kind(for: film)
     }
 
-    private var photoFrame: FilmSamplePhotoFrame {
-        FilmSamplePhotoFrame.frame(for: film)
+    private var resolvedPhotoFrame: FilmSamplePhotoFrame {
+        photoFrame ?? FilmSamplePhotoFrame.frame(for: film)
     }
 
     private var treatment: FilmSampleTreatment {
@@ -3982,7 +4028,7 @@ private struct FilmSampleSceneView: View {
             let height = proxy.size.height
 
             ZStack {
-                FilmContactSheetCrop(frame: photoFrame)
+                FilmContactSheetCrop(frame: resolvedPhotoFrame)
                     .saturation(treatment.saturation)
                     .contrast(treatment.contrast)
                     .brightness(treatment.brightness)

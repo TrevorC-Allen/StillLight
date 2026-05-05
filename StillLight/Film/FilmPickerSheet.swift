@@ -27,7 +27,7 @@ struct FilmPickerSheet: View {
                             language: appState.language
                         )
 
-                        FilmObjectShelf(
+                        CameraLibraryGrid(
                             films: filteredPresets,
                             focusedFilmId: focusedFilm.id,
                             selectedFilmId: appState.selectedFilm.id,
@@ -341,6 +341,180 @@ private struct FilmPickerHero: View {
 
     private var drawerText: String {
         language == .chinese ? "相机库" : "CAMERA LIBRARY"
+    }
+}
+
+private struct CameraLibraryGrid: View {
+    let films: [FilmPreset]
+    let focusedFilmId: String
+    let selectedFilmId: String
+    let favoriteIds: Set<String>
+    let language: AppLanguage
+    let enableHaptics: Bool
+    let focusAction: (FilmPreset) -> Void
+
+    private let rows = [
+        GridItem(.fixed(154), spacing: 12, alignment: .top),
+        GridItem(.fixed(154), spacing: 12, alignment: .top)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text(language == .chinese ? "相机墙" : "Camera Wall")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(StillLightTheme.secondaryText.opacity(0.72))
+
+                Rectangle()
+                    .fill(StillLightTheme.secondaryText.opacity(0.14))
+                    .frame(height: 1)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHGrid(rows: rows, alignment: .top, spacing: 12) {
+                    ForEach(films) { film in
+                        CameraLibraryTile(
+                            film: film,
+                            isFocused: film.id == focusedFilmId,
+                            isLoaded: film.id == selectedFilmId,
+                            isFavorite: favoriteIds.contains(film.id),
+                            language: language
+                        ) {
+                            if enableHaptics {
+                                UISelectionFeedbackGenerator().selectionChanged()
+                            }
+                            withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+                                focusAction(film)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 2)
+                .padding(.vertical, 2)
+            }
+            .frame(height: 320)
+        }
+    }
+}
+
+private struct CameraLibraryTile: View {
+    let film: FilmPreset
+    let isFocused: Bool
+    let isLoaded: Bool
+    let isFavorite: Bool
+    let language: AppLanguage
+    let action: () -> Void
+
+    private var style: FilmCoverStyle {
+        FilmCoverStyle.style(for: film)
+    }
+
+    private var profile: FilmCameraProfile {
+        film.cameraProfile
+    }
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 8) {
+                ZStack(alignment: .topTrailing) {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    style.ink.opacity(0.78),
+                                    StillLightTheme.panelElevated.opacity(0.78),
+                                    StillLightTheme.panel.opacity(0.52)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay(alignment: .bottomLeading) {
+                            Circle()
+                                .fill(style.accent.opacity(0.26))
+                                .frame(width: 78, height: 78)
+                                .blur(radius: 12)
+                                .offset(x: -20, y: 22)
+                        }
+
+                    CameraModelPlate(film: film)
+                        .frame(height: 74)
+                        .padding(.horizontal, 8)
+                        .padding(.top, 15)
+                        .padding(.bottom, 4)
+
+                    if isLoaded {
+                        LoadedTab(language: language)
+                            .padding(7)
+                    } else if isFavorite {
+                        FavoritePin()
+                            .padding(7)
+                    }
+                }
+                .frame(width: 132, height: 92)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(isFocused ? style.accent.opacity(0.92) : .white.opacity(0.08), lineWidth: isFocused ? 1.4 : 1)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 5) {
+                        Image(systemName: profile.markerIconName)
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(style.accent)
+                            .frame(width: 14)
+                        Text(profile.displayName(language: language))
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(StillLightTheme.text)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.70)
+                    }
+
+                    Text(profile.displayLensAndEra(language: language))
+                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .foregroundStyle(StillLightTheme.secondaryText.opacity(0.82))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.68)
+
+                    HStack(spacing: 4) {
+                        CameraCapabilityPill(text: profile.category.title(language: language), style: style)
+                        if let firstCapability = profile.accessoryLabels(language: language).first {
+                            CameraCapabilityPill(text: firstCapability, style: style)
+                        }
+                    }
+                }
+                .frame(width: 132, alignment: .leading)
+            }
+            .padding(8)
+            .frame(width: 148, height: 154, alignment: .top)
+            .background(isFocused ? StillLightTheme.panelElevated.opacity(0.80) : StillLightTheme.panel.opacity(0.48))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(isFocused ? style.accent.opacity(0.58) : .white.opacity(0.06), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(profile.displayName(language: language))
+    }
+}
+
+private struct CameraCapabilityPill: View {
+    let text: String
+    let style: FilmCoverStyle
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 8, weight: .black, design: .rounded))
+            .lineLimit(1)
+            .minimumScaleFactor(0.62)
+            .foregroundStyle(StillLightTheme.background.opacity(0.88))
+            .padding(.horizontal, 5)
+            .frame(height: 16)
+            .background(style.accent.opacity(0.86))
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
     }
 }
 

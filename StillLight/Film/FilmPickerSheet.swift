@@ -1996,9 +1996,10 @@ private struct FilmPhysicalPackageView: View {
                     )
                 )
 
-            boxWrapperArtwork
-            .padding(size.width * 0.055)
-            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+            FilmIdentityArtworkView(film: film, style: style)
+                .padding(size.width * 0.055)
+                .opacity(isHeroScale ? 0.92 : 0.86)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
 
             boxSidePanel
             boxTopLip
@@ -2014,11 +2015,6 @@ private struct FilmPhysicalPackageView: View {
                 .frame(width: size.width * 0.13)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.vertical, size.width * 0.055)
-
-            packageMotif
-                .frame(width: size.width * 0.58, height: size.height * 0.38)
-                .padding(.leading, size.width * 0.13)
-                .padding(.top, size.height * 0.28)
 
             VStack(alignment: .leading, spacing: size.height * 0.022) {
                 Text("STILL LIGHT")
@@ -2052,6 +2048,15 @@ private struct FilmPhysicalPackageView: View {
                 .foregroundStyle(style.ink.opacity(0.76))
             }
             .padding(size.width * 0.12)
+            .background(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(style.paper.opacity(0.30))
+                    .blur(radius: 0.6)
+                    .padding(.leading, size.width * 0.08)
+                    .padding(.trailing, size.width * 0.20)
+                    .padding(.top, size.height * 0.08)
+                    .padding(.bottom, size.height * 0.50)
+            }
 
             boxFoldLines
             productionTicks

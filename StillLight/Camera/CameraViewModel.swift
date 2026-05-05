@@ -266,11 +266,12 @@ final class CameraViewModel: ObservableObject {
 
         let film = appState.selectedFilm
         let aspectRatio = appState.selectedAspectRatio
-        let saveOriginal = appState.saveOriginalPhoto
+        let saveOriginal = appState.effectiveSaveOriginalPhoto
         let addTimestamp = appState.addTimestamp
-        let quality = appState.jpegQuality
+        let quality = appState.effectiveJPEGQuality
         let flash = flashMode
         let starburstIntensity = starburstIntensity
+        let renderIntensity = appState.effectiveFilmIntensity
 
         cameraService.capturePhoto(flashMode: flash) { [weak self] captureResult in
             Task { @MainActor in
@@ -282,6 +283,7 @@ final class CameraViewModel: ObservableObject {
                     addTimestamp: addTimestamp,
                     jpegQuality: quality,
                     starburstIntensity: starburstIntensity,
+                    renderIntensity: renderIntensity,
                     appState: appState
                 )
             }
@@ -299,12 +301,13 @@ final class CameraViewModel: ObservableObject {
 
         let film = appState.selectedFilm
         let aspectRatio = appState.selectedAspectRatio
-        let saveOriginal = appState.saveOriginalPhoto
+        let saveOriginal = appState.effectiveSaveOriginalPhoto
         let addTimestamp = appState.addTimestamp
-        let quality = appState.jpegQuality
+        let quality = appState.effectiveJPEGQuality
         let flash = flashMode
         let blendMode = doubleExposureState.blendMode
         let starburstIntensity = starburstIntensity
+        let renderIntensity = appState.effectiveFilmIntensity
 
         cameraService.capturePhoto(flashMode: flash) { [weak self] captureResult in
             Task { @MainActor in
@@ -317,6 +320,7 @@ final class CameraViewModel: ObservableObject {
                     jpegQuality: quality,
                     blendMode: blendMode,
                     starburstIntensity: starburstIntensity,
+                    renderIntensity: renderIntensity,
                     appState: appState
                 )
             }
@@ -334,12 +338,13 @@ final class CameraViewModel: ObservableObject {
 
         let film = appState.selectedFilm
         let aspectRatio = appState.selectedAspectRatio
-        let saveOriginal = appState.saveOriginalPhoto
+        let saveOriginal = appState.effectiveSaveOriginalPhoto
         let addTimestamp = appState.addTimestamp
-        let quality = appState.jpegQuality
+        let quality = appState.effectiveJPEGQuality
         let flash = flashMode
         let request = longExposureState.request.normalized
         let starburstIntensity = starburstIntensity
+        let renderIntensity = appState.effectiveFilmIntensity
 
         longExposureState.phase = .collectingFrames
         longExposureState.capturedFrameCount = 0
@@ -365,6 +370,7 @@ final class CameraViewModel: ObservableObject {
                         addTimestamp: addTimestamp,
                         jpegQuality: quality,
                         starburstIntensity: starburstIntensity,
+                        renderIntensity: renderIntensity,
                         appState: appState
                     )
                 }
@@ -380,6 +386,7 @@ final class CameraViewModel: ObservableObject {
         addTimestamp: Bool,
         jpegQuality: Double,
         starburstIntensity: Double,
+        renderIntensity: Double,
         appState: AppState
     ) async {
         do {
@@ -392,6 +399,7 @@ final class CameraViewModel: ObservableObject {
                     aspectRatio: aspectRatio,
                     date: captureDate,
                     addTimestamp: false,
+                    intensity: renderIntensity,
                     includeDecoration: false
                 )
                 let creativeImage = try CameraCreativeImageComposer.applyStarburst(
@@ -441,6 +449,7 @@ final class CameraViewModel: ObservableObject {
         jpegQuality: Double,
         blendMode: CameraDoubleExposureBlendMode,
         starburstIntensity: Double,
+        renderIntensity: Double,
         appState: AppState
     ) async {
         do {
@@ -453,6 +462,7 @@ final class CameraViewModel: ObservableObject {
                     aspectRatio: aspectRatio,
                     date: captureDate,
                     addTimestamp: false,
+                    intensity: renderIntensity,
                     includeDecoration: false
                 )
             }.value
@@ -525,6 +535,7 @@ final class CameraViewModel: ObservableObject {
         addTimestamp: Bool,
         jpegQuality: Double,
         starburstIntensity: Double,
+        renderIntensity: Double,
         appState: AppState
     ) async {
         do {
@@ -543,6 +554,7 @@ final class CameraViewModel: ObservableObject {
                         aspectRatio: aspectRatio,
                         date: outputDate,
                         addTimestamp: false,
+                        intensity: renderIntensity,
                         includeDecoration: false
                     )
                 }

@@ -21,7 +21,9 @@ enum PhotoExporter {
         let createdAt = Date()
         let directory = try appDirectory()
         let processedURL = directory.appendingPathComponent("\(id.uuidString)-processed.jpg")
-        let originalURL = originalData == nil ? nil : directory.appendingPathComponent("\(id.uuidString)-original.jpg")
+        let originalURL = originalData.map {
+            directory.appendingPathComponent("\(id.uuidString)-original.\(originalFileExtension(for: $0))")
+        }
 
         let jpegData = try encodedJPEGData(
             image: processedImage,
@@ -106,6 +108,18 @@ enum PhotoExporter {
         }
 
         return data as Data
+    }
+
+    private static func originalFileExtension(for data: Data) -> String {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let typeIdentifier = CGImageSourceGetType(source),
+              let type = UTType(typeIdentifier as String),
+              let preferredExtension = type.preferredFilenameExtension
+        else {
+            return "jpg"
+        }
+
+        return preferredExtension == "jpeg" ? "jpg" : preferredExtension
     }
 
     private static func saveToPhotoLibrary(_ fileURL: URL) async throws {

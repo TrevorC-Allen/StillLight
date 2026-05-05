@@ -9,6 +9,7 @@ struct ImportLabScreen: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var showsFilmPicker = false
     @State private var showsShareSheet = false
+    @State private var didApplyDefaultStrength = false
     @GestureState private var showsOriginalPreview = false
 
     var body: some View {
@@ -44,6 +45,11 @@ struct ImportLabScreen: View {
                     presets: appState.filmLibrary.presets,
                     framesLoadedFormat: appState.t(.framesLoaded)
                 )
+            }
+            .onAppear {
+                guard !didApplyDefaultStrength else { return }
+                viewModel.strength = appState.effectiveFilmIntensity
+                didApplyDefaultStrength = true
             }
         }
     }
@@ -499,8 +505,8 @@ struct ImportLabScreen: View {
                         Task {
                             await viewModel.saveSelected(
                                 film: appState.selectedFilm,
-                                jpegQuality: appState.jpegQuality,
-                                saveOriginal: appState.saveOriginalPhoto,
+                                jpegQuality: appState.effectiveJPEGQuality,
+                                saveOriginal: appState.effectiveSaveOriginalPhoto,
                                 photoStore: appState.photoStore,
                                 successMessage: appState.t(.savedToRoll),
                                 photosSaveFailedPrefix: appState.t(.photosSaveFailed)
@@ -517,8 +523,8 @@ struct ImportLabScreen: View {
                         Task {
                             await viewModel.saveAll(
                                 film: appState.selectedFilm,
-                                jpegQuality: appState.jpegQuality,
-                                saveOriginal: appState.saveOriginalPhoto,
+                                jpegQuality: appState.effectiveJPEGQuality,
+                                saveOriginal: appState.effectiveSaveOriginalPhoto,
                                 photoStore: appState.photoStore,
                                 successFormat: appState.t(.savedFrames),
                                 progressFormat: appState.t(.savingFrame),
@@ -588,7 +594,7 @@ private final class ImportLabViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var statusMessage: String?
     @Published var processingMessage: String?
-    @Published var strength = 1.0
+    @Published var strength = AppState.fidelityFilmIntensity
     @Published var aspectRatio: CaptureAspectRatio = .ratio3x2
     @Published private(set) var isBatchDeveloping = false
 

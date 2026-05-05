@@ -20,6 +20,12 @@ struct SettingsScreen: View {
 
                     Section(appState.t(.output)) {
                         Toggle(appState.t(.saveOriginalPhoto), isOn: $appState.saveOriginalPhoto)
+                            .disabled(appState.fidelityMode)
+                            .opacity(appState.fidelityMode ? 0.58 : 1)
+                        Toggle(appState.t(.fidelityMode), isOn: $appState.fidelityMode)
+                        Text(appState.t(.fidelityModeDescription))
+                            .font(.caption)
+                            .foregroundStyle(StillLightTheme.secondaryText)
                         Toggle(appState.t(.addDateStamp), isOn: $appState.addTimestamp)
 
                         VStack(alignment: .leading, spacing: 8) {

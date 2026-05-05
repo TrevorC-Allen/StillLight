@@ -219,7 +219,7 @@ enum FilmImagePipeline {
         } record: { timing.record($0, milliseconds: $1) }
 
         let grained = measureStage("grain") {
-            applyFinishingTexture(to: rendered, film: film)
+            applyFinishingTexture(to: rendered, film: film, intensity: intensity)
         } record: { timing.record($0, milliseconds: $1) }
 
         let finishedImage = UIImage(cgImage: grained)
@@ -579,7 +579,10 @@ enum FilmImagePipeline {
         return blend.outputImage?.cropped(to: extent) ?? image
     }
 
-    private static func applyFinishingTexture(to image: CGImage, film: FilmPreset) -> CGImage {
+    private static func applyFinishingTexture(to image: CGImage, film: FilmPreset, intensity: Double) -> CGImage {
+        let finishingIntensity = intensity.clamped(to: 0...1)
+        guard finishingIntensity > 0.001 else { return image }
+
         let width = image.width
         let height = image.height
         let bytesPerPixel = 4
@@ -610,11 +613,11 @@ enum FilmImagePipeline {
             let renderingProfile = FilmRenderingProfile.profile(for: film)
             let toneSeparation = FilmToneSeparation.profile(for: film)
             let colorPolish = FilmColorPolish.profile(for: film)
-            let amount = max(0.0, min(1.0, film.grainAmount))
+            let amount = max(0.0, min(1.0, film.grainAmount * finishingIntensity))
             let isoScale = sqrt(Double(max(50, film.iso)) / 400.0).clamped(to: 0.72...1.48)
             let lumaAmplitude = amount * 17.5 * isoScale * film.grainSize.clamped(to: 0.7...1.45)
             let chromaAmplitude = film.category == .blackWhite ? 0.0 : lumaAmplitude * 0.18
-            let colorWarmth = finishingWarmth(for: film)
+            let colorWarmth = finishingWarmth(for: film) * finishingIntensity
             let appliesColorFinish = film.category != .blackWhite
             var previousRowNoise = [Double](repeating: 0, count: width)
             var currentRowNoise = [Double](repeating: 0, count: width)
@@ -639,7 +642,7 @@ enum FilmImagePipeline {
                         let shadowWarmth = (1.0 - luminance).clamped(to: 0...1) * colorWarmth
                         let skinWarmth = skinWeight * colorWarmth * (1.0 - highlightWeight * 0.58)
                         let skinLuma = luminance * 255.0
-                        let preservation = skinWeight * renderingProfile.skinProtection
+                        let preservation = skinWeight * renderingProfile.skinProtection * finishingIntensity
 
                         r = skinLuma + (r - skinLuma) * (1.0 - preservation * 0.050)
                         g = skinLuma + (g - skinLuma) * (1.0 - preservation * 0.030)
@@ -648,7 +651,7 @@ enum FilmImagePipeline {
                         g += skinWarmth * 1.0 + shadowWarmth * 0.45
                         b -= skinWarmth * 3.2 + shadowWarmth * 1.1
 
-                        let highlightRecovery = highlightWeight * renderingProfile.highlightRecovery
+                        let highlightRecovery = highlightWeight * renderingProfile.highlightRecovery * finishingIntensity
                         if highlightRecovery > 0 {
                             let recoveredLuma = min(246.0, skinLuma + (245.0 - skinLuma) * 0.18)
                             r = r * (1.0 - highlightRecovery * 0.20) + recoveredLuma * (highlightRecovery * 0.20)
@@ -656,9 +659,9 @@ enum FilmImagePipeline {
                             b = b * (1.0 - highlightRecovery * 0.14) + recoveredLuma * (highlightRecovery * 0.14)
                         }
 
-                        let shadowToneWeight = (1.0 - smoothstep(edge0: 0.16, edge1: 0.62, x: luminance)) * toneSeparation.intensity
-                        let highlightToneWeight = highlightWeight * toneSeparation.intensity * (1.0 - skinWeight * 0.38)
-                        let midtoneToneWeight = (1.0 - abs(luminance - 0.52) * 2.2).clamped(to: 0...1) * toneSeparation.intensity
+                        let shadowToneWeight = (1.0 - smoothstep(edge0: 0.16, edge1: 0.62, x: luminance)) * toneSeparation.intensity * finishingIntensity
+                        let highlightToneWeight = highlightWeight * toneSeparation.intensity * finishingIntensity * (1.0 - skinWeight * 0.38)
+                        let midtoneToneWeight = (1.0 - abs(luminance - 0.52) * 2.2).clamped(to: 0...1) * toneSeparation.intensity * finishingIntensity
 
                         r += shadowToneWeight * toneSeparation.shadowR
                             + highlightToneWeight * toneSeparation.highlightR
@@ -671,7 +674,7 @@ enum FilmImagePipeline {
                             + midtoneToneWeight * toneSeparation.midtoneB
 
                         if colorPolish.intensity > 0 {
-                            let polishIntensity = colorPolish.intensity
+                            let polishIntensity = colorPolish.intensity * finishingIntensity
                             let midtonePresence = (1.0 - abs(luminance - 0.52) * 2.0).clamped(to: 0...1)
                             let deepShadow = (1.0 - smoothstep(edge0: 0.14, edge1: 0.58, x: luminance)) * (1.0 - skinWeight * 0.45)
                             let warmHighlight = highlightWeight * (1.0 - skinWeight * 0.28)
@@ -708,7 +711,7 @@ enum FilmImagePipeline {
                         let redDominance = ((r - max(g, b)) / 96.0).clamped(to: 0...1)
                         if redDominance > 0 {
                             let compressedRed = r * 0.72 + g * 0.20 + b * 0.08
-                            let compression = redDominance * toneSeparation.redCompression
+                            let compression = redDominance * toneSeparation.redCompression * finishingIntensity
                             r = r * (1.0 - compression) + compressedRed * compression
                         }
                     }

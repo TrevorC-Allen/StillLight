@@ -5,11 +5,16 @@ final class AppState: ObservableObject {
     @Published var selectedFilm: FilmPreset
     @Published var selectedAspectRatio: CaptureAspectRatio = .ratio3x2
     @Published var saveOriginalPhoto = true
+    @Published var fidelityMode: Bool {
+        didSet {
+            UserDefaults.standard.set(fidelityMode, forKey: Self.fidelityModeKey)
+        }
+    }
     @Published var addTimestamp = true
     @Published var enableHaptics = true
     @Published var showGrid = true
     @Published var showLevel = true
-    @Published var jpegQuality: Double = 0.93
+    @Published var jpegQuality: Double = 0.98
     @Published var photoStore = PhotoStore()
     @Published private(set) var currentRoll: FilmRoll
     @Published private(set) var favoriteFilmIds: Set<String> = [] {
@@ -27,6 +32,8 @@ final class AppState: ObservableObject {
     private let filmRollStore = FilmRollStore()
     private static let languageKey = "StillLight.language"
     private static let favoriteFilmIdsKey = "StillLight.favoriteFilmIds"
+    private static let fidelityModeKey = "StillLight.fidelityMode"
+    static let fidelityFilmIntensity = 0.62
 
     init() {
         let firstFilm = filmLibrary.presets[0]
@@ -34,9 +41,22 @@ final class AppState: ObservableObject {
         currentRoll = filmRollStore.loadOrCreate(for: firstFilm)
         let storedLanguage = UserDefaults.standard.string(forKey: Self.languageKey)
         language = storedLanguage.flatMap(AppLanguage.init(rawValue:)) ?? Self.defaultLanguage
+        fidelityMode = UserDefaults.standard.object(forKey: Self.fidelityModeKey) as? Bool ?? true
         favoriteFilmIds = Self.loadFavoriteFilmIds(from: UserDefaults.standard, library: filmLibrary)
         persistFavoriteFilmIds()
         photoStore.load()
+    }
+
+    var effectiveFilmIntensity: Double {
+        fidelityMode ? Self.fidelityFilmIntensity : 1.0
+    }
+
+    var effectiveSaveOriginalPhoto: Bool {
+        fidelityMode || saveOriginalPhoto
+    }
+
+    var effectiveJPEGQuality: Double {
+        fidelityMode ? max(jpegQuality, 0.98) : jpegQuality
     }
 
     func selectFilm(_ film: FilmPreset) {
